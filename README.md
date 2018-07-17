@@ -20,6 +20,7 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities.
 - Find Subtitles for every video file in torrents (either automatically in the Web Player, or by using the "Find Subtitles" button in the torrent file settings to find / download subtitles)
 - Supports Embedding in Websites (user needs to approve website)
 - Advanced Web Player (playlist, searches for subtitles automatically, add local subtitle file, aspect ratio, crop, zoom, subtitle delay, audio delay, [hotkeys](https://github.com/jaruba/PowderWeb/wiki/Web-Player-Hotkeys))
+- Advanced Torrent Settings
 - Managing Multiple Torrents
 
 
