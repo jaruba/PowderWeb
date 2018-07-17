@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+
+  <script src="/bower_components/webcomponentsjs/webcomponents.js"></script>
+
+  <script src="/isMobile-0.4.1.js"></script>
+  <link rel="stylesheet" href="/font-awesome-5.0.13/css/fontawesome-all.css">
+  <link href="/videojs-7.0.3.css" rel="stylesheet">
+  <link href="/videojs-settings-menu-0.0.2/videojs-settings-menu.css" rel="stylesheet">
+  <link href="/videojs-title-bar-1.0.0/videojs-title-bar.css" rel="stylesheet">
+  <link href="/videojs-iplayer-skin-1.css" rel="stylesheet">
+  <script src="/videojs-7.0.3.js"></script>
+
+  <script src="/silvermine-quality-selector-1.1.2.js"></script>
+  <script src="/videojs-settings-menu-0.0.2/videojs-settings-menu.js"></script>
+  <script src="/videojs-title-bar-1.0.0/videojs-title-bar.js"></script>
+  <script src="/videojs-overlay-2.1.0.js"></script>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
+  <title>Powder Web</title>
+
+  <link rel="import" href="/bower_components/neon-animation/web-animations.html">
+
+  <link rel="import" href="/bower_components/paper-fab/paper-fab.html">
+  <link rel="import" href="/bower_components/progress-bubble/progress-bubble.html">
+  <link rel="import" href="/bower_components/paper-icon-button/paper-icon-button.html">
+
+  <link rel="import" href="/bower_components/iron-icon/iron-icon.html">
+  <link rel="import" href="/bower_components/iron-icons/iron-icons.html">
+  <link rel="import" href="/bower_components/iron-icons/hardware-icons.html">
+  <link rel="import" href="/bower_components/iron-icons/device-icons.html">
+  <link rel="import" href="/bower_components/iron-icons/av-icons.html">
+  <link rel="import" href="/bower_components/iron-icons/image-icons.html">
+  <link rel="import" href="/bower_components/iron-icons/editor-icons.html">
+
+  <link rel="import" href="/bower_components/paper-dialog/paper-dialog.html">
+  <link rel="import" href="/bower_components/paper-button/paper-button.html">
+  <link rel="import" href="/bower_components/paper-checkbox/paper-checkbox.html">
+  <link rel="import" href="/bower_components/paper-dropdown-menu/paper-dropdown-menu.html">
+  <link rel="import" href="/bower_components/paper-listbox/paper-listbox.html">
+  <link rel="import" href="/bower_components/paper-item/paper-item.html">
+  <link rel="import" href="/bower_components/paper-spinner/paper-spinner.html">
+  <link rel="stylesheet" href="/styles.css">
+  <!--[if IE]>
+    <link rel="stylesheet" type="text/css" href="/for-ie-9-and-lower.css" />
+  <![endif]-->
+  <script src="/parseTorrentBrowser.js"></script>
+  <script src="/bower_components/eventEmitter/EventEmitter.min.js"></script>
+
+    <style is="custom-style">
+    :root {
+        --paper-input-container-color: #737373;
+        --paper-input-container-focus-color: #00bcd4;
+        --paper-progress-active-color: #00bcd4;
+        --paper-tab-ink: #e3e3e3;
+        --paper-slider-secondary-color: #bdbdbd;
+        --paper-slider-active-color: #00bcd4;
+        --paper-slider-knob-color: #00bcd4;
+        --paper-input-container-input-color: #ffffff;
+        
+        --progress-bubble-stroke-color: #4ac5f8;
+        --progress-bubble-bg-stroke-color: rgba(48, 48, 48, 0.4);
+        --progress-bubble-background: transparent;
+        --progress-bubble-reflection-display: none;
+    }
+    .torrentProgress {
+        --paper-progress-active-color: #07A3E7 !important;
+        --paper-progress-container-color: #272727 !important;
+        --paper-progress-height: 12px !important;
+    }
+    paper-input.dark-input {
+        --paper-input-container-color: #5c5e60;
+        --paper-input-container-focus-color: #00bcd4;
+        --paper-input-container-input-color: #ffffff;
+        --primary-text-color: #ffffff;
+        --paper-input-container-disabled: {
+            opacity: 0.66;
+            padding: 0;
+            margin-top: -3px;
+        };
+        --paper-input-container: {
+            padding: 0;
+        };
+        --paper-input-container-input: {
+            height: 21px;
+        };
+    }
+    paper-input.dark-input-large {
+        --paper-input-container: {
+            padding: 8px 0;
+        };
+        --paper-input-container-input: {
+            height: 23.3px;
+        };
+    }
+    paper-input.dl-input {
+        --paper-input-container-input: {
+            cursor: pointer !important;
+        };
+    }
+    paper-toggle-button.playerTogglers {
+        --paper-toggle-button-checked-bar-color: #0097a7;
+        --paper-toggle-button-checked-button-color: #0097a7;
+        --paper-toggle-button-checked-ink-color: #0097a7;
+        --paper-toggle-button-unchecked-bar-color: #f50057;
+        --paper-toggle-button-unchecked-button-color: #f50057;
+        --paper-toggle-button-unchecked-ink-color: #f50057;
+    }
+    paper-toggle-button.mainTogglers {
+        --paper-toggle-button-checked-bar-color: #4d97eb;
+        --paper-toggle-button-checked-button-color: #4d97eb;
+        --paper-toggle-button-checked-ink-color: #4d97eb;
+    }
+     paper-fab.yellow {
+        --paper-fab-background: #e3b618 !important;
+    }
+     paper-fab.orange {
+        --paper-fab-background: #e38318 !important;
+    }
+     paper-fab.green {
+        --paper-fab-background: #11a34e !important;
+    }
+    
+    .dashboard-buttons iron-icon {
+       width: 30px !important;
+        height: 30px !important;
+     }
+    paper-progress.green-progress {
+        --paper-progress-active-color: var(--paper-light-green-500);
+        --paper-progress-secondary-color: var(--paper-light-green-100);
+    }
+    paper-spinner#search-spinner {
+      --paper-spinner-layer-1-color: #fff;
+      --paper-spinner-layer-2-color: #fff;
+      --paper-spinner-layer-3-color: #fff;
+      --paper-spinner-layer-4-color: #fff;
+    }
+    </style>
+    <style is="custom-style">
+      paper-checkbox.dark {
+        --paper-checkbox-unchecked-color: 'white';
+        --paper-checkbox-unchecked-ink-color: 'white';
+        --paper-checkbox-label-color: 'white';
+      }
+    </style>
+    <style>
+    .toggle-container {
+        float: right;
+    }
+    .toggle-label {
+        color: #fff !important;
+        padding: 0 !important;
+        vertical-align: middle;
+        float: left;
+    }
+    .playerButtons {
+        float: left;
+        background: #303030;
+        color: white;
+        padding: 8px 15px;
+        text-transform: none;
+        font-size: 15px;
+        font-weight: normal !important;
+        margin-top: 0px;
+        margin-right: 10px;
+        margin-bottom: 12px;
+        margin-left: 0px;
+    }
+    .playerButtons:hover {
+        background: #404040;
+    }
+    .playerButtons-primary {
+        float: left;
+        background: #0097a7;
+        color: #000;
+        padding: 8px 15px;
+        text-transform: none;
+        font-size: 15px;
+        font-weight: normal !important;
+        margin-top: 0px;
+        margin-right: 10px;
+        margin-bottom: 12px;
+        margin-left: 0px;
+    }
+    .playerButtons-primary:hover {
+        background: #136e77;
+    }
+    paper-autocomplete input {
+        color: white !important;
+    }
+    paper-autocomplete paper-material {
+        background-color: #1d1d1d !important;
+        color: white !important;
+        overflow: auto !important;
+    }
+    paper-autocomplete paper-item:hover {
+        background-color: #262626 !important;
+        color: white !important;
+    }
+    paper-autocomplete paper-item.active {
+        background-color: #262626 !important;
+        color: white !important;
+    }
+    paper-autocomplete paper-icon-button {
+        padding-right: 0 !important;
+       color: #4BABF4 !important;
+    }
+    .subtitle-list .iron-selected {
+        background-color: #444 !important;
+        font-weight: normal;
+    }
+    </style>
+
+</head>
+<body>
+  <div id="root"></div>
+</body>
+</html>

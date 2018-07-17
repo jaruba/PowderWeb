@@ -1,0 +1,7 @@
+/**
+ * videojs-title-bar
+ * @version 1.0.0
+ * @copyright 2018 NOC
+ * @license MIT
+ */
+.video-js .vjs-title-bar-content{font-size:1.4em;position:absolute;top:0;left:0;right:0;background-color:rgba(43,51,63,0.7);height:2em;line-height:2em;overflow:hidden;padding:0 10px;text-align:left;display:none}.vjs-has-started .vjs-title-bar-content{display:-webkit-box;display:-webkit-flex;display:-ms-flexbox;display:flex;visibility:visible;opacity:1;-webkit-transition:visibility 0.1s,opacity 0.1s;-moz-transition:visibility 0.1s,opacity 0.1s;-o-transition:visibility 0.1s,opacity 0.1s;transition:visibility 0.1s,opacity 0.1s}.vjs-has-started.vjs-user-inactive.vjs-playing .vjs-title-bar-content{visibility:hidden;opacity:0;-webkit-transition:visibility 1s,opacity 1s;-moz-transition:visibility 1s,opacity 1s;-o-transition:visibility 1s,opacity 1s;transition:visibility 1s,opacity 1s}.vjs-controls-disabled .vjs-title-bar-content,.vjs-using-native-controls .vjs-title-bar-content,.vjs-error .vjs-title-bar-content{display:none !important}.vjs-audio.vjs-has-started.vjs-user-inactive.vjs-playing .vjs-title-bar-content{opacity:1;visibility:visible}

@@ -1,0 +1,15 @@
+{
+  "gitbook": "3.2.2",
+  "title": "Redux",
+  "plugins": ["edit-link", "prism", "-highlight", "github", "anchorjs"],
+  "root": "./docs",
+  "pluginsConfig": {
+      "edit-link": {
+        "base": "https://github.com/timberio/molecule/tree/master",
+        "label": "Edit This Page"
+      },
+      "github": {
+        "url": "https://github.com/reactjs/redux/"
+      }
+    }
+}
