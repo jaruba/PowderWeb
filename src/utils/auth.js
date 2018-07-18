@@ -131,7 +131,7 @@ export function checkToken (validate, cb) {
       } else {
         window.isMaster = false
       }
-      events.emitEvent('updateModals')
+      events.emitEvent('updateNav')
 
       if (!validate) {
         window.location.replace('/')

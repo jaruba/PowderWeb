@@ -53,7 +53,6 @@ export default class Modals extends PureComponent {
               this.setState({
                 searchResults: _.orderBy(this.state.searchResults.concat(parsed.results), ['seeders'], ['desc'])
               })
-//              events.emitEvent('updateModals')
               setTimeout(() => {
                 getSearch(searchId)
               }, 500)

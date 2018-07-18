@@ -111,7 +111,6 @@ const syncBrowsers = async () => {
         if (file) {
           if (document.getElementById("loadingDialog"))
             document.getElementById("loadingDialog").close()
-          events.emitEvent('updateModals')
           player.modal.open(torrent, file, parseFloat(histObj.time))
         }
 
