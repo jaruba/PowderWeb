@@ -59,35 +59,27 @@ npm run package
 
 ## Embedding in Websites
 
-Can be started with either Magnet Link or Torrent File HTTP(S) Link:
+Can be started with either Magnet Link or Torrent File HTTP(S) Link.
+
+Add Script to `<head>`:
 
 ```
+<script src="http://powder.media/embed.js"></script>
+```
 
-<html>
-	<head>
-		<script src="http://powder.media/embed.js"></script>
-		<style>
-			#testEmbed {
-				width: 100%;
-				height: 100%;
-			}
-		</style>
-	</head>
-	<body>
-		<div id="testEmbed">
-		</div>
-		<script>
 
-			window.powder.stream(
+Start Web Player on a `<div>`:
 
-				'#testEmbed',
+```
+<div id="testEmbed"></div>
+<script>
+  window.powder.stream(
 
-				'magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=Sintel&tr=udp%3A%2F%2Fexplodie.org%3A6969&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.empire-js.us%3A1337&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2F
+    '#testEmbed',
+
+    'magnet:?xt=urn:btih:08ada5a7a6183aae1e09d831df6748d566095a10&dn=Sintel&tr=udp%3A%2F%2Fexplodie.org%3A6969&tr=udp%3A%2F%2Ftracker.coppersurfer.tk%3A6969&tr=udp%3A%2F%2Ftracker.empire-js.us%3A1337&tr=udp%3A%2F%2Ftracker.leechers-paradise.org%3A6969&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=wss%3A%2F%2Ftracker.btorrent.xyz&tr=wss%3A%2F%2Ftracker.fastcast.nz&tr=wss%3A%2F%2Ftracker.openwebtorrent.com&ws=https%3A%2F%2Fwebtorrent.io%2Ftorrents%2F
 info hash: 08ada5a7a6183aae1e09d831df6748d566095a10'
 
-			)
-
-		</script>
-	</body>
-</html>
+  )
+</script>
 ```
