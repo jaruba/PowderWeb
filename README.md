@@ -51,7 +51,10 @@ npm run electron
 
 ## Building:
 
+Requires babel (`npm i babel-cli -g`), because of a node module that is written in ES6 and breaks building the front-end of the application.
+
 ```
+babel node_modules/hue-name/index.js --out-file node_modules/hue-name/index.js --presets=env
 npm run build
 npm run package
 ```
