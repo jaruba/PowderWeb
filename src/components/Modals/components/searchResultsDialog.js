@@ -166,6 +166,8 @@ export default class Modals extends PureComponent {
 
         <paper-dialog
             id="searchResultsDialog"
+            horizontal-align="left"
+            horizontal-offset="0"
             style={{display: 'none', maxWidth: '100%', width: '100%', padding: '0', marginTop: '57px', marginBottom: '0px', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'center', borderRadius: '0', height: 'calc(100% - 57px)'}}
             on-iron-overlay-closed={this.closingSearchDialog}
             opened={true}
@@ -178,7 +180,7 @@ export default class Modals extends PureComponent {
               <paper-icon-button style={{color: '#cacaca', cursor: 'pointer', width: '40px', height: '40px'}} onClick={this.cancelSearchResults.bind(this)} icon="close" />
             </div>
             <div style={{clear: 'both'}}/>
-            <div id="searchResultsList">
+            <div id="searchResultsList" class="modalScroll">
               {this.torrentList()}
             </div>
         </paper-dialog>

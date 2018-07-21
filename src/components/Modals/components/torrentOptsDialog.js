@@ -207,6 +207,7 @@ export default class Modals extends PureComponent {
     return (
         <paper-dialog
             id="torrentOptsDialog"
+            class="modalScroll"
             style={{display: 'none', width: '440px', textAlign: 'left', borderRadius: '3px', maxWidth: '90%', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'center', overflowX: 'auto'}}
             opened={true}
             with-backdrop >

@@ -89,8 +89,10 @@ export default class Modals extends PureComponent {
       <div style={{width: '0px', height: '0px'}}>
         <paper-dialog
             id="playerOptsDialog"
-            className="prettyScrollWhite"
-            style={{display: 'none', maxWidth: '100%', width: '100%', padding: '0', marginTop: '90px', marginBottom: '0px', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'left', borderRadius: '0', overflowX: 'scroll'}}
+            class="modalScroll"
+            horizontal-align="left"
+            horizontal-offset="0"
+            style={{display: 'none', maxWidth: '100%', width: '100%', padding: '0', marginTop: '90px', marginBottom: '0px', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'left', borderRadius: '0', overflow: 'auto'}}
             with-backdrop >
             <div>
               <div style={{display: 'none'}}>

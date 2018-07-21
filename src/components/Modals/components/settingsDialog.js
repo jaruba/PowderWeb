@@ -103,6 +103,7 @@ export default class Modals extends PureComponent {
       settings.maxCompatibility = this.getLocalValue('maxCompatibility')
       settings.maxQuality = this.getLocalValue('maxQuality')
       settings.alwaysTranscode = this.getLocalValue('alwaysTranscode')
+      settings.useMatroska = this.getLocalValue('useMatroska')
       settings.subSearch = this.getLocalValue('subSearch')
       settings.renderNotFocused = this.getLocalValue('renderNotFocused')
       settings.playButtonAction = this.getLocalValue('playButtonAction')
@@ -486,11 +487,25 @@ export default class Modals extends PureComponent {
     })
   }
 
+  generalPlayerHotkeys = () => {
+    window.open('https://github.com/jaruba/PowderWeb/wiki/Web-Player-Hotkeys', "_blank")
+  }
+
   generalForceTranscode = () => {
     const newValue = !this.state.alwaysTranscode
     this.saveLocalValue('alwaysTranscode', newValue, () => {
       this.setState({
         alwaysTranscode: newValue
+      })
+    })
+  }
+
+
+  generalUseMatroska = () => {
+    const newValue = !this.state.useMatroska
+    this.saveLocalValue('useMatroska', newValue, () => {
+      this.setState({
+        useMatroska: newValue
       })
     })
   }
@@ -517,8 +532,10 @@ export default class Modals extends PureComponent {
     return (
           <paper-dialog
             id="settingsDialog"
-            className="prettyScrollWhite"
-            style={{display: 'none', maxWidth: '100%', width: '100%', padding: '0', marginTop: '90px', marginBottom: '0px', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'left', borderRadius: '0', overflowX: 'scroll'}}
+            class="modalScroll"
+            horizontal-align="left"
+            horizontal-offset="0"
+            style={{display: 'none', maxWidth: '100%', width: '100%', padding: '0', marginTop: '90px', marginBottom: '0px', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'left', borderRadius: '0', overflow: 'auto'}}
             opened={true}
             with-backdrop >
             <div>
@@ -645,6 +662,42 @@ export default class Modals extends PureComponent {
 
               <paper-button
                   raised
+                  onClick={this.generalUseMatroska.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                  className='playerButtons' >
+              Use Matroska:
+              </paper-button>
+              
+              <paper-button
+                  raised
+                  id="forcedButton"
+                  onClick={this.generalUseMatroska.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '100px', maxWidth: '100px', display: 'inline-block', textAlign: 'center'}}
+                  className='playerButtons' >
+              { this.state.useMatroska ? 'Auto' : 'False' }
+              </paper-button>
+
+              <paper-button
+                  raised
+                  id="forcedButton"
+                  onClick={this.showInfo.bind(this, 'useMatroska')}
+                  style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                  className='playerButtons' >
+              { '?' }
+              </paper-button>
+
+              <div className="settingsInfo useMatroskaInfo">
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <i>For some browsers we use the matroska container as it is supported and works well in the latest releases of those browsers. If video playback doesn't work in your browser, you can try setting this to "False" to see if it fixes playback.</i>
+
+              </div>
+
+              <div style={{clear: 'both', height: '15px'}} />
+
+              <paper-button
+                  raised
                   onClick={this.generalForceTranscode.bind(this)}
                   style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
                   className='playerButtons' >
@@ -736,6 +789,16 @@ export default class Modals extends PureComponent {
               { this.state.subSearch ? 'On' : 'Off' }
               </paper-button>
 
+              <div style={{clear: 'both', height: '15px'}} />
+
+              <paper-button
+                  raised
+                  onClick={this.generalPlayerHotkeys.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                  className='playerButtons' >
+              Player Hotkeys
+              </paper-button>
+              
               <div style={{clear: 'both', height: '15px'}} />
 
               <div className="setting-header" style={{marginTop: '10px'}}>

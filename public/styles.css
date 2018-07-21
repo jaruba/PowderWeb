@@ -24,26 +24,32 @@ span.whiteLink:hover {
   overflow-y: scroll;
 }
 
-#searchResultsList::-webkit-scrollbar {
+#subtitleResultsList {
+  padding: 0px;
+  max-height: calc(100% - 45px);
+  overflow-y: scroll;
+}
+
+.modalScroll::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
-#searchResultsList::-webkit-scrollbar-button {
+.modalScroll::-webkit-scrollbar-button {
   width: 0px;
   height: 0px;
 }
-#searchResultsList::-webkit-scrollbar-thumb {
+.modalScroll::-webkit-scrollbar-thumb {
   background: #bebebe;
   border: 0px none #ffffff;
   border-radius: 0px;
 }
-#searchResultsList::-webkit-scrollbar-thumb:hover {
+.modalScroll::-webkit-scrollbar-thumb:hover {
   background: #d3d3d3;
 }
-#searchResultsList::-webkit-scrollbar-thumb:active {
+.modalScroll::-webkit-scrollbar-thumb:active {
   background: #d3d3d3;
 }
-#searchResultsList::-webkit-scrollbar-track {
+.modalScroll::-webkit-scrollbar-track {
   background: #666666;
   border: 0px none #ffffff;
   border-radius: 0px;
@@ -58,6 +64,9 @@ span.whiteLink:hover {
   height: 100%;
   margin-bottom: 0px !important;
   border-radius: 0px !important;
+  margin-left: 0px !important;
+  margin-right: 0px !important;
+  max-height: calc(100% - 57px) !important;
 }
 
 .vjs-settings-sub-menu-value {
@@ -101,13 +110,13 @@ span.whiteLink:hover {
 #playerOptsDialog {
   top: 0px !important;
   bottom: 0px !important;
-  left: -40px !important;
-  position: absolute !important;
-  right: 0px !important;
   height: calc(100% - 57px) !important;
+  max-height: calc(100% - 57px) !important;
   margin-top: 57px !important;
   margin-bottom: 0px !important;
   border-radius: 0px !important;
+  margin-left: 0px !important;
+  margin-right: 0px !important;
 }
 
 .dashboardFile {
@@ -770,6 +779,8 @@ span.whiteLink:hover {
   margin-top: 57px !important;
   height: calc(100% - 57px) !important;
   max-height: calc(100% - 57px) !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 .settingsInfo {
@@ -819,10 +830,16 @@ span.whiteLink:hover {
 
 #historyListDialog {
   top: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  max-height: calc(100% - 57px) !important;
 }
 
 #subtitleListDialog {
   top: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  max-height: calc(100% - 57px) !important;
 }
 
 header {

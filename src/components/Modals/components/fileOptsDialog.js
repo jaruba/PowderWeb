@@ -105,6 +105,7 @@ export default class Modals extends PureComponent {
     return (
         <paper-dialog
             id="fileOptsDialog"
+            class="modalScroll"
             style={{width: '440px', textAlign: 'left', borderRadius: '3px', maxWidth: '90%', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'center', overflowX: 'auto'}}
             opened={true}
             with-backdrop >

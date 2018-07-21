@@ -107,7 +107,10 @@ export default class Modals extends PureComponent {
     return (
         <paper-dialog
             id="subtitleListDialog"
-            style={{display: 'none', maxWidth: '100%', width: '100%', padding: '0', marginTop: '57px', marginBottom: '0px', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'left', borderRadius: '0', overflowX: 'scroll', height: 'calc(100% - 57px)'}}
+            class="modalScroll"
+            horizontal-align="left"
+            horizontal-offset="0"
+            style={{display: 'none', maxWidth: '100%', width: '100%', padding: '0', marginTop: '57px', marginBottom: '0px', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'left', borderRadius: '0', overflow: 'auto', height: 'calc(100% - 57px)'}}
             opened={true}
             with-backdrop >
             <div>
@@ -120,6 +123,7 @@ export default class Modals extends PureComponent {
               <div style={{clear: 'both'}}/>
 
               {this.getSubtitleList()}
+
             </div>
         </paper-dialog>
     )
