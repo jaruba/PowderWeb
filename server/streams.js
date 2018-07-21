@@ -18,8 +18,8 @@ const parseTorrent = require('parse-torrent')
 const organizer = require('./utils/file_organizer')
 const rimraf = require('rimraf')
 
-const openerDir = path.join(app.getPath('appData'), 'powder-streamer', 'openers')
-const tempDir = path.join(os.tmpDir(), 'Powder-Streamer', 'torrent-stream')
+const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
+const tempDir = path.join(os.tmpDir(), 'PowderWeb', 'torrent-stream')
 
 let loading = {}
 
@@ -651,13 +651,13 @@ const actions = {
             if (fileId !== false) {
                 if (file.id == fileId) {
                     const title = parser(file.name).name()
-                    const uri = (requestHost || altHost) + '/api/' + engine.infoHash + '/' + file.name + '?token='+token
+                    const uri = (requestHost || altHost) + '/api/' + token + '/' + engine.infoHash + '/' + file.name
                     newM3U += os.EOL+"#EXTINF:0,"+title+os.EOL+uri
                     return true
                 }
             } else {
                 const title = parser(file.name).name()
-                const uri = (requestHost || altHost) + '/api/' + engine.infoHash + '/' + file.name + '?token='+token
+                const uri = (requestHost || altHost) + '/api/' + token + '/' + engine.infoHash + '/' + file.name
                 newM3U += os.EOL+"#EXTINF:0,"+title+os.EOL+uri
             }
         })

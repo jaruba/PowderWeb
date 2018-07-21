@@ -1,7 +1,7 @@
 
 const { app } = require('electron')
 const path = require('path')
-const temp = path.join(app.getPath('temp'), 'Powder-Streamer')
+const temp = path.join(app.getPath('temp'), 'PowderWeb')
 const torrentWorker = require('torrent-worker')
 const settings = require('electron-settings')
 const hat = require('hat')
