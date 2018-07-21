@@ -116,8 +116,11 @@ const runTorrent = (torrentQuery, reqToken) => {
 module.exports = {
     process: (args, reqToken) => {
         if (args.length) {
-//            console.log(args);
+            console.log(args);
             args.forEach( el => {
+                if (el.includes('PowderWeb')) {
+                  return
+                }
                 if (el.startsWith('--')) {
                     // command line args
                     // none yet
