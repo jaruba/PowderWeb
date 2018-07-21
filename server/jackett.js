@@ -31,19 +31,19 @@ var apiKey = false
 var apiIndexers = []
 
 const getIndexers = (cb) => {
-	const jackettIndexers = []
 	request({
 		method: 'GET',
-		url: settings.get('jackettHost') + 'api/v2.0/indexers?_='+Date.now(),
-		json: true,
-		timeout: 2000
+		url: settings.get('jackettHost') + 'api/v2.0/indexers/all/results/torznab/api?apikey='+settings.get('jackettKey')+'&t=indexers&configured=true',
+		timeout: 10000
 	}, function(error, response, indexers) {
-		if (!error && indexers && isObject(indexers)) {
-			indexers.forEach((indexer) => {
-				if (indexer && indexer.configured)
-					jackettIndexers.push(indexer)
-			})
-			cb(null, jackettIndexers)
+		if (!error && indexers) {
+			indexers = xmlJs.xml2js(indexers)
+			if (indexers && indexers.elements && indexers.elements[0] && indexers.elements[0].elements) {
+				indexers = indexers.elements[0].elements
+				cb(null, indexers)
+			} else {
+				cb(new Error('No Indexers'))
+			}
 		} else {
 			cb(error || new Error('No Indexers'))
 		}
@@ -57,7 +57,6 @@ module.exports = {
 	},
 
 	search: (query, item, cb, end) => {
-
 		getIndexers(function(err, apiIndexers) {
 			if (!err && apiIndexers && apiIndexers.length) {
 				var cat = item && item.type ? item.type == 'movie' ? 2000 : 5000 : ''
@@ -65,10 +64,10 @@ module.exports = {
 					end({ ended: true })
 				})
 				apiIndexers.forEach((indexer) => {
-					if (indexer && indexer.id) {
+					if (indexer && indexer.attributes && indexer.attributes.id) {
 						request({
 							method: 'GET',
-							url: settings.get('jackettHost')+'api/v2.0/indexers/'+indexer.id+'/results/torznab/api?apikey='+settings.get('jackettKey')+'&t=search&cat='+cat+'&q='+encodeURI(query),
+							url: settings.get('jackettHost')+'api/v2.0/indexers/'+indexer.attributes.id+'/results/torznab/api?apikey='+settings.get('jackettKey')+'&t=search&cat='+cat+'&q='+encodeURI(query),
 							json: true,
 							timeout: 10000
 						}, function(error, response, xmlTors) {
@@ -121,7 +120,7 @@ module.exports = {
 
 											newObj.isJackett = true
 
-											newObj.indexer = indexer.id
+											newObj.indexer = indexer.attributes.id
 
 											tempResults.push(newObj)
 										}
