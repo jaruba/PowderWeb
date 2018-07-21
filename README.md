@@ -19,8 +19,10 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities.
 - Streaming to your Browser (works on all Devices and all Browsers)
 - Find Subtitles for every Video File in Torrents (either automatically in the Web Player, or by using the "Find Subtitles" button in the torrent file settings to find / download subtitles)
 - Supports Embedding in Websites (user needs to approve website)
+- Supports Allowing User Registration (default is 0 users)
 - Advanced Web Player (playlist, searches for subtitles automatically, add local subtitle file, quality selection, playback speed, aspect ratio, crop, zoom, subtitle delay, audio delay, [hotkeys](https://github.com/jaruba/PowderWeb/wiki/Web-Player-Hotkeys))
-- Advanced Torrent Settings
+- Searching for Torrents with [Jackett](https://github.com/Jackett/Jackett)
+- Advanced Torrent and Web Server Settings
 - Managing Multiple Torrents
 
 
@@ -35,28 +37,15 @@ bower install
 
 ## Running:
 
-Run Front-end:
-
 ```
 npm start
 ```
 
 
-Run Back-end (in a different terminal):
-
-```
-npm run electron
-```
-
-
 ## Building:
 
-Requires babel (`npm i babel-cli -g`), because of a node module that is written in ES6 and breaks building the front-end of the application.
-
 ```
-babel node_modules/hue-name/index.js --out-file node_modules/hue-name/index.js --presets=env
 npm run build
-npm run package
 ```
 
 
@@ -67,7 +56,7 @@ Can be started with either Magnet Link or Torrent File HTTP(S) Link.
 Add Script to `<head>`:
 
 ```
-<script src="http://powder.media/embed.js"></script>
+<script src="https://powder.media/embed.js"></script>
 ```
 
 
@@ -85,3 +74,7 @@ Start Web Player on a `<div>`:
   )
 </script>
 ```
+
+[Embed Demo](http://powder.media/embed-test.html)
+
+**Note**: Embedding will not work on websites that use SSL unless the user activates "Use SSL" in Powder Web's settings and then sets the Self-Signed SSL Certificate as Trusted by right clicking Powder Web in the tray, selecting "Show in Browser" and then accepting the certificate on the security page shown by the Browser.
