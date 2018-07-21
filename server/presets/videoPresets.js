@@ -96,7 +96,7 @@ module.exports = {
 //			"-profile:v baseline",
 //			"-level 3",
 
-			"-pix_fmt yuv420p",
+//			"-pix_fmt yuv420p",
 
 //"-ar 22050",
 //"-ab 512",
@@ -128,6 +128,8 @@ module.exports = {
 
 			// working in chrome, ff, edge (but not safari):
 
+			// actually, this only works in firefox last i checked..
+
 			'-preset ultrafast',
 			'-tune zerolatency',
 			'-movflags faststart+frag_keyframe+empty_moov',
@@ -144,7 +146,7 @@ module.exports = {
 		chromeOptions: [
 			'-preset ultrafast',
 			'-tune zerolatency',
-			 "-f matroska",
+			'-f matroska',
 		]
 	},
 
