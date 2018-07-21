@@ -3,3 +3,4 @@ packages
 bin
 node_modules
 public/bower_components
+dist
