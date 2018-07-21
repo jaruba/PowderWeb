@@ -4,10 +4,20 @@
 
 // Import parts of electron to use
 const { app, BrowserWindow, Menu, Tray, clipboard } = require('electron');
+
+var shouldQuit = app.makeSingleInstance(function(commandLine, workingDirectory) {
+  server.passArgs(commandLine)
+})
+
+if (shouldQuit) {
+  app.quit()
+  return
+}
 const path = require('path');
 const url = require('url');
 const process = require('process');
 const MenuBuilder = require('./menu');
+const getPort = require('get-port')
 
 const AutoLaunch = require('auto-launch');
 
@@ -22,6 +32,9 @@ const btoa = require('./server/utils/btoa')
 
 const opn = require('opn')
 
+if (app && app.commandLine && app.commandLine.appendSwitch)
+  app.commandLine.appendSwitch("ignore-certificate-errors")
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
@@ -34,6 +47,46 @@ let dev = false;
 if (process.env.NODE_ENV === 'development') {
   dev = true;
   require('dotenv').config({ silent: true });
+}
+
+function createServer() {
+
+  let frontPort
+  let backPort
+  let maybePort = 11485
+
+  var getPorts = function(cb) {
+
+    var fail = function() {
+      maybePort++
+      getPorts(cb)
+    }
+
+    getPort({ port: maybePort }).then(function(newPort) {
+      if (newPort == maybePort) {
+        cb(newPort)
+      } else 
+        fail()
+    }).catch(function(e) {
+      fail()
+    })
+  }
+
+  getPorts(function(newPort) {
+
+    frontPort = newPort
+    maybePort = newPort -1
+
+    getPorts(function(newPort) {
+
+      backPort = newPort
+
+      server.init(frontPort, backPort)
+
+      setTimeout(createWindow)
+
+    })
+  })
 }
 
 function createWindow() {
@@ -73,7 +126,8 @@ function createWindow() {
   mainWindow.on('close', (e) => {
     e.preventDefault()
     mainWindow.hide()
-    app.dock.hide()
+    if (app.dock)
+      app.dock.hide()
   });
 
   server.setMainWindow(mainWindow)
@@ -109,7 +163,7 @@ app.on('ready', () => {
       .then(() => installExtension(REDUX_DEVTOOLS))
       .then(() => createWindow());
   } else {
-    createWindow();
+    createServer();
   }
 
   tray = new Tray(path.join(__dirname, 'packaging', 'osx_tray.png'))
@@ -117,7 +171,7 @@ app.on('ready', () => {
     if (!mainWindow.isVisible()) {
       mainWindow.show()
       mainWindow.focus()
-      if (!app.dock.isVisible())
+      if (app.dock && !app.dock.isVisible())
         app.dock.show()
     } else {
       mainWindow.focus()

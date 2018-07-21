@@ -1,15 +1,19 @@
 const path = require('path')
 const dotenv = require('dotenv')
-const getPortSync = require('get-port-sync')
+const getPort = require('get-port')
+
 
 let port
+
 let peerflixProxy
 
-for (let maybePort = 11485; maybePort -1 != port; maybePort++)
-  port = getPortSync({ port: maybePort })
+if (process.env.PWFRONTPORT) {
+  port = process.env.PWFRONTPORT
+}
 
-for (let maybePort = port+1; maybePort -1 != peerflixProxy; maybePort++)
-  peerflixProxy = getPortSync({ port: maybePort })
+if (process.env.PWBACKPORT) {
+  peerflixProxy = process.env.PWBACKPORT
+}
 
 // In development use a .env file for convenience
 if (process.env.NODE_ENV === 'development') {
