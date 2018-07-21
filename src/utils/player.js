@@ -1,6 +1,4 @@
 
-const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-
 import browserSupport from 'utils/browserSupport'
 
 import modals from 'utils/modals'
@@ -13,9 +11,11 @@ import _ from 'lodash'
 
 const isEmbedPlayer = window.location.pathname == '/embed'
 
-import ifChrome from 'utils/isChrome'
+import detectBrowser from 'utils/detectBrowser'
 
-const isChrome = ifChrome()
+const isSafari = detectBrowser.isChrome
+
+let isMatroska = (detectBrowser.isChrome || detectBrowser.isIE || detectBrowser.isEdge)
 
 let video
 
@@ -39,7 +39,8 @@ const defaultConfig = {
 	renderNotFocused: false,
 	playButtonAction: true,
 	historyButtonList: true,
-	playNewTorrent: 0
+	playNewTorrent: 0,
+	useMatroska: true
 }
 
 _.each(defaultConfig, (el, ij) => {
@@ -390,6 +391,9 @@ let config = {
 	},
 	subSearch: () => {
 		return getConfig('subSearch')
+	},
+	useMatroska: () => {
+		return getConfig('useMatroska')
 	}
 }
 
@@ -1601,7 +1605,11 @@ const player = {
 
 		qualities.forEach((elm) => {
 
-	    	const srcs = []
+		  if (isMatroska && !config.useMatroska()) {
+		  	isMatroska = false
+		  }
+
+	      const srcs = []
 
 	      if (preferredFormat.container == 'all') {
 
@@ -1610,7 +1618,7 @@ const player = {
 				const audioCodec = browserSupport.containerCodecs.video[format].audio[0]
 				const videoCodec = browserSupport.containerCodecs.video[format].video[0]
 
-				const webStreamQual = parseUrl({ type: window.location.origin + '/web/' + torrent.infoHash + '/' + el.id + '/' + elm + '.' + format }).substr(1) + '&maxHeight='+ preferredFormat.maxHeight + '&maxWidth='+ preferredFormat.maxWidth + '&needsAudio=' + preferredFormat.needsAudio + '&needsVideo=' + preferredFormat.needsVideo + '&a=' + audioCodec + '&v=' + videoCodec + '&forAudio=' + preferredFormat.forAudio + '&copyts=' + (copyts ? '1' : '-1') + '&forceTranscode=' + (forceTranscode ? '1' : '-1') + '&isChrome=' + (isChrome ? '1' : '-1') + '&audioDelay=' + preferredFormat.audioDelay + (startTime ? '&start=' + startTime : '')
+				const webStreamQual = parseUrl({ type: window.location.origin + '/web/' + torrent.infoHash + '/' + el.id + '/' + elm + '.' + format }).substr(1) + '&maxHeight='+ preferredFormat.maxHeight + '&maxWidth='+ preferredFormat.maxWidth + '&needsAudio=' + preferredFormat.needsAudio + '&needsVideo=' + preferredFormat.needsVideo + '&a=' + audioCodec + '&v=' + videoCodec + '&forAudio=' + preferredFormat.forAudio + '&copyts=' + (copyts ? '1' : '-1') + '&forceTranscode=' + (forceTranscode ? '1' : '-1') + '&useMatroska=' + (isMatroska ? '1' : '-1') + '&audioDelay=' + preferredFormat.audioDelay + (startTime ? '&start=' + startTime : '')
 
 				if (playerType && playerType == contentType && prefQuality == elm) {
 					dedicatedSrc = {
@@ -1631,7 +1639,7 @@ const player = {
 			const audioCodec = preferredFormat.audio || browserSupport.containerCodecs.video[preferredFormat.container].audio[0]
 			const videoCodec = preferredFormat.video || browserSupport.containerCodecs.video[preferredFormat.container].video[0]
 
-			const webStreamQual = parseUrl({ type: window.location.origin + '/web/' + torrent.infoHash + '/' + el.id + '/' + elm + '.' + preferredFormat.container }).substr(1) + '&maxHeight='+ preferredFormat.maxHeight + '&maxWidth='+ preferredFormat.maxWidth + '&needsAudio=' + preferredFormat.needsAudio + '&needsVideo=' + preferredFormat.needsVideo + '&a=' + audioCodec + '&v=' + videoCodec + '&forAudio=' + preferredFormat.forAudio + '&copyts=' + (copyts ? '1' : '-1') + '&forceTranscode=' + (forceTranscode ? '1' : '-1') + '&isChrome=' + (isChrome ? '1' : '-1') + '&audioDelay=' + preferredFormat.audioDelay + (startTime ? '&start=' + startTime : '')
+			const webStreamQual = parseUrl({ type: window.location.origin + '/web/' + torrent.infoHash + '/' + el.id + '/' + elm + '.' + preferredFormat.container }).substr(1) + '&maxHeight='+ preferredFormat.maxHeight + '&maxWidth='+ preferredFormat.maxWidth + '&needsAudio=' + preferredFormat.needsAudio + '&needsVideo=' + preferredFormat.needsVideo + '&a=' + audioCodec + '&v=' + videoCodec + '&forAudio=' + preferredFormat.forAudio + '&copyts=' + (copyts ? '1' : '-1') + '&forceTranscode=' + (forceTranscode ? '1' : '-1') + '&useMatroska=' + (isMatroska ? '1' : '-1') + '&audioDelay=' + preferredFormat.audioDelay + (startTime ? '&start=' + startTime : '')
 
 			srcs.push({
 				src: webStreamQual,
@@ -1820,8 +1828,8 @@ const player = {
 
 			  if (parsed) {
 
-			    console.log('meta')
-			    console.log(parsed)
+//			    console.log('meta')
+//			    console.log(parsed)
 
 			    const videoSettings = player.probeConfig(parsed, prefQuality)
 
@@ -1870,7 +1878,7 @@ const player = {
 					preferredFormat.audioDelay = newAudioDelay
 					const copyts = config.copyts()
 			  		const isHls = ['application/x-mpegURL', 'application/vnd.apple.mpegurl'].indexOf(video.currentType()) > -1
-				  	shouldSyncSubtitles = !!((preferredFormat.audioDelay && !isHls) || (!isHls && !isChrome && !copyts))
+				  	shouldSyncSubtitles = !!((preferredFormat.audioDelay && !isHls) || (!isHls && !isMatroska && !copyts))
 				  	console.log('should sync subtitles: ' + shouldSyncSubtitles)
 				  	video.qualityChange(window.selectedQuality)
 				}
@@ -1957,11 +1965,11 @@ const player = {
 
 				  }
 
-				  console.log('is HLS: ' + isHls)
-				  console.log('is chrome: ' + isChrome)
-				  console.log('is copyts: ' + copyts)
+//				  console.log('is HLS: ' + isHls)
+//				  console.log('is Matroska: ' + isMatroska)
+//				  console.log('is copyts: ' + copyts)
 
-				  if (!isHls && !isChrome && !copyts)
+				  if (!isHls && !isMatroska && !copyts)
 				  	shouldSyncSubtitles = true
 
 				  console.log('initial shouldSyncSubtitles: ' + shouldSyncSubtitles)
