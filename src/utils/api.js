@@ -6,6 +6,8 @@ import modals from 'utils/modals'
 
 import events from 'utils/events'
 
+import { getParameterByName } from 'utils/misc'
+
 const apiGet = new Frisbee({
   baseURI: window.location.origin,
   headers: {
@@ -48,8 +50,8 @@ const api = {
 	parseUrl: (opts, noToken) => {
 		let params = []
 
-		if (!noToken && !opts.token && localStorage.getItem('token'))
-			opts.token = localStorage.getItem('token')
+		if (!noToken && !opts.token && (localStorage.getItem('token') || getParameterByName('token')))
+			opts.token = localStorage.getItem('token') || getParameterByName('token')
 
 		_.each(opts, (el, ij) => {
 			if (ij == 'type') return
