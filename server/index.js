@@ -38,7 +38,7 @@ const url = require('url')
 const streams = require('./streams')
 const childProcess = require('child_process')
 const settings = require('electron-settings')
-const getPortSync = require('get-port-sync')
+const getPort = require('get-port')
 const _ = require('lodash')
 const os = require('os')
 const TMP = os.tmpDir()
@@ -78,17 +78,29 @@ let tokens = {
 }
 
 const passArgs = function(e, args) {
-  clArgs.process([args], argsKey);
+  clArgs.process(Array.isArray(args) ? args : [args], argsKey);
 }
 
 app.on('open-file', passArgs);
 app.on('open-url', passArgs);
 
-//console.log('master key: '+ masterKey)
+passArgs(null, process.argv)
+
+if (process.env.NODE_ENV === 'development') {
+  console.log('master key: '+ masterKey)
+}
 
 let port
 
 let peerflixProxy
+
+if (process.env.PWFRONTPORT) {
+  port = process.env.PWFRONTPORT
+}
+
+if (process.env.PWBACKPORT) {
+  peerflixProxy = process.env.PWBACKPORT
+}
 
 let jackettResponses = {}
 
@@ -128,12 +140,9 @@ const getReqUrl = (req) => {
   return topUrl
 }
 
-for (let maybePort = 11485; maybePort -1 != port; maybePort++)
-  port = getPortSync({ port: maybePort })
+let serverPort = settings.get('webServerPort') || 3000
 
-for (let maybePort = port+1; maybePort -1 != peerflixProxy; maybePort++)
-  peerflixProxy = getPortSync({ port: maybePort })
-
+const initServer = () => {
 const mainServer = http.createServer(function(req, resp) {
   req.setTimeout(Number.MAX_SAFE_INTEGER)
   const urlParsed = url.parse(req.url, true)
@@ -843,7 +852,7 @@ const mainServer = http.createServer(function(req, resp) {
       if (settings.get('downloadFolder'))
         shell.openItem(settings.get('downloadFolder'))
       else
-        shell.openItem(path.join(app.getPath('temp'), 'Powder-Streamer'))
+        shell.openItem(path.join(app.getPath('temp'), 'PowderWeb'))
       respond({})
       return
     }
@@ -964,19 +973,26 @@ var srv = http.createServer(function (req, res) {
   const urlParsed = url.parse(req.url, true)
   let uri = urlParsed.pathname
 
-  // let reqToken
+  let reqToken
 
-  // if (req.headers && req.headers.authorization)
-  //   reqToken = req.headers.authorization
-  // else if (urlParsed.query && urlParsed.query.token)
-  //   reqToken = urlParsed.query.token  
+  if (req.headers && req.headers.authorization)
+    reqToken = req.headers.authorization
+  else if (urlParsed.query && urlParsed.query.token)
+    reqToken = urlParsed.query.token
+  else if (uri.startsWith('/api/')) {
+    // vlc 3+ is bugged and breaks if
+    // we use a token in the get vars
+    const tokenParts = uri.split('/')
+    reqToken = tokenParts[2]
+    uri = uri.replace(reqToken+'/','')
+  }
 
-  // if (!reqToken || !tokens[reqToken]) {
-  //   res.writeHead(500, { "Content-Type": "text/plain" })
-  //   res.write("Invalid access token\n")
-  //   res.end()
-  //   return
-  // }
+  if (!reqToken || !tokens[reqToken]) {
+    res.writeHead(500, { "Content-Type": "text/plain" })
+    res.write("Invalid access token\n")
+    res.end()
+    return
+  }
 
   const getParams = (uri) => {
     const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').split('/')
@@ -996,7 +1012,7 @@ var srv = http.createServer(function (req, res) {
       returnObj.video = urlParsed.query.v ? videoPresets.codecMap[urlParsed.query.v] : false
       returnObj.copyts = urlParsed.query.copyts
       returnObj.forceTranscode = urlParsed.query.forceTranscode
-      returnObj.isChrome = urlParsed.query.isChrome
+      returnObj.useMatroska = urlParsed.query.useMatroska
       returnObj.audioDelay = parseFloat(urlParsed.query.audioDelay)
     }
     return returnObj
@@ -1041,7 +1057,7 @@ var srv = http.createServer(function (req, res) {
     outputOpts.unshift('-map 0:v:'+(params.needsVideo > -1 ? params.needsVideo : 0))
     outputOpts.unshift('-map ' + (params.audioDelay ? '1' : '0') + ':a:'+(params.forAudio > -1 ? params.forAudio : params.needsAudio > -1 ? params.needsAudio : 0))
 
-    const chromeProfile = (params.isChrome > -1 && params.videoContainer == 'mp4')
+    const chromeProfile = (params.useMatroska > -1 && params.videoContainer == 'mp4')
 
     if (chromeProfile)
       outputOpts = outputOpts.concat(videoParams.chromeOptions)
@@ -1176,225 +1192,228 @@ var srv = http.createServer(function (req, res) {
         .addOptions('-acodec ' + whichAudio)
 //        .addOptions('-acodec libvo_aacenc')
         .addOptions('-ac 2')
-        // .on('start', function(cmdLine) {
-        //   console.log("START START START START")
-        //   console.log(cmdLine)
-        // })
-//        .on('end', function() {
-//          console.log('file has been converted succesfully');
-//        })
-        .outputOptions(outputOpts)
-        .on('error', function(err) {
-          console.log('an error happened: ' + err.message);
+        .on('start', function(cmdLine) {
+           console.log("START START START START")
+           console.log(cmdLine)
         })
+  //        .on('end', function() {
+  //          console.log('file has been converted succesfully');
+  //        })
+          .outputOptions(outputOpts)
+          .on('error', function(err) {
+            console.log('an error happened: ' + err.message);
+          })
 
-      } else if (params.videoContainer == 'ogv') {
+        } else if (params.videoContainer == 'ogv') {
 
-        var command = ffmpeg(peerflixUrl)
+          var command = ffmpeg(peerflixUrl)
 
-        if (params.audioDelay) {
-          if (start)
-            command.addOptions(['-ss '+convertSecToTime(start)])
-          command.addOptions(['-itsoffset '+params.audioDelay, '-i '+peerflixUrl])
+          if (params.audioDelay) {
+            if (start)
+              command.addOptions(['-ss '+convertSecToTime(start)])
+            command.addOptions(['-itsoffset '+params.audioDelay, '-i '+peerflixUrl])
+          }
+
+          if(start)
+            command.seekInput(convertSecToTime(start))
+
+          command.format('ogg')
+
+          if (resized) {
+            command.addOptions(['-filter:v scale=w='+sizeParams.resolution.split('x')[0]+':h=trunc(ow/a/2)*2'])
+  //          command.size(sizeParams.resolution)
+          }
+
+          command
+          .addOptions('-vcodec ' + whichVideo)
+          .addOptions('-acodec ' + whichAudio)
+          .addOptions('-ac 2')
+  //        .on('end', function() {
+  //          console.log('file has been converted succesfully');
+  //        })
+          .outputOptions(outputOpts)
+          .on('error', function(err) {
+            console.log('an error happened: ' + err.message);
+          })
+
         }
-
-        if(start)
-          command.seekInput(convertSecToTime(start))
-
-        command.format('ogg')
-
-        if (resized) {
-          command.addOptions(['-filter:v scale=w='+sizeParams.resolution.split('x')[0]+':h=trunc(ow/a/2)*2'])
-//          command.size(sizeParams.resolution)
-        }
-
-        command
-        .addOptions('-vcodec ' + whichVideo)
-        .addOptions('-acodec ' + whichAudio)
-        .addOptions('-ac 2')
-//        .on('end', function() {
-//          console.log('file has been converted succesfully');
-//        })
-        .outputOptions(outputOpts)
-        .on('error', function(err) {
-          console.log('an error happened: ' + err.message);
-        })
-
       }
+
+      if (command)
+        command.pipe(res, { end: true });
+      else
+        res.end()
+
+    } else if (uri.startsWith('/meta')) {
+      var command = ffmpeg(peerflixUrl)
+      .ffprobe(0, function(err, data) {
+        if (!err && data) {
+          res.writeHead(200, {});
+          res.write(JSON.stringify(data))
+          res.end()
+        } else {
+          res.writeHead(500, { "Content-Type": "text/plain" })
+          res.write((err && err.message ? err.message : "Cannot fetch video metadata") + "\n")
+          res.end()
+        }
+      })
+    } else {
+
+      // peerflix proxy
+
+      req.url = peerflixUrl || (getReqUrl(req) + '/404')
+
+      proxy.web(req, res, { target: req.url });
+
     }
-
-    if (command)
-      command.pipe(res, { end: true });
-    else
-      res.end()
-
-  } else if (uri.startsWith('/meta')) {
-    var command = ffmpeg(peerflixUrl)
-    .ffprobe(0, function(err, data) {
-      if (!err && data) {
-        res.writeHead(200, {});
-        res.write(JSON.stringify(data))
-        res.end()
-      } else {
-        res.writeHead(500, { "Content-Type": "text/plain" })
-        res.write((err && err.message ? err.message : "Cannot fetch video metadata") + "\n")
-        res.end()
-      }
-    })
-  } else {
-
-    // peerflix proxy
-
-    req.url = peerflixUrl || (getReqUrl(req) + '/404')
-
-    proxy.web(req, res, { target: req.url });
-
-  }
-})
-
-srv.listen(peerflixProxy)
-
-srv.on('error', function(e) {
-  console.log('http proxy error')
-  console.log(e)
-})
-
-srv.on('connection', function(socket) {
-  socket.setTimeout(Number.MAX_SAFE_INTEGER);
-})
-
-srv.on('listening',function() { })
-
-let serverPort = settings.get('webServerPort') || 3000
-
-if (process.env.NODE_ENV !== 'development') {
-  // create web server
-
-  var webProxy = require('http-proxy').createProxyServer({
-      timeout: Number.MAX_SAFE_INTEGER,
-      proxyTimeout: Number.MAX_SAFE_INTEGER
   })
 
-  const proxyLogic = [{
-    context: ["/playlist.m3u", "/getplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
-    target: "http://localhost:" + port
-  }, {
-    context: ["/api", "/web", "/meta"],
-    target: "http://localhost:" + peerflixProxy
-  }]
+  srv.listen(peerflixProxy)
 
-  const serverLogic = (req, res) => {
-
-    req.setTimeout(Number.MAX_SAFE_INTEGER)
-    const urlParsed = url.parse(req.url, true)
-    let uri = urlParsed.pathname
-
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Request-Method', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-    res.setHeader('Access-Control-Allow-Headers', '*');
-
-    const foundProxy = proxyLogic.some((prx) => {
-      return prx.context.some((ctx) => {
-        if (uri.startsWith(ctx)) {
-          webProxy.web(req, res, { target: prx.target });
-          return true
-        }
-      })
-    })
-
-    const indexFile = '/index.html'
-
-    if (!foundProxy) {
-
-      if (!uri || uri == '/')
-        uri = indexFile
-
-      const routes = ['auth', 'torrent', 'embed']
-
-      const isRoute = routes.some((el) => {
-        if (uri.startsWith('/' + el))
-          return true
-      })
-
-      if (isRoute)
-        uri = indexFile
-
-      let filePath = path.join(__dirname, '../dist', uri.substr(1));
-
-      const extname = path.extname(filePath)
-
-      let contentType = 'text/html';
-
-      switch (extname) {
-          case '.js':
-              contentType = 'text/javascript';
-              break;
-          case '.css':
-              contentType = 'text/css';
-              break;
-          case '.json':
-              contentType = 'application/json';
-              break;
-          case '.png':
-              contentType = 'image/png';
-              break;      
-          case '.jpg':
-              contentType = 'image/jpg';
-              break;
-          case '.ico':
-              contentType = 'image/x-icon';
-              break;
-      }
-
-      fs.readFile(filePath, (error, content) => {
-        if (error) {
-            if(error.code == 'ENOENT'){
-                res.writeHead(404);
-                res.end('404 File Not Found\n');
-                res.end(); 
-            }
-            else {
-                res.writeHead(500);
-                res.end('Sorry, check with the developers for error: '+error.code+' ..\n');
-                res.end(); 
-            }
-        } else {
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(content, 'utf-8');
-        }
-      })
-    }
-
-  }
-
-  const useSSL = settings.get('webServerSSL') || false
-
-  let mainSrv
-
-  if (useSSL) {
-    const sslCert = sslUtil.generate()
-    mainSrv = https.createServer({
-      key: sslCert,
-      cert: sslCert
-    }, serverLogic)
-  } else {
-    mainSrv =http.createServer(serverLogic)
-  }
-
-  mainSrv.listen(serverPort)
-
-  mainSrv.on('error', function(e) {
-    console.log('web server error')
+  srv.on('error', function(e) {
+    console.log('http proxy error')
     console.log(e)
   })
 
-  mainSrv.on('connection', function(socket) {
+  srv.on('connection', function(socket) {
     socket.setTimeout(Number.MAX_SAFE_INTEGER);
   })
 
-  mainSrv.on('listening',function() { serverPort = mainSrv.address().port })
+  srv.on('listening',function() { })
 
+  if (process.env.NODE_ENV !== 'development') {
+    // create web server
+
+    var webProxy = require('http-proxy').createProxyServer({
+        timeout: Number.MAX_SAFE_INTEGER,
+        proxyTimeout: Number.MAX_SAFE_INTEGER
+    })
+
+    const proxyLogic = [{
+      context: ["/playlist.m3u", "/getplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
+      target: "http://localhost:" + port
+    }, {
+      context: ["/api", "/web", "/meta"],
+      target: "http://localhost:" + peerflixProxy
+    }]
+
+    const serverLogic = (req, res) => {
+
+      req.setTimeout(Number.MAX_SAFE_INTEGER)
+      const urlParsed = url.parse(req.url, true)
+      let uri = urlParsed.pathname
+
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Request-Method', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+      res.setHeader('Access-Control-Allow-Headers', '*');
+
+      const foundProxy = proxyLogic.some((prx) => {
+        return prx.context.some((ctx) => {
+          if (uri.startsWith(ctx)) {
+            webProxy.web(req, res, { target: prx.target });
+            return true
+          }
+        })
+      })
+
+      const indexFile = '/index.html'
+
+      if (!foundProxy) {
+
+        if (!uri || uri == '/')
+          uri = indexFile
+
+        const routes = ['auth', 'torrent', 'embed']
+
+        const isRoute = routes.some((el) => {
+          if (uri.startsWith('/' + el))
+            return true
+        })
+
+        if (isRoute)
+          uri = indexFile
+
+        let filePath = path.join(__dirname, '../dist', uri.substr(1));
+
+        const extname = path.extname(filePath)
+
+        let contentType = 'text/html';
+
+        switch (extname) {
+            case '.js':
+                contentType = 'text/javascript';
+                break;
+            case '.css':
+                contentType = 'text/css';
+                break;
+            case '.json':
+                contentType = 'application/json';
+                break;
+            case '.png':
+                contentType = 'image/png';
+                break;      
+            case '.jpg':
+                contentType = 'image/jpg';
+                break;
+            case '.ico':
+                contentType = 'image/x-icon';
+                break;
+        }
+
+        fs.readFile(filePath, (error, content) => {
+          if (error) {
+              if(error.code == 'ENOENT'){
+                  res.writeHead(404);
+                  res.end('404 File Not Found\n');
+                  res.end(); 
+              }
+              else {
+                  res.writeHead(500);
+                  res.end('Sorry, check with the developers for error: '+error.code+' ..\n');
+                  res.end(); 
+              }
+          } else {
+              res.writeHead(200, { 'Content-Type': contentType });
+              res.end(content, 'utf-8');
+          }
+        })
+      }
+
+    }
+
+    const useSSL = settings.get('webServerSSL') || false
+
+    let mainSrv
+
+    if (useSSL) {
+      const sslCert = sslUtil.generate()
+      mainSrv = https.createServer({
+        key: sslCert,
+        cert: sslCert
+      }, serverLogic)
+    } else {
+      mainSrv =http.createServer(serverLogic)
+    }
+
+    mainSrv.listen(serverPort)
+
+    mainSrv.on('error', function(e) {
+      console.log('web server error')
+      console.log(e)
+    })
+
+    mainSrv.on('connection', function(socket) {
+      socket.setTimeout(Number.MAX_SAFE_INTEGER);
+    })
+
+    mainSrv.on('listening',function() { serverPort = mainSrv.address().port })
+
+  }
+}
+
+if (process.env.PWFRONTPORT && process.env.PWBACKPORT) {
+  initServer()
 }
 
 let mainWindow
@@ -1404,6 +1423,14 @@ module.exports = {
   isSSL: settings.get('webServerSSL') || false,
   port: () => { return serverPort },
   embedKey: settings.get('embedToken') || '',
-  setMainWindow: mWindow => { mainWindow = mWindow }
+  setMainWindow: mWindow => { mainWindow = mWindow },
+  init: function(frontPort, backPort) {
+    port = frontPort
+    peerflixProxy = backPort
+    initServer()
+  },
+  passArgs: (args) => {
+    clArgs.process(Array.isArray(args) ? args : [args], argsKey)
+  }
 }
 
