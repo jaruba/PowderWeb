@@ -1,7 +1,9 @@
 
 import _ from 'lodash'
 
-const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+import detectBrowser from 'utils/detectBrowser'
+
+const isSafari = detectBrowser.isSafari;
 
 const meta2container = {
 	video: {
@@ -155,12 +157,18 @@ export default {
 	init: (video) => {
 		if (video && !supported)
 			supported = browserSupport(video)
+
+		// opera doesn't like our mp4 transcodes sometimes (just sometimes though)
+		// so we remove mp4 from supported for it completely to guarantee playback
+		if (detectBrowser.isOpera && supported && supported.video && supported.video.mp4)
+			delete supported.video.mp4
+
 		console.log('supported')
 		console.log(supported)
 	},
 
 	isSupported: (meta, type, forceAll) => {
-		if (!supported || !_.size(supported[type || 'video'])) {
+		if (forceAll || !supported || !_.size(supported[type || 'video'])) {
 			return {
 				container: 'all',
 				needsAudio: -1,
@@ -206,7 +214,9 @@ export default {
 
 console.log('orig container: ' + origContainer)
 
-				if (origContainer && supported.video[origContainer]) {
+//				if (origContainer && supported.video[origContainer]) {
+//				^ this was wrong because a browser does not need to support the container in order to support the video/audio codecs
+				if (origContainer) {
 
 					if (meta.streams && meta.streams.length) {
 
