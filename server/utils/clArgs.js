@@ -118,7 +118,7 @@ module.exports = {
         if (args.length) {
             console.log(args);
             args.forEach( el => {
-                if (el.includes('PowderWeb')) {
+                if (el.includes('PowderWeb') || el == '.') {
                   return
                 }
                 if (el.startsWith('--')) {

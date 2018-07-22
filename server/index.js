@@ -61,10 +61,6 @@ const sslUtil = require('./utils/ssl')
 
 const srt2vtt = require('srt-to-vtt')
 
-//setTimeout(() => {
-//  subtitles.fetchOsCookie()
-//})
-
 const helpers = require('./utils/misc')
 
 const jackettApi = require('./jackett')
@@ -82,10 +78,13 @@ const passArgs = function(e, args) {
   clArgs.process(Array.isArray(args) ? args : [args], argsKey);
 }
 
-app.on('open-file', passArgs);
-app.on('open-url', passArgs);
-
-passArgs(null, process.argv)
+if (process.platform !== 'darwin') {
+  passArgs(null, process.argv)
+} else {
+  // these events are OSX only:
+  app.on('open-file', passArgs);
+  app.on('open-url', passArgs);
+}
 
 if (process.env.NODE_ENV === 'development') {
   console.log('master key: '+ masterKey)
