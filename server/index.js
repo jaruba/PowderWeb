@@ -47,6 +47,7 @@ const addresses = require('./utils/addressbook')
 const uniqueString = require('unique-string')
 const formidable = require('formidable')
 const subsrt = require('subsrt')
+const notifier = require('node-notifier')
 
 const clArgs = require('./utils/clArgs')
 
@@ -381,6 +382,21 @@ const mainServer = http.createServer(function(req, resp) {
 
     let torrentId
 
+    if (isMaster) {
+      const shouldNotify = settings.get('torrentNotifs')
+
+      if (shouldNotify) {
+        notifier.notify({
+            title: 'Powder Web',
+            message: 'Torrent started downloading',
+            icon: path.join(__dirname, '..', 'public', 'powder.png'),
+          }, (err, response) => {
+            // Response is response from notification
+          }
+        )
+      }
+    }
+
     streams.new(urlParsed.query.torrent,
 
                 torrentObj => {
@@ -392,6 +408,31 @@ const mainServer = http.createServer(function(req, resp) {
 
                   // ready
 
+
+                  engine.on('complete', () => {
+                    if (isMaster) {
+                      const shouldNotify = settings.get('torrentNotifs')
+
+                      if (shouldNotify) {
+                        notifier.notify({
+                            title: 'Powder Web',
+                            message: 'Torrent finished downloading',
+                            icon: path.join(__dirname, '..', 'public', 'powder.png'),
+                            wait: true,
+                          }, (err, response) => {
+                            // Response is response from notification
+                          }
+                        )
+                        notifier.on('click', (notifierObject, options) => {
+                          streams.getPath(engine.infoHash, (folderPath) => {
+                            if (folderPath) {
+                              shell.openItem(folderPath)
+                            }
+                          })
+                        })
+                      }
+                    }
+                  })
 
                 },
 

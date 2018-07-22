@@ -252,6 +252,14 @@ export default class Modals extends PureComponent {
       })
     })
   }
+  generalTorrentNotifs = () => {
+    const newValue = !this.state.torrentNotifs
+    this.saveValue('torrentNotifs', newValue, () => {
+      this.setState({
+        torrentNotifs: newValue
+      })
+    })
+  }
   generalForcedDownloading = () => {
     const newValue = !this.state.forceDownload
     this.saveValue('forceDownload', newValue, () => {
@@ -1558,6 +1566,42 @@ export default class Modals extends PureComponent {
                   <div style={{clear: 'both', height: '15px'}} />
 
                   <i>Stream URLs for video files in torrents can either include the filename or not. It is better to use filenames in streams as some players (like VLC on Android) ignore the video title set in the M3U playlist and use the filename from the streams exclusively. This should be set to "False" if your player refuses to play torrent streams, as the stream URL is simpler without filenames and may help aid playback from players.</i>
+
+                </div>
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <paper-button
+                    raised
+                    onClick={this.generalTorrentNotifs.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', display: 'block', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                    className='playerButtons' >
+                Notifications:
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.generalTorrentNotifs.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '70px', maxWidth: '70px', display: 'inline-block', textAlign: 'center'}}
+                    className='playerButtons' >
+                { this.state.torrentNotifs ? 'True' : 'False' }
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.showInfo.bind(this, 'torrentNotifs')}
+                    style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                    className='playerButtons' >
+                { '?' }
+                </paper-button>
+
+                <div className="settingsInfo torrentNotifsInfo">
+
+                  <div style={{clear: 'both', height: '15px'}} />
+
+                  <i>When set to "True" shows notifications when torrents start and complete downloading.</i>
 
                 </div>
 

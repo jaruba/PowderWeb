@@ -57,6 +57,7 @@ const map = {
     useWebPlayerAssoc: false,
 
     useFilenameStream: true,
+    torrentNotifs: true
 
 }
 
