@@ -121,28 +121,32 @@ const basicTorrentData = (torrent, cb) => {
 }
 
 const closeAll = (cb) => {
+
     if (updateInterval)
         clearInterval(updateInterval)
+
     updateInterval = false
 
     if (concurrencyInterval)
         clearInterval(concurrencyInterval)
-    concurrencyInterval = false
 
-    setTimeout(() => {
-        cb && cb()
-        cb = false
-    }, 500)
+    concurrencyInterval = false
 
     let ticks = _.size(streams)
 
     if (!ticks)
         return cb()
 
+    const closeTimeout = setTimeout(() => {
+        cb && cb()
+        cb = false
+    }, 30000) // 30 sec timeout
+
     _.each(streams, (el, ij) => {
         cancelTorrent(ij, () => {
             ticks--
             if (!ticks) {
+                clearTimeout(closeTimeout)
                 cb && cb()
             }
         }, false, true)
