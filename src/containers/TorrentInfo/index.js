@@ -268,7 +268,7 @@ export default class Counter extends PureComponent {
   render() {
 
     return (
-      <div className="torrentDataList listContainer">
+      <div className="torrentDataList">
         {this.torrentHeader()}
         {this.torrentList()}
       </div>
