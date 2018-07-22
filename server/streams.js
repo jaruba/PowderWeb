@@ -256,6 +256,49 @@ let checkConcurrency = () => {
 
 }
 
+const initConcurrency = () => {
+
+    const maxConcurrency = settings.get('maxConcurrency')
+
+    if (!maxConcurrency || maxConcurrency < 0) return
+
+    const streamsSize = _.size(streams)
+
+    if (streamsSize < maxConcurrency) {
+        let startStreams = maxConcurrency - streamsSize
+
+        const allTors = actions.getAll()
+        const torsArr = []
+
+        if (!_.size(allTors)) return
+
+        _.each(allTors, (el, ij) => {
+            torsArr.push(el)
+        })
+
+        const sortedArr = _.orderBy(torsArr, ['utime'], ['desc'])
+
+        _.some(sortedArr, (el, ij) => {
+
+            if (!startStreams) return true
+
+            startStreams--
+
+            actions.new(el.infoHash,
+
+              torrentObj => { },
+
+              (engine, organizedFiles) => { },
+
+              (engine, organizedFiles) => { },
+
+              (err) => { },
+
+            true)
+        })
+    }
+}
+
 // make sure concurrency is kept every 30 minutes
 let concurrencyInterval = setInterval(checkConcurrency, 1800000)
 
@@ -786,5 +829,7 @@ const actions = {
         return thisTorrentId
     }
 }
+
+initConcurrency()
 
 module.exports = actions
