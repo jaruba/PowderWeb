@@ -388,7 +388,7 @@ const mainServer = http.createServer(function(req, resp) {
         notifier.notify({
             title: 'Powder Web',
             message: 'Torrent started downloading',
-            icon: path.join(__dirname, '..', 'packaging', 'icons', 'powder.png'),
+            icon: path.join(__dirname, '..', 'packaging', 'icons', 'powder-square.png'),
           }, (err, response) => {
             // Response is response from notification
           }
@@ -416,7 +416,7 @@ const mainServer = http.createServer(function(req, resp) {
                         notifier.notify({
                             title: 'Powder Web',
                             message: 'Torrent finished downloading',
-                            icon: path.join(__dirname, '..', 'packaging', 'icons', 'powder.png'),
+                            icon: path.join(__dirname, '..', 'packaging', 'icons', 'powder-square.png'),
                             wait: true,
                           }, (err, response) => {
                             // Response is response from notification
