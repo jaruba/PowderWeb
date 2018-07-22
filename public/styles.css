@@ -864,8 +864,19 @@ header.headerToolbar {
   padding-right: 0;
   height: 35px;
   line-height: 25px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
+.listContainer {
+  margin-top: 57px;
+}
+
+body.isElectron .listContainer {
+  margin-top: 92px;
+}
 
 body.isElectron header {
   display: block !important;

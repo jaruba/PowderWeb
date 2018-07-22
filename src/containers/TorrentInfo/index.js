@@ -7,8 +7,6 @@ import { increment, incrementAsync, decrement } from './actions'
 import { selectCount } from './selectors'
 import _ from 'lodash'
 
-import Wrapper from './Wrapper'
-import CounterWrapper from './components/Dashboard'
 import events from 'utils/events'
 import { healToken, checkToken } from 'utils/auth'
 
@@ -270,10 +268,10 @@ export default class Counter extends PureComponent {
   render() {
 
     return (
-      <Wrapper className="torrentDataList">
+      <div className="torrentDataList listContainer">
         {this.torrentHeader()}
         {this.torrentList()}
-      </Wrapper>
+      </div>
     )
   }
 }

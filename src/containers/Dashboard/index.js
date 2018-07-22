@@ -8,8 +8,6 @@ import { increment, incrementAsync, decrement } from './actions'
 import { selectCount } from './selectors'
 import _ from 'lodash'
 
-import Wrapper from './Wrapper'
-import CounterWrapper from './components/Dashboard'
 import events from 'utils/events'
 import { healToken, checkToken } from 'utils/auth'
 import api from 'utils/api'
@@ -291,7 +289,7 @@ export default class Counter extends PureComponent {
 
   render() {
     return (
-      <Wrapper>
+      <div className='listContainer'>
         <div style={{ display: this.state.noTorrents ? 'block' : 'none', textAlign: 'left', color: 'rgba(255,255,255,0.8)', fontWeight: '100', fontSize: '14px', padding: '30px 35px', lineHeight: '20px' }}>
           You have no torrents added. You can add torrents by:<div style={{height: '11px'}} />
           - pressing the "+" button in the top navigation bar<div style={{height: '11px'}} />
@@ -299,7 +297,7 @@ export default class Counter extends PureComponent {
           - downloading and installing <span className="whiteLink" onClick={this.externalJackettLink.bind(this)}>Jackett</span> locally then configuring it to search your favorite torrent sites from the search button (navigation bar)
         </div>
         {this.torrentList()}
-      </Wrapper>
+      </div>
     )
   }
 }
