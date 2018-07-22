@@ -639,6 +639,7 @@ const actions = {
 
     createPlaylist(utime, files, token, fileId, cb, requestHost) {
 
+        const useFilename = settings.get('useFilenameStream')
 
         const engine = streams[utime].engine
         const enginePort = engine.streamPort || engine.server.port || engine.server.address().port
@@ -651,13 +652,13 @@ const actions = {
             if (fileId !== false) {
                 if (file.id == fileId) {
                     const title = parser(file.name).name()
-                    const uri = (requestHost || altHost) + '/api/' + token + '/' + engine.infoHash + '/' + file.name
+                    const uri = (requestHost || altHost) + '/api/' + token + '/' + engine.infoHash + '/' + (useFilename ? encodeURIComponent(file.name) : file.id)
                     newM3U += os.EOL+"#EXTINF:0,"+title+os.EOL+uri
                     return true
                 }
             } else {
                 const title = parser(file.name).name()
-                const uri = (requestHost || altHost) + '/api/' + token + '/' + engine.infoHash + '/' + file.name
+                const uri = (requestHost || altHost) + '/api/' + token + '/' + engine.infoHash + '/' + (useFilename ? encodeURIComponent(file.name) : file.id)
                 newM3U += os.EOL+"#EXTINF:0,"+title+os.EOL+uri
             }
         })

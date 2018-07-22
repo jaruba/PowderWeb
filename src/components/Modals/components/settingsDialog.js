@@ -236,11 +236,19 @@ export default class Modals extends PureComponent {
       })
     })
   }
-  generalVerifyFiles =  () => {
+  generalVerifyFiles = () => {
     const newValue = !this.state.verifyFiles
     this.saveValue('verifyFiles', newValue, () => {
       this.setState({
         verifyFiles: newValue
+      })
+    })
+  }
+  generalUseFilenameStreams = () => {
+    const newValue = !this.state.useFilenameStream
+    this.saveValue('useFilenameStream', newValue, () => {
+      this.setState({
+        useFilenameStream: newValue
       })
     })
   }
@@ -1514,6 +1522,42 @@ export default class Modals extends PureComponent {
                   <div style={{clear: 'both', height: '15px'}} />
 
                   <i>Verifying files is necessary in order to understand what has already been downloaded to resume download correctly. But unfortunately this is also a lengthy task that happens on every torrent resume, so disabling it makes resuming torrents much faster, although it will disable all information gathering of previous downloads.</i>
+
+                </div>
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <paper-button
+                    raised
+                    onClick={this.generalUseFilenameStreams.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', display: 'block', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                    className='playerButtons' >
+                Filename in Streams:
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.generalUseFilenameStreams.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '70px', maxWidth: '70px', display: 'inline-block', textAlign: 'center'}}
+                    className='playerButtons' >
+                { this.state.useFilenameStream ? 'True' : 'False' }
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.showInfo.bind(this, 'useFilenameStream')}
+                    style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                    className='playerButtons' >
+                { '?' }
+                </paper-button>
+
+                <div className="settingsInfo useFilenameStreamInfo">
+
+                  <div style={{clear: 'both', height: '15px'}} />
+
+                  <i>Stream URLs for video files in torrents can either include the filename or not. It is better to use filenames in streams as some players (like VLC on Android) ignore the video title set in the M3U playlist and use the filename from the streams exclusively. This should be set to "False" if your player refuses to play torrent streams, as the stream URL is simpler without filenames and may help aid playback from players.</i>
 
                 </div>
 

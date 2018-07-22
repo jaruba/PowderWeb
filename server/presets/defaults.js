@@ -56,6 +56,8 @@ const map = {
 
     useWebPlayerAssoc: false,
 
+    useFilenameStream: true,
+
 }
 
 module.exports = {
