@@ -878,6 +878,14 @@ body.isElectron .listContainer {
   margin-top: 92px;
 }
 
+body.isElectron .openInBrowserButton {
+  display: inline-block !important;
+}
+
+body.isElectron .openInBrowserLine {
+  display: block !important;
+}
+
 body.isElectron header {
   display: block !important;
 }

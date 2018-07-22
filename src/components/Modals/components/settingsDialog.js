@@ -83,6 +83,12 @@ export default class Modals extends PureComponent {
     this.state = {}
   }
 
+  openInBrowser = () => {
+    api.get({
+      method: 'openInBrowser'
+    })
+  }
+
   componentDidMount = async () => {
       if (this.props.query && this.props.query.oldScroll) {
         setTimeout(() => {
@@ -599,6 +605,17 @@ export default class Modals extends PureComponent {
               </div>
 
               <div style={{clear: 'both', height: '15px'}} />
+
+              <paper-button
+                  raised
+                  onClick={this.openInBrowser.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'none'}}
+                  className='playerButtons'
+                  class="openInBrowserButton" >
+              Open in Browser
+              </paper-button>
+
+              <div className='openInBrowserLine' style={{clear: 'both', height: '15px', display: 'none'}} />
 
               <div className="setting-header" style={{marginTop: '10px'}}>
                   Transcoding (for Web Player)
