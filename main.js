@@ -118,12 +118,25 @@ function createWindow() {
   // Don't show until we are ready and loaded
   mainWindow.once('ready-to-show', () => {
     // Open the DevTools automatically if developing
+
+    if (process.platform == 'linux')
+      mainWindow.show()
+
     if (dev) {
       mainWindow.webContents.openDevTools();
     }
   });
 
   mainWindow.on('close', (e) => {
+
+    if (process.platform == 'linux') {
+      mainWindow.destroy()
+      streams.closeAll(() => {
+        process.exit()
+      })
+      return
+    }
+
     e.preventDefault()
     mainWindow.hide()
     if (app.dock)

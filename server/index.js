@@ -61,6 +61,8 @@ const sslUtil = require('./utils/ssl')
 
 const srt2vtt = require('srt-to-vtt')
 
+const opn = require('opn')
+
 const helpers = require('./utils/misc')
 
 const jackettApi = require('./jackett')
@@ -798,6 +800,13 @@ const mainServer = http.createServer(function(req, resp) {
 
   if (isMaster) {
 
+    if (method == 'openInBrowser') {
+      const isSSL = settings.get('webServerSSL') || false
+      opn('http' + (isSSL ? 's': '') + '://localhost:' + serverPort + '/auth?token=' + masterKey)
+      respond({})
+      return
+    }
+
     if (method == 'toggleMaximize') {
       if (mainWindow.isMaximized()) {
         mainWindow.unmaximize()
@@ -1064,8 +1073,10 @@ var srv = http.createServer(function (req, res) {
 
   const enginePort = streams.getPortFor(params.infohash)
 
+  const useIp = (process.platform == 'linux')
+
   if (enginePort)
-    peerflixUrl = 'http://localhost:'+enginePort+'/'+params.fileId
+    peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+enginePort+'/'+params.fileId
 
   if (uri.startsWith('/web/')) {
     // ffmpeg proxy
