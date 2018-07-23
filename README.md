@@ -2,6 +2,8 @@
 
 Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities.
 
+[See Screenshots](https://imgur.com/a/Jnxf0wf)
+
 
 ## Possible use cases include:
 
