@@ -22,6 +22,8 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities.
 - Supports Allowing User Registration (default is 0 users)
 - Advanced Web Player (playlist, searches for subtitles automatically, add local subtitle file, quality selection, playback speed, aspect ratio, crop, zoom, subtitle delay, audio delay, [hotkeys](https://github.com/jaruba/PowderWeb/wiki/Web-Player-Hotkeys))
 - Searching for Torrents with [Jackett](https://github.com/Jackett/Jackett)
+- Supports SSL (users can activate Self Signed Certificates)
+- Supports Secondary Torrent Client (you can set a secondary torrent client that will be used if the torrent does not include any video files)
 - Advanced Torrent and Web Server Settings
 - Managing Multiple Torrents
 
