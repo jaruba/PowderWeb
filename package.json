@@ -21,7 +21,8 @@
     "electron-production": "cross-env NODE_ENV=production electron .",
     "prepackage": "run-s clean:packages",
     "build-back": "electron-packager ./ --out=./packages --icon=./packaging/icons/powder --ignore=\"tools|docs|webpackConfig|lock|public/\"",
-    "package-all": "electron-packager ./ --out=./packages --icon=./packaging/icons/powder --platform=all --ignore=\"tools|docs|webpackConfig|lock|public/\""
+    "package-all": "electron-packager ./ --out=./packages --icon=./packaging/icons/powder --platform=all --ignore=\"tools|docs|webpackConfig|lock|public/\"",
+    "package-32bit": "electron-packager ./ --out=./packages --icon=./packaging/icons/powder --arch=ia32 --ignore=\"tools|docs|webpackConfig|lock|public/\""
   },
   "dependencies": {
     "async": "^1.5.0",
