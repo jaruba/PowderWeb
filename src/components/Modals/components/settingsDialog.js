@@ -250,6 +250,14 @@ export default class Modals extends PureComponent {
       })
     })
   }
+  generalFastResume = () => {
+    const newValue = !this.state.fastResume
+    this.saveValue('fastResume', newValue, () => {
+      this.setState({
+        fastResume: newValue
+      })
+    })
+  }
   generalUseFilenameStreams = () => {
     const newValue = !this.state.useFilenameStream
     this.saveValue('useFilenameStream', newValue, () => {
@@ -1547,6 +1555,42 @@ export default class Modals extends PureComponent {
                   <div style={{clear: 'both', height: '15px'}} />
 
                   <i>Verifying files is necessary in order to understand what has already been downloaded to resume download correctly. But unfortunately this is also a lengthy task that happens on every torrent resume, so disabling it makes resuming torrents much faster, although it will disable all information gathering of previous downloads.</i>
+
+                </div>
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <paper-button
+                    raised
+                    onClick={this.generalFastResume.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', display: 'block', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                    className='playerButtons' >
+                Fast Resume:
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.generalFastResume.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '70px', maxWidth: '70px', display: 'inline-block', textAlign: 'center'}}
+                    className='playerButtons' >
+                { this.state.fastResume ? 'True' : 'False' }
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.showInfo.bind(this, 'fastResume')}
+                    style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                    className='playerButtons' >
+                { '?' }
+                </paper-button>
+
+                <div className="settingsInfo fastResumeInfo">
+
+                  <div style={{clear: 'both', height: '15px'}} />
+
+                  <i>Fast resume attempts to verify files faster when resuming torrents by keeping a data file with required information to simplify the verification process.</i>
 
                 </div>
 

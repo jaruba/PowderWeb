@@ -7,6 +7,7 @@ const settings = require('electron-settings')
 const hat = require('hat')
 const getPort = require('get-port')
 const readTorrent = require('read-torrent')
+const fastResumeDir = path.join(app.getPath('appData'), 'PowderWeb', 'fastresume')
 
 module.exports = (torrent) => {
 
@@ -31,6 +32,8 @@ module.exports = (torrent) => {
             opts.connections = settings.get('maxPeers')
             opts.torFile = typeof torrent === 'string' && !torrent.startsWith('magnet:') && torrent.match(/(?:\.torrent)(\?([^.]+)|$)/gi) ? torrent : null
             opts.id = '-' + settings.get('peerID') + '-' + hat(48)
+            opts.resumeDataFolder = fastResumeDir
+            opts.fastresume = !!settings.get('fastResume')
 
             if (settings.has('torrentTrackers') && settings.get('torrentTrackers')) {
                 opts.trackers = settings.get('torrentTrackers').split(';')

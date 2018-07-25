@@ -7,6 +7,8 @@ var dir = path.join(app.getPath('appData'), 'PowderWeb');
 
 const openerDir = path.join(dir, 'openers')
 
+const fastResumeDir = path.join(dir, 'fastresume')
+
 const hlsVod = require('../node_modules/hls-vod/hls-vod.js')
 
 //hlsVod(ffmpeg)
@@ -27,6 +29,9 @@ if (!fs.existsSync(dir))
 
 if (!fs.existsSync(openerDir))
     fs.mkdirSync(openerDir)
+
+if (!fs.existsSync(fastResumeDir))
+    fs.mkdirSync(fastResumeDir)
 
 const defaults = require('./presets/defaults')
 defaults.set()
