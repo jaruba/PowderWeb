@@ -20,6 +20,7 @@ const rimraf = require('rimraf')
 
 const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
 const tempDir = path.join(os.tmpDir(), 'PowderWeb', 'torrent-stream')
+const fastResumeDir = path.join(dir, 'fastresume')
 
 let loading = {}
 
@@ -188,6 +189,12 @@ const cancelTorrent = (utime, cb, force, noDelete) => {
 
             if (fs.existsSync(appDataMagnetLink)) {
                 fs.unlink(appDataMagnetLink, () => {})
+            }
+
+            const appDataFastResume = path.join(fastResumeDir, engine.infoHash + '.fastresume')
+
+            if (fs.existsSync(appDataFastResume)) {
+                fs.unlink(appDataFastResume, () => {})
             }
 
         } else if (noDelete || settings.get('removeLogic') == 2) {
