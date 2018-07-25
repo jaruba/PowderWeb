@@ -20,7 +20,7 @@ const rimraf = require('rimraf')
 
 const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
 const tempDir = path.join(os.tmpDir(), 'PowderWeb', 'torrent-stream')
-const fastResumeDir = path.join(dir, 'fastresume')
+const fastResumeDir = path.join(app.getPath('appData'), 'fastresume')
 
 let loading = {}
 
