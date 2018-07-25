@@ -67,23 +67,25 @@ export default class Modals extends PureComponent {
 
   render() {
     return (
-        <header className="headerToolbar">
-            <div className={'controls'}>
-                <div className="closeWindow">
-                    <i/>
-                </div>
-                <div className="toggleMaximize">
-                    <i/>
-                    <i/>
-                </div>
-                <div className="minimize">
-                    <i/>
-                </div>
-            </div>
-            <div className="windowTitle">
-                {this.state.title}
-            </div>
-        </header>
+        <div className="headerHolder">
+          <header className="headerToolbar">
+              <div className={'controls'}>
+                  <div className="closeWindow">
+                      <i/>
+                  </div>
+                  <div className="toggleMaximize">
+                      <i/>
+                      <i/>
+                  </div>
+                  <div className="minimize">
+                      <i/>
+                  </div>
+              </div>
+              <div className="windowTitle">
+                  {this.state.title}
+              </div>
+          </header>
+        </div>
     );
   }
 }

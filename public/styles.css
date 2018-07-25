@@ -848,17 +848,21 @@ header {
   width: 100vw;
   -webkit-app-region: drag;
   background-color: #3E7395;
-  display: none !important;
-  z-index: 1000;
 }
 
 .nodragwindow {
   -webkit-app-region: no-drag;
 }
 
+.headerHolder {
+  display: none !important;
+  -webkit-app-region: drag;
+  height: 35px;
+  z-index: 1000;
+}
+
 header.headerToolbar {
   margin: 0 !important;
-  position: relative;
   padding-left: 0;
   width: 100%;
   padding-right: 0;
@@ -874,14 +878,6 @@ header.headerToolbar {
   margin-top: 57px;
 }
 
-body.isElectron .listContainer {
-  margin-top: 92px;
-}
-
-body.isElectron .torrentDataList:nth-child(1) {
-  margin-top: 183px !important;
-}
-
 body.isElectron .openInBrowserButton {
   display: inline-block !important;
 }
@@ -890,14 +886,14 @@ body.isElectron .openInBrowserLine {
   display: block !important;
 }
 
-body.isElectron header {
+body.isElectron .headerHolder {
   display: block !important;
 }
 
 header .windowTitle {
   float: left;
   color: white;
-  padding-top: 4px;
+  padding-top: 5px;
   padding-left: 12px;
   font-size: 14px;
   text-overflow: ellipsis;
