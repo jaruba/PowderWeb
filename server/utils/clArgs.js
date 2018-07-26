@@ -4,9 +4,11 @@ const settings = require('electron-settings')
 const streams = require('../streams')
 const { app, shell } = require('electron')
 const helpers = require('../utils/misc')
+const events = require('../utils/events')
+const isTorrentString = require('../utils/isTorrentString')
 const fs = require('fs')
 
-const runPlaylist = (torrentId, organizedFiles, infoHash, reqToken) => {
+const runPlaylist = (torrentId, organizedFiles, infoHash, reqToken, opts) => {
 
   const server = require('../../server')
 
@@ -17,7 +19,7 @@ const runPlaylist = (torrentId, organizedFiles, infoHash, reqToken) => {
       const serverUrl = 'http' + (server.isSSL ? 's': '') + '://localhost:' + server.port()
       // create playlist of streams
 
-      if (settings.get('useWebPlayerAssoc')) {
+      if (settings.get('useWebPlayerAssoc') || (opts && opts.runWebPlayer)) {
         const webPlayerUrl = serverUrl + '/embed?opener=' + infoHash + '&token=' + reqToken
         shell.openExternal(webPlayerUrl)
       } else {
@@ -52,7 +54,7 @@ const runPlaylist = (torrentId, organizedFiles, infoHash, reqToken) => {
   }
 }
 
-const runTorrent = (torrentQuery, reqToken) => {
+const runTorrent = (torrentQuery, reqToken, noAction, opts) => {
 
     let torrentId
 
@@ -63,6 +65,10 @@ const runTorrent = (torrentQuery, reqToken) => {
         },
 
         (engine, organizedFiles) => {
+
+          if (noAction) return
+
+          if (opts) return
 
           // ready
 
@@ -93,11 +99,13 @@ const runTorrent = (torrentQuery, reqToken) => {
 
         (engine, organizedFiles) => {
 
+          if (noAction) return
+
           // listening
 
           // we only need the next code when it's ran from a magnet link / torrent file association
 
-          runPlaylist(torrentId, organizedFiles, engine.infoHash, reqToken)
+          runPlaylist(torrentId, organizedFiles, engine.infoHash, reqToken, opts)
 
         },
 
@@ -113,6 +121,31 @@ const runTorrent = (torrentQuery, reqToken) => {
         })
 }
 
+const torrentSpeedUp = (torrent) => {
+  streams.toInfoHash(torrent, (iHash) => {
+      if (!iHash) return
+      const torrentId = streams.getTorrentId(iHash)
+      if (!torrentId) return
+      streams.speedUp(torrentId)
+  })
+}
+
+const torrentCleanUp = streams.deleteAllPaused
+
+const torrentPause = (torrent) => {
+    streams.toInfoHash(torrent, (iHash) => {
+        if (!iHash) return
+        streams.cancelByInfohash(iHash, () => {}, false, true)
+    })
+}
+
+const torrentRemove = (torrent) => {
+    streams.toInfoHash(torrent, (iHash) => {
+        if (!iHash) return
+        streams.cancelByInfohash(iHash, () => {}, true)
+    })
+}
+
 module.exports = {
     process: (args, reqToken) => {
         if (args.length) {
@@ -122,8 +155,46 @@ module.exports = {
                   return
                 }
                 if (el.startsWith('--')) {
+
                     // command line args
-                    // none yet
+
+                    let cmdValue
+                    let isTorrent
+
+                    if (el.includes('='))
+                      cmdValue = el.split('=')[1]
+
+                    if (el == '--restart') {
+                      events.emit('appRelaunch')
+                    } else if (el == '--quit') {
+                      events.emit('appQuit')
+                    } else if (el == '--show-app') {
+                      events.emit('appShow')
+                    } else if (el == '--show-browser') {
+                      events.emit('appShowBrowser')
+                    } else if (el == '--clean-up') {
+                      events.emit('torrentCleanUp')
+                    } else if (el == '--speed-up') {
+                      events.emit('torrentSpeedUp')
+                    } else if (cmdValue) {
+
+                      const isTorrent = !!(isTorrentString.isMagnetLink(cmdValue) || isTorrentString.isTorrentPath(cmdValue) || isTorrentString.isInfoHash(cmdValue))
+
+                      if (isTorrent) {
+                        if (el.startsWith('--pause=')) {
+                          torrentPause(cmdValue)
+                        } else if (el.startsWith('--start=')) {
+                          runTorrent(cmdValue, reqToken, true)
+                        } else if (el.startsWith('--remove=')) {
+                          torrentRemove(cmdValue)
+                        } else if (el.startsWith('--play-browser=')) {
+                          runTorrent(cmdValue, reqToken, false, { runWebPlayer: true })
+                        } else if (el.startsWith('--play-playlist=')) {
+                          runTorrent(cmdValue, reqToken, false, { runPlaylist: true })
+                        }
+                      }
+                    }
+
                 } else {
                     if (path.isAbsolute(el)) {
                         // local file

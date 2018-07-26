@@ -16,6 +16,7 @@ const os = require('os')
 const ip = require('my-local-ip')
 const parseTorrent = require('parse-torrent')
 const organizer = require('./utils/file_organizer')
+const isTorrentString = require('./utils/isTorrentString')
 const rimraf = require('rimraf')
 
 const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
@@ -62,7 +63,7 @@ const isRedirectToMagnet = (url, cb) => {
     var req = http.request(options, function(res) {
         if (!cb) return
         if (res && res.headers && res.headers.location) {
-            cb && cb(res.headers.location.startsWith('magnet:'), res.headers.location)
+            cb && cb(isTorrentString.isMagnetLink(res.headers.location), res.headers.location)
         } else {
             cb && cb(false)
         }
@@ -79,10 +80,10 @@ const basicTorrentData = (torrent, cb) => {
         cb(new Error('Unknown Error'))
         return
     }
-    if (torrent.startsWith('magnet:')) {
+    if (isTorrentString.isMagnetLink(torrent)) {
         // magnet link
         cb(null, torrent, parseTorrent(torrent))
-    } else if (torrent.startsWith('http')) {
+    } else if (isTorrentString.isTorrentLink(torrent)) {
         isRedirectToMagnet(torrent, (isMagnet, torrentUrl) => {
             if (!isMagnet) {
                 // remote .torrent
@@ -99,7 +100,7 @@ const basicTorrentData = (torrent, cb) => {
                 basicTorrentData(torrentUrl, cb)
             }
         })
-    } else if (torrent.endsWith('.torrent') && path.isAbsolute(torrent)) {
+    } else if (isTorrentString.isTorrentPath(torrent)) {
         // local .torrent
         let parsed
 
@@ -838,6 +839,40 @@ const actions = {
         })
 
         return thisTorrentId
+    },
+
+    toInfoHash(str, cb) {
+        if (str) {
+
+            if (isTorrentString.isInfoHash(str)) {
+
+                cb(str)
+
+            } else if (isTorrentString.isMagnetLink(str)) {
+
+                const parsed = parseTorrent(str)
+
+                if (parsed && parsed.infoHash) {
+                    cb(parsedInfohash)
+                } else {
+                    cb(false)
+                }
+
+            } else if (isTorrentString.isTorrentPath(str)) {
+
+                const parsed = parseTorrent(fs.readFileSync(str))
+
+                if (parsed && parsed.infoHash) {
+                    cb(parsed.infohash)
+                } else {
+                    cb(false)
+                }
+
+            }
+
+        } else {
+            cb(false)
+        }
     }
 }
 

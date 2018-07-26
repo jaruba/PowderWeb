@@ -30,6 +30,8 @@ const streams = require('./server/streams')
 
 const btoa = require('./server/utils/btoa')
 
+const events = require('./server/utils/events')
+
 const opn = require('opn')
 
 if (app && app.commandLine && app.commandLine.appendSwitch)
@@ -226,6 +228,11 @@ app.on('ready', () => {
       app.exit()
     })
   }
+
+  events.on('appQuit', quit)
+  events.on('appRelaunch', relaunch)
+  events.on('appShow', showApp)
+  events.on('appShowBrowser', showBrowser)
 
   const buildContextMenu = (startUp) => {
     const contextMenu = Menu.buildFromTemplate([
