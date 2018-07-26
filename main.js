@@ -123,7 +123,7 @@ function createWindow() {
       mainWindow.show()
 
     if (dev) {
-      mainWindow.webContents.openDevTools();
+      mainWindow.webContents.openDevTools()
     }
   });
 
@@ -212,11 +212,19 @@ app.on('ready', () => {
       if(isEnabled){
         autoLauncher.disable()
       } else {
-        autoLauncher.enable();
+        autoLauncher.enable()
       }
     })
     .catch(function(err){ })
 
+  }
+
+  const relaunch = () => {
+    mainWindow.destroy()
+    streams.closeAll(() => {
+      app.relaunch()
+      app.exit()
+    })
   }
 
   const buildContextMenu = (startUp) => {
@@ -243,6 +251,12 @@ app.on('ready', () => {
         type: 'checkbox',
         checked: startUp,
         click: toggleStartUp
+      },
+      { type: 'separator' },
+      {
+        label: 'Restart',
+        type: 'normal',
+        click: relaunch
       },
       {
         label: 'Quit',
