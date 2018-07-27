@@ -438,6 +438,66 @@ const mainServer = http.createServer(function(req, resp) {
                         })
                       }
                     }
+
+                    // execute user set commands at end of download
+                    // (yes, not only in isMaster case)
+
+                    const userCommands = settings.get('userCommands')
+
+                    if (userCommands) {
+
+                      const newEnv = JSON.parse(JSON.stringify(process.env))
+
+                      const nextCommand = (allCommands, folderPath) => {
+                        allCommands.shift()
+                        runCommands(allCommands, folderPath)
+                      }
+
+                      const runCommands = (allCommands, folderPath) => {
+
+                        if (allCommands.length) {
+
+                          let currentCommand = allCommands[0].trim()
+
+                          if (currentCommand.includes('%folder%')) {
+                            currentCommand.split('%folder%').join('"' + folderPath + '"')
+                          }
+
+                          currentCommand = currentCommand.split(' ')
+
+                          const firstPart = currentCommand[0]
+
+                          currentCommand.shift()
+
+                          const commandProc = child.spawn(firstPart, currentCommand, {
+                            env: newEnv
+                          })
+
+                          commandProc.stderr.on('data', () => {
+                            nextCommand(allCommands, folderPath)
+                          })
+
+                          commandProc.on('exit', () => {
+                            nextCommand(allCommands, folderPath)
+                          })
+
+                        }
+
+                      }
+
+                      let allCommands = []
+
+                      if (userCommands.includes(';;')) {
+                        allCommands = userCommands.split(';;')
+                      } else {
+                        allCommands = [userCommands]
+                      }
+
+                      streams.getPath(engine.infoHash, (folderPath) => {
+                        runCommands(allCommands, folderPath)
+                      })
+
+                    }
                   })
 
                 },

@@ -333,6 +333,13 @@ export default class Modals extends PureComponent {
       this.saveValue('torrentTrackers', newValue, cb)
     })
   }
+  generalUserCommands = () => {
+    const label = 'User specified commands to run after torrent finished downloading. Separate commands with ";;" (double semicolon, no quotes), you can also use "%folder%" (no quotes) which will be converted to the torrent\'s download path when the commands are being ran. If you wish to remove all commands set this field to an empty string.'
+
+    this.getValueString(label, (this.state.userCommands || ''), '[^]', 10000000, (newValue, cb) => {
+      this.saveValue('userCommands', newValue, cb)
+    })
+  }
   generalSetPlayer = async () => {
     var newValue = await api.get({ method: 'selectFile', json: true })
     if (newValue && newValue.value && newValue.value[0]) {
@@ -1421,7 +1428,6 @@ export default class Modals extends PureComponent {
                 <paper-button
                     raised
                     onClick={this.generalMaximumPeers.bind(this)}
-                    id="speedLimitButton"
                     style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', verticalAlign: 'middle', display: 'inline-block', marginRight: '15px'}}
                     className='playerButtons' >
                 Maximum Peers:
@@ -1671,10 +1677,21 @@ export default class Modals extends PureComponent {
                 <paper-button
                     raised
                     onClick={this.generalDefaultTrackers.bind(this)}
-                    id="speedLimitButton"
                     style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', verticalAlign: 'middle', display: 'inline-block', marginRight: '15px'}}
                     className='playerButtons' >
                 Set Default Trackers
+                </paper-button>
+
+                <div className="setting-header">
+                    Commands to Run When Torrent Finished
+                </div>
+
+                <paper-button
+                    raised
+                    onClick={this.generalUserCommands.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', verticalAlign: 'middle', display: 'inline-block', marginRight: '15px'}}
+                    className='playerButtons' >
+                Set Commands
                 </paper-button>
 
                 <div className="setting-header">

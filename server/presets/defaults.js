@@ -61,6 +61,8 @@ const map = {
 
     fastResume: true,
 
+    userCommands: '',
+
 }
 
 module.exports = {
