@@ -4,6 +4,8 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities.
 
 [See Screenshots](https://imgur.com/a/Jnxf0wf)
 
+[Guide](https://github.com/jaruba/PowderWeb/wiki/Guide)
+
 [Chat](https://gitter.im/jaruba/PowderWeb)
 
 
@@ -84,3 +86,8 @@ Start Web Player on a `<div>`:
 [Embed Demo](http://powder.media/embed-test.html)
 
 **Note**: Embedding will not work on websites that use SSL unless the user activates "Use SSL" in Powder Web's settings and then sets the Self-Signed SSL Certificate as Trusted by right clicking Powder Web in the tray, selecting "Show in Browser" and then accepting the certificate on the security page shown by the Browser.
+
+
+### Technologies Used
+
+[Electron](https://electronjs.org/), [React](https://reactjs.org/), [Polymer](https://www.polymer-project.org/), [Peerflix](https://github.com/mafintosh/peerflix), [FFmpeg](https://www.ffmpeg.org/) and many others listed in the dependencies section of the `package.json` file.
