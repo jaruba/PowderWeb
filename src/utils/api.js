@@ -32,7 +32,7 @@ const api = {
 
 		const resp = await api.frisbee.get(api.parseUrl(opts, true))
 
-		if (resp && resp.err) {
+		if (resp && resp.err && errCb) {
 			// fetch errors
 			if (resp.originalResponse && resp.status == 500 && resp.originalResponse._bodyBlob) {
 				if (FileReader) {
