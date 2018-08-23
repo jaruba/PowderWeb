@@ -25,12 +25,28 @@ const api = {
 		},
 	}),
 
-	get: async (opts) => {
+	get: async (opts, errCb) => {
 
 		const isJson = !!opts.json
 		delete opts.json
 
 		const resp = await api.frisbee.get(api.parseUrl(opts, true))
+
+		if (resp && resp.err) {
+			// fetch errors
+			if (resp.originalResponse && resp.status == 500 && resp.originalResponse._bodyBlob) {
+				if (FileReader) {
+					const reader = new FileReader()
+					reader.addEventListener('loadend', (e) => {
+					  const text = e.srcElement.result
+					  if (text)
+					  	errCb(text)
+					})
+					reader.readAsText(resp.originalResponse._bodyBlob)
+					return false
+				}
+			}
+		}
 
 		if (!resp || !resp.body)
 			return false
