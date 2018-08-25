@@ -13,9 +13,14 @@ const isEmbedPlayer = window.location.pathname == '/embed'
 
 import detectBrowser from 'utils/detectBrowser'
 
-const isSafari = detectBrowser.isChrome
+const isSafari = detectBrowser.isSafari
 
 let isMatroska = (detectBrowser.isChrome || detectBrowser.isIE || detectBrowser.isEdge)
+
+const isAndroid = /(android)/i.test(navigator.userAgent)
+
+if (detectBrowser.isChrome && isAndroid)
+	isMatroska = false
 
 let video
 
