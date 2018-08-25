@@ -11,11 +11,17 @@ export default class Modals extends PureComponent {
   constructor (props) {
     super(props)
 
-    this.state = {}
+    this.state = {
+      message: ''
+    }
   }
 
   componentDidMount = () => {
-
+    events.on('embedLoadingMsg', (msg) => {
+      this.setState({
+        message: msg
+      })
+    })
   }
 
   componentWillUnmount = () => {
@@ -47,7 +53,7 @@ export default class Modals extends PureComponent {
               <div className='ball-three' />
             </div>
             <div style={{ marginTop: '50px', marginBottom: '0px', top: '50%', position: 'absolute', left: '50%', transform: 'translate(-50%,-50%)'}}>
-              Loading Torrent ...
+              {this.state.message && this.state.message.length ? this.state.message : 'Loading Torrent ...'}
             </div>
         </paper-dialog>
     )
