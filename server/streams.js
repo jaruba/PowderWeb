@@ -5,6 +5,7 @@ const settings = require('electron-settings')
 const parser = require('./utils/parser')
 const helpers = require('./utils/misc')
 let addresses = require('./utils/addressbook')
+let uploadedBook = require('./utils/uploadedbook')
 let streams = {}
 let shouldDestroy = {}
 let canceled = {}
@@ -178,6 +179,7 @@ const cancelTorrent = (utime, cb, force, noDelete) => {
         if (settings.get('removeLogic') == 1 || (!noDelete && force)) {
 
             addresses.remove(engine.infoHash)
+            uploadedBook.remove(engine.infoHash)
             engine.kill(cb)
 
             const appDataTorrentFilePath = path.join(openerDir, engine.infoHash + '.torrent')
@@ -200,9 +202,10 @@ const cancelTorrent = (utime, cb, force, noDelete) => {
 
         } else if (noDelete || settings.get('removeLogic') == 2) {
 
-            let rememberUploaded = addresses.get(engine.infoHash)
-            rememberUploaded.uploadedStart = (rememberUploaded.uploadedStart || 0) + (engine.swarm && engine.swarm.uploaded ? engine.swarm.uploaded : 0)
-            addresses.update(rememberUploaded)
+            const lastUploaded = uploadedBook.get(engine.infoHash) + (engine.swarm && engine.swarm.uploaded ? engine.swarm.uploaded : 0)
+
+            uploadedBook.add(engine.infoHash, lastUploaded)
+
             engine.softKill(cb)
 
         }
@@ -236,7 +239,7 @@ var torrentObj = (utime, torrent, engine) => {
         obj.downloadSpeed = engine.swarm.downloadSpeed || 0
         obj.uploaded = engine.swarm.uploaded || 0
         obj.uploadSpeed = engine.swarm.uploadSpeed || 0
-        obj.uploadedStart = 0
+        obj.uploadedStart = uploadedBook.get(engine.infoHash)
         obj.peers = engine.swarm.wires && engine.swarm.wires.length ? engine.swarm.wires.length : 0
     } else
         obj.downloaded = obj.downloadSpeed = obj.uploaded = obj.uploadSpeed = obj.uploadedStart = obj.peers = 0
@@ -751,7 +754,7 @@ const actions = {
                 total: engine.total,
                 isFinished,
                 opener: address.opener || '',
-                uploadStart: address.uploadedStart || 0,
+                uploadedStart: uploadedBook.get(engine.infoHash) || 0,
                 files: defaultFiles ? engine.files : (orderedFiles || engine.files).map(el => {
                     const file = engine.files[el.id || el.fileID]
                     el.progress = isFinished ? 100 : Math.round(engine.torrent.pieces.bank.filePercent(file.offset, file.length) * 100)

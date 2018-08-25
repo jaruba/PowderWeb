@@ -168,7 +168,7 @@ export default class Counter extends PureComponent {
     const filePercent = finished ? 1 : torrent.swarm.downloaded / torrent.total.length
     const fileProgress = Math.round(filePercent * 100)
     const eta = Math.round((torrent.total.length - torrent.swarm.downloaded) / torrent.swarm.downloadSpeed)
-    const uploadStart = torrent.uploadStart || 0
+    const uploadStart = torrent.uploadedStart || 0
     return (
       <div className={"torrentHeader"}>
         <div style={{float: 'left', marginLeft: '15px'}}>

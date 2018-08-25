@@ -35,6 +35,7 @@ const map = {
     forceDownload: false,
     peerID: 'PW0700',
     addressbook: {},
+    uploaded: {},
     maxConcurrency: 2,
     users: {},
     maxUsers: 0,

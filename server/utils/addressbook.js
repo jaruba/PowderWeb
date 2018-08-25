@@ -5,7 +5,7 @@ let addresses = settings.get('addressbook')
 
 const addMissing = (newObj, oldObj, altsToo) => {
 
-	// add utime, opener and uploadedStart if their missing
+	// add utime and opener if their missing
 
 	if (oldObj) {
 
@@ -16,9 +16,6 @@ const addMissing = (newObj, oldObj, altsToo) => {
 			if (oldObj.opener.toLowerCase().indexOf(newObj.infoHash || oldObj.infoHash) > -1)
 				newObj.opener = oldObj.opener
 		}
-
-		if (oldObj.uploadedStart && (!newObj.uploadedStart || newObj.uploadedStart < oldObj.uploadedStart))
-			newObj.uploadedStart = oldObj.uploadedStart
 
 		if (altsToo) {
 			newObj.pulsing = oldObj.pulsing || false
