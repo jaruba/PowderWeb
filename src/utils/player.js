@@ -773,11 +773,13 @@ const player = {
 		// }
 
 		video.on('fullscreenchange', () => {
-			setTimeout(video.handleResize.bind(null,null), 0)
-			setTimeout(video.handleResize.bind(null,null), 250)
-			setTimeout(video.handleResize.bind(null,null), 500)
-			setTimeout(video.handleResize.bind(null,null), 750)
-			setTimeout(video.handleResize.bind(null,null), 1000)
+			if (video.handleResize) {
+				setTimeout(video.handleResize.bind(null,null), 0)
+				setTimeout(video.handleResize.bind(null,null), 250)
+				setTimeout(video.handleResize.bind(null,null), 500)
+				setTimeout(video.handleResize.bind(null,null), 750)
+				setTimeout(video.handleResize.bind(null,null), 1000)
+			}
 		})
 
 		const handleResize = () => {
@@ -1375,26 +1377,38 @@ const player = {
 	    }
 	  })
 
-	  if (needsPlaylist > 1) {
-	    document.getElementsByClassName('vjs-control-bar')[0].classList.add('vjs-control-bar-with-playlist')
-	    document.getElementsByClassName('vjs-control-bar')[0].classList.remove('vjs-control-bar-no-playlist')
-	    document.getElementById('videoHold').classList.add('videoHold-with-playlist')
-	  } else {
-	    document.getElementsByClassName('vjs-control-bar')[0].classList.add('vjs-control-bar-no-playlist')
-	    document.getElementsByClassName('vjs-control-bar')[0].classList.remove('vjs-control-bar-with-playlist')
-	    document.getElementById('videoHold').classList.remove('videoHold-with-playlist')
+	  if (document.getElementsByClassName('vjs-control-bar') && document.getElementsByClassName('vjs-control-bar')[0] && document.getElementById('videoHold')) {
+
+		  if (needsPlaylist > 1) {
+		    document.getElementsByClassName('vjs-control-bar')[0].classList.add('vjs-control-bar-with-playlist')
+		    document.getElementsByClassName('vjs-control-bar')[0].classList.remove('vjs-control-bar-no-playlist')
+		    document.getElementById('videoHold').classList.add('videoHold-with-playlist')
+		  } else {
+		    document.getElementsByClassName('vjs-control-bar')[0].classList.add('vjs-control-bar-no-playlist')
+		    document.getElementsByClassName('vjs-control-bar')[0].classList.remove('vjs-control-bar-with-playlist')
+		    document.getElementById('videoHold').classList.remove('videoHold-with-playlist')
+		  }
+
 	  }
 
-	  if (playlistIj > 0) {
-	    document.getElementsByClassName('customPrevButton')[0].classList.remove('customButtonFadded')
-	  } else {
-	    document.getElementsByClassName('customPrevButton')[0].classList.add('customButtonFadded')      
+	  if (document.getElementsByClassName('customPrevButton') && document.getElementsByClassName('customPrevButton')[0]) {
+
+		  if (playlistIj > 0) {
+		    document.getElementsByClassName('customPrevButton')[0].classList.remove('customButtonFadded')
+		  } else {
+		    document.getElementsByClassName('customPrevButton')[0].classList.add('customButtonFadded')      
+		  }
+
 	  }
 
-	  if (playlistIj +1 < playlistArr.length) {
-	    document.getElementsByClassName('customNextButton')[0].classList.remove('customButtonFadded')
-	  } else {
-	    document.getElementsByClassName('customNextButton')[0].classList.add('customButtonFadded')      
+	  if (document.getElementsByClassName('customNextButton') && document.getElementsByClassName('customNextButton')[0]) {
+
+		  if (playlistIj +1 < playlistArr.length) {
+		    document.getElementsByClassName('customNextButton')[0].classList.remove('customButtonFadded')
+		  } else {
+		    document.getElementsByClassName('customNextButton')[0].classList.add('customButtonFadded')      
+		  }
+
 	  }
 
 
@@ -1757,6 +1771,10 @@ const player = {
 
 		open: async (torrent, file, initTime, noLoader, prefQuality, oldAudioTrack) => {
 
+
+			if (document.getElementById('video') && document.getElementById('video').classList && document.getElementById('video').classList.contains('vjs-live'))
+				document.getElementById('video').classList.remove('vjs-live')
+
 			isPlayerClosed = false
 
 			if (isEmbedPlayer) {
@@ -1835,7 +1853,7 @@ const player = {
 
 			    const duration = videoSettings.duration
 
-			    if (duration > 3600) {
+			    if (duration && duration > 3600) {
 					document.getElementsByClassName('vjs-control-bar')[0].classList.add('hour-long-video')
 			    } else {
 					document.getElementsByClassName('vjs-control-bar')[0].classList.remove('hour-long-video')
@@ -2284,11 +2302,11 @@ const player = {
 
 			    }
 
-			    video.handleResize({
-			    	aspect: 'Default',
-			    	crop: 'Default',
-			    	zoom: 1
-			    })
+				video.handleResize({
+					aspect: 'Default',
+					crop: 'Default',
+					zoom: 1
+				})
 
 			  }
 
