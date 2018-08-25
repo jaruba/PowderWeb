@@ -24,11 +24,16 @@ export default class Modals extends PureComponent {
   }
 
   closingDialog() {
+
     events.emit('canceledLoading')
-    document.getElementById("loadingDialog").close()
+
+    if (document.getElementById("loadingDialog"))
+      document.getElementById("loadingDialog").close()
+
     setTimeout(() => {
         modals.close()
     })
+
   }
 
   render() {
