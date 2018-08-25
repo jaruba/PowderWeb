@@ -394,10 +394,13 @@ const actions = {
 
             var added = addresses.add(torrentObj(utime, torrent, torrentData))
 
-            if (!added && !resume) {
-                errCb(new Error('Torrent already exists'))
-                return
-            } else {
+            // don't handle "torrent already added" as an error
+            // just play the damned thing anyway as that's what users expect
+
+//            if (!added && !resume) {
+//                errCb(new Error('Torrent already exists'))
+//                return
+//            } else {
                 let streamerId
                 const foundStreamer = _.some(streams, (el, ij) => {
                     if (el.engine && el.engine.infoHash == torrentData.infoHash) {
@@ -414,7 +417,7 @@ const actions = {
                 } else {
                     idCb(torrentObj(utime, torrent, torrentData))
                 }
-            }
+//            }
 
             canceled[utime] = false
             streams[utime] = {}
