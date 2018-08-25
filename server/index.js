@@ -76,6 +76,8 @@ const masterKey = uniqueString()
 
 const argsKey = uniqueString()
 
+const qrCode = require('./utils/qrcode')
+
 let tokens = {
   [masterKey]: 'master',
   [argsKey]: true
@@ -132,6 +134,8 @@ const btoa = (str) => {
   return buffer.toString('base64');
 }
 
+let serverPort = settings.get('webServerPort') || 3000
+
 const getReqUrl = (req) => {
   let topUrl = ''
 
@@ -141,13 +145,11 @@ const getReqUrl = (req) => {
   } else if (req.headers.host) {
     topUrl += 'http://' + req.headers.host
   } else {
-    topUrl += 'http://localhost:3000'
+    topUrl += 'http://127.0.0.1:' + serverPort
   }
 
   return topUrl
 }
-
-let serverPort = settings.get('webServerPort') || 3000
 
 const initServer = () => {
 const mainServer = http.createServer(function(req, resp) {
@@ -384,6 +386,18 @@ const mainServer = http.createServer(function(req, resp) {
     }
   }
 
+  if (method == 'qrCode' && urlParsed.query && urlParsed.query.qrType) {
+
+    const qrKey = isMaster ? argsKey : reqToken
+
+    if (['local','internet'].indexOf(urlParsed.query.qrType) > -1) {
+      qrCode(urlParsed.query.qrType, qrKey, serverPort, respond, page500)
+    } else {
+      page404()
+    }
+    return
+  }
+
   if (method == 'new' && urlParsed.query && urlParsed.query.torrent) {
 
     let torrentId
@@ -540,8 +554,10 @@ const mainServer = http.createServer(function(req, resp) {
 
     let doneResp = false
 
-    resp.on('finish', () => { doneResp = true })
-    resp.on('close', () => { doneResp = true })
+    const setResp = () => { doneResp = true }
+
+    resp.on('finish', setResp)
+    resp.on('close', setResp)
 
     let torrentId
 
@@ -867,7 +883,7 @@ const mainServer = http.createServer(function(req, resp) {
 
     if (method == 'openInBrowser') {
       const isSSL = settings.get('webServerSSL') || false
-      opn('http' + (isSSL ? 's': '') + '://localhost:' + serverPort + '/auth?token=' + masterKey)
+      opn('http' + (isSSL ? 's': '') + '://127.0.0.1:' + serverPort + '/auth?token=' + masterKey)
       respond({})
       return
     }
@@ -1087,6 +1103,8 @@ var srv = http.createServer(function (req, res) {
   const urlParsed = url.parse(req.url, true)
   let uri = urlParsed.pathname
 
+//  console.log('REQUEST: ' + req.url)
+
   let reqToken
 
   if (req.headers && req.headers.authorization)
@@ -1100,6 +1118,8 @@ var srv = http.createServer(function (req, res) {
     reqToken = tokenParts[2]
     uri = uri.replace(reqToken+'/','')
   }
+
+  const embedToken = settings.get('embedToken')
 
   if (!reqToken || !tokens[reqToken]) {
     res.writeHead(500, { "Content-Type": "text/plain" })
@@ -1409,7 +1429,7 @@ var srv = http.createServer(function (req, res) {
       context: ["/playlist.m3u", "/getplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
       target: "http://localhost:" + port
     }, {
-      context: ["/api", "/web", "/meta"],
+      context: ["/api/", "/web/", "/meta/"],
       target: "http://localhost:" + peerflixProxy
     }]
 
@@ -1523,7 +1543,7 @@ var srv = http.createServer(function (req, res) {
       socket.setTimeout(Number.MAX_SAFE_INTEGER);
     })
 
-    mainSrv.on('listening',function() { serverPort = mainSrv.address().port })
+    mainSrv.on('listening', function() { serverPort = mainSrv.address().port })
 
   }
 }
@@ -1536,6 +1556,7 @@ let mainWindow
 
 module.exports = {
   masterKey,
+  argsKey,
   isSSL: settings.get('webServerSSL') || false,
   port: () => { return serverPort },
   embedKey: settings.get('embedToken') || '',

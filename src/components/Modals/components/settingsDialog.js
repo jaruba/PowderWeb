@@ -206,6 +206,10 @@ export default class Modals extends PureComponent {
     }
   }
 
+  showConnectDialog = () => {
+    modals.open('qrCode')
+  }
+
   generalAssociateMagnet = () => {
     api.get({ method: 'associateMagnetLink' })
   }
@@ -585,6 +589,20 @@ export default class Modals extends PureComponent {
               </div>
               <div style={{clear: 'both'}}/>
 
+
+              <div className="setting-header" style={{marginTop: '10px'}}>
+                  Accessing from Other Devices
+              </div>
+
+              <paper-button
+                  raised
+                  onClick={this.showConnectDialog.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block'}}
+                  className='playerButtons' >
+              Connect Device
+              </paper-button>
+
+              <div style={{clear: 'both', height: '15px'}} />
 
               <div className="setting-header" style={{marginTop: '10px'}}>
                   Embedding in Websites

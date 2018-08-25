@@ -32,6 +32,8 @@ const btoa = require('./server/utils/btoa')
 
 const events = require('./server/utils/events')
 
+const qrCode = require('./server/utils/qrcode')
+
 const opn = require('opn')
 
 if (app && app.commandLine && app.commandLine.appendSwitch)
@@ -115,7 +117,7 @@ function createWindow() {
   // and load the index.html of the app.
   let indexPath;
 
-  mainWindow.loadURL( 'http' + (server.isSSL ? 's': '') + '://localhost:' + server.port() + '/auth?token=' + server.masterKey );
+  mainWindow.loadURL( 'http' + (server.isSSL ? 's': '') + '://127.0.0.1:' + server.port() + '/auth?token=' + server.masterKey );
 
   // Don't show until we are ready and loaded
   mainWindow.once('ready-to-show', () => {
@@ -193,12 +195,23 @@ app.on('ready', () => {
     }
   }
   const copyEmbedKey = () => {
-    const servUrl = 'http' + (server.isSSL ? 's': '') + '://localhost:' + server.port() + '/'
+    const servUrl = 'http' + (server.isSSL ? 's': '') + '://127.0.0.1:' + server.port() + '/'
     const embedKey = server.embedKey
     clipboard.writeText(embedKey + '-' + btoa(servUrl));
   }
+  const copyLink = (qrType) => {
+
+    qrCode(qrType, server.argsKey, server.port(), (resp) => {
+      if (resp && resp.url)
+        clipboard.writeText(resp.url);
+    }, (err) => {
+
+    })
+  }
+  const copyLanLink = () => { copyLink('local') }
+  const copyInternetLink = () => { copyLink('internet') }
   const showBrowser = () => {
-    opn('http' + (server.isSSL ? 's': '') + '://localhost:' + server.port() + '/auth?token=' + server.masterKey)
+    opn('http' + (server.isSSL ? 's': '') + '://127.0.0.1:' + server.port() + '/auth?token=' + server.masterKey)
   }
   const quit = () => {
     mainWindow.destroy()
@@ -245,6 +258,17 @@ app.on('ready', () => {
         label: 'Show in Browser',
         type: 'normal',
         click: showBrowser
+      },
+      { type: 'separator' },
+      {
+        label: 'Copy LAN Link',
+        type: 'normal',
+        click: copyLanLink
+      },
+      {
+        label: 'Copy Internet Link',
+        type: 'normal',
+        click: copyInternetLink
       },
       { type: 'separator' },
       {

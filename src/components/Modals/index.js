@@ -24,6 +24,7 @@ import InputDialog from './components/inputDialog'
 import HistoryListDialog from './components/historyListDialog'
 import SubtitleListDialog from './components/subtitleListDialog'
 import MessageDialog from './components/messageDialog'
+import QrCodeDialog from './components/qrcodeDialog'
 
 import events from 'utils/events'
 
@@ -119,6 +120,9 @@ export default class Modals extends PureComponent {
               break;
           case 'message':
               return <MessageDialog query={this.state.query} />;
+              break
+          case 'qrCode':
+              return <QrCodeDialog query={this.state.query} />;
               break
       }
   }
