@@ -2,6 +2,7 @@ const path = require('path')
 const url = require('url')
 const settings = require('electron-settings')
 const streams = require('../streams')
+const acestream = require('../acestream')
 const { app, shell } = require('electron')
 const helpers = require('../utils/misc')
 const events = require('../utils/events')
@@ -54,7 +55,96 @@ const runPlaylist = (torrentId, organizedFiles, infoHash, reqToken, opts) => {
   }
 }
 
+const runAcePlaylist = (pid, reqToken) => {
+  if (pid) {
+
+    const reqUrl = 'http://127.0.0.1:3000'
+
+    // create playlist of streams
+
+    if (settings.get('extPlayer')) {
+
+      // open with selected external player
+
+      const playlist = reqUrl + '/getaceplaylist.m3u?pid=' + pid + '&token=' + reqToken
+
+      helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), playlist)
+
+    } else {
+
+      // open with default player
+
+      const tryConnect = () => {
+        acestream.getVersion((connected) => {
+          if (connected) {
+            acestream.getPort((servPort) => {
+                if (!servPort) {
+                    console.log('NO ACESTREAM PORT')
+                    // this means acestream is installed somewhere else and we don't have access to it
+                    // SHOULD SHOW INSTALL PROMPT
+                } else {
+                    acestream.connect(pid, servPort, peerflixProxy, reqToken, (playlist) => {
+                      // playlist cb
+                      const filePath = path.join(app.getPath('appData'), 'playlist'+(Date.now())+'.m3u')
+                      fs.writeFile(filePath, playlist, function(err) {
+                          if (err) {
+                              return console.log(err);
+                          }
+                          shell.openItem(filePath)
+                      })
+                    }, reqUrl)
+                }
+            })
+          }
+        })
+      }
+
+      const runAce = () => {
+        acestream.isDownloaded((downloaded) => {
+          if (downloaded) {
+            acestream.binary.run(function(didRun) {
+              if (didRun) {
+                tryConnect()
+              } else {
+                console.log('CAN\'T START ACESTREAM')
+              }
+            })
+          } else {
+            console.log('NO ACESTREAM INSTALLED')
+          }
+        })
+      }
+
+
+      acestream.getVersion((connected) => {
+          if (connected) {
+            acestream.getPort((servPort) => {
+              if (!servPort) {
+                runAce()
+              } else {
+                tryConnect()
+              }
+            })
+          } else {
+            runAce()
+          }
+      })
+
+    }
+
+  }
+
+}
+
 const runTorrent = (torrentQuery, reqToken, noAction, opts) => {
+
+  if (torrentQuery.startsWith('acestream://')) {
+
+    const pid = torrentQuery.replace('acestream://', '')
+
+    runAcePlaylist(pid, reqToken)
+
+  } else {
 
     let torrentId
 
@@ -119,6 +209,7 @@ const runTorrent = (torrentQuery, reqToken, noAction, opts) => {
           }
 
         })
+  }
 }
 
 const torrentSpeedUp = (torrent) => {

@@ -34,17 +34,62 @@ const playTorrent = async () => {
   if (validToken && validToken > 0) {
     modals.open('embedLoading')
 
-    const runningTorrent = await api.get({ method: 'embedStart', id: getParameterByName('hash') || getParameterByName('opener'), json: true })
+    const iHash = getParameterByName('hash')
 
-    const parsed = await api.get({ method: 'torrentData', id: runningTorrent.infoHash || getParameterByName('hash'), json: true })
+    const opener = getParameterByName('opener')
 
-    if (parsed) {
+    if (opener && opener.startsWith('acestream://')) {
 
-      player.modal.open(parsed, parsed.files[0])
+      const pid = opener.replace('acestream://', '')
+
+      const attemptResp = await api.get({ method: 'ace', torrent: pid, json: true}, (err) => {
+        if (err)
+          events.emit('embedLoadingMsg', err)
+      })
+
+
+      if (attemptResp && attemptResp.hasAcestream == true) {
+
+        let dataTimer
+
+        const checkMsg = async () => {
+          const checkResp = await api.get({ method: 'aceMsg', torrent: pid, json: true})
+          if (checkResp && checkResp.status) {
+            events.emit('embedLoadingMsg', checkResp.status)
+            if (checkResp.transcodeLink) {
+              console.log('Transcode Link: ' + checkResp.transcodeLink)
+              modals.close()
+              setTimeout(() => {
+                player.modal.openLive(checkResp.transcodeLink, checkResp.name)
+              })
+              return
+            }
+          }
+          dataTimer = setTimeout(checkMsg, 2000)
+        }
+
+        dataTimer = setTimeout(checkMsg, 2000)
+
+      } else {
+        // acestream not installed, prompt for install
+        modals.open('aceNotInstalled')
+      }
 
     } else {
 
-      fail()
+      const runningTorrent = await api.get({ method: 'embedStart', id: getParameterByName('hash') || getParameterByName('opener'), json: true })
+
+      const parsed = await api.get({ method: 'torrentData', id: runningTorrent.infoHash || getParameterByName('hash'), json: true })
+
+      if (parsed) {
+
+        player.modal.open(parsed, parsed.files[0])
+
+      } else {
+
+        fail()
+
+      }
 
     }
 
@@ -109,7 +154,12 @@ export default class Modals extends PureComponent {
 
     api.frisbee.headers = { ...api.frisbee.headers, authorization: getParameterByName('token') }
 
-    setTimeout(playTorrent)
+    if (getParameterByName('url')) {
+      const playUrl = decodeURIComponent(getParameterByName('url'))
+      player.modal.openUrl(playUrl)
+    } else {
+      setTimeout(playTorrent)
+    }
   }
 
   componentWillUnmount = () => {

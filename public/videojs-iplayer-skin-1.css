@@ -124,3 +124,50 @@
 	top: auto !important;
 }
 
+.vjs-live .vjs-subs-caps-button {
+  display: none !important;
+}
+
+.vjs-live .vjs-settings.vjs-icon-cog {
+  display: none !important;
+}
+
+.vjs-live .vjs-duration {
+  display: none !important;
+}
+
+.vjs-live .vjs-time-divider {
+  display: none !important;
+}
+
+.vjs-live .vjs-current-time-display {
+  right: -14px !important;
+}
+
+.vjs-live .vjs-live-control.vjs-control {
+  transition: none !important;
+  background: none !important;
+  background-color: transparent !important;
+}
+
+.vjs-live .vjs-title-bar-content .playlistButton {
+  display: none !important;
+}
+
+.vjs-live-display {
+  display: none !important;
+}
+
+.vjs-live .vjs-live-display {
+  display: block !important;
+}
+
+.vjs-live .video-container-hold {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.vjs-live .video-container {
+  width: 100% !important;
+  height: 100% !important;
+}

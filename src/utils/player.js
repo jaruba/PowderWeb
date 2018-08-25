@@ -1774,6 +1774,54 @@ const player = {
 		  player.modal.open(torrent, file, null, true, window.selectedQuality, oldAudioTrack)
 		},
 
+		openUrl: (url) => {
+			console.log('adding:')
+			console.log({
+				src: url
+			})
+			video.src({
+				src: url
+			})
+			video.play()
+		},
+
+		openLive: (url, title) => {
+
+			if (document.getElementById('video') && document.getElementById('video').classList && !document.getElementById('video').classList.contains('vjs-live'))
+				document.getElementById('video').classList.add('vjs-live')
+
+			if (!video && window.player)
+				video = window.player
+
+			if (video && video.handleResize)
+				video.handleResize({
+					aspect: 'Default',
+					crop: 'Default',
+					zoom: 1
+				})
+
+			isPlayerClosed = false
+
+			document.removeEventListener('keyup', hotkeysKeyUp)
+
+			document.removeEventListener('keydown', hotkeysKeyDown)
+
+			document.addEventListener('keyup', hotkeysKeyUp)
+
+			document.addEventListener('keydown', hotkeysKeyDown)
+
+			player.setTitle(title)
+
+			video.src({
+				src: url
+			})
+
+			video.play()
+
+			events.emit('openPlayer', {})
+
+		},
+
 		open: async (torrent, file, initTime, noLoader, prefQuality, oldAudioTrack) => {
 
 

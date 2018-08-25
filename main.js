@@ -27,6 +27,7 @@ const autoLauncher = new AutoLaunch({
 
 const server = require('./server')
 const streams = require('./server/streams')
+const acestream = require('./server/acestream')
 
 const btoa = require('./server/utils/btoa')
 
@@ -138,6 +139,11 @@ function createWindow() {
       streams.closeAll(() => {
         process.exit()
       })
+      acestream.binary.kill(() => {
+
+      }, () => {
+
+      })
       return
     }
 
@@ -217,6 +223,11 @@ app.on('ready', () => {
     mainWindow.destroy()
     streams.closeAll(() => {
       process.exit()
+    })
+    acestream.binary.kill(() => {
+
+    }, () => {
+
     })
   }
 

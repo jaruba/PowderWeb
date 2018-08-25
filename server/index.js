@@ -76,7 +76,13 @@ const masterKey = uniqueString()
 
 const argsKey = uniqueString()
 
+const acestream = require('./acestream')
+
+const acebook = require('./utils/acebook')
+
 const qrCode = require('./utils/qrcode')
+
+let aceDownloadMsg = ''
 
 let tokens = {
   [masterKey]: 'master',
@@ -281,7 +287,7 @@ const mainServer = http.createServer(function(req, resp) {
   if (tokens[reqToken] == 'master')
     isMaster = true
 
-  if (isEmbed && ['embedStart', 'torrentData', 'getSubs', 'updateHistory'].indexOf(method) == -1 && !uri.startsWith('/srt2vtt/subtitle.vtt'))
+  if (isEmbed && ['embedStart', 'torrentData', 'getSubs', 'updateHistory', 'haveAce', 'ace', 'aceMsg'].indexOf(method) == -1 && !uri.startsWith('/srt2vtt/subtitle.vtt'))
     return page500('Invalid access token')
 
   if (method == 'settings') {
@@ -293,6 +299,11 @@ const mainServer = http.createServer(function(req, resp) {
       settings.set(ij, el)
     })
     respond({})
+    return
+  }
+
+  if (method == 'aceMsg' && urlParsed.query && urlParsed.query.torrent) {
+    respond(acestream.streamObj(urlParsed.query.torrent))
     return
   }
 
@@ -384,6 +395,201 @@ const mainServer = http.createServer(function(req, resp) {
 
       }
     }
+  }
+
+
+  const runAcePlaylist = (pid) => {
+    if (pid) {
+
+      const reqUrl = getReqUrl(req)
+
+      // create playlist of streams
+
+      if (settings.get('extPlayer')) {
+
+        // open with selected external player
+
+        const playlist = reqUrl + '/getaceplaylist.m3u?pid=' + pid + '&token=' + reqToken
+
+        helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), playlist)
+      } else {
+
+        // open with default player
+
+        const tryConnect = () => {
+          acestream.getVersion((connected) => {
+            if (connected) {
+              acestream.getPort((servPort) => {
+                  if (!servPort) {
+                      console.log('NO ACESTREAM PORT')
+                      // this means acestream is installed somewhere else and we don't have access to it
+                      // SHOULD SHOW INSTALL PROMPT
+                  } else {
+                      acestream.connect(pid, servPort, peerflixProxy, reqToken, (playlist) => {
+                        // playlist cb
+                        const filePath = path.join(app.getPath('appData'), 'playlist'+(Date.now())+'.m3u')
+                        fs.writeFile(filePath, playlist, function(err) {
+                            if (err) {
+                                return console.log(err);
+                            }
+                            shell.openItem(filePath)
+                        })
+                      }, reqUrl)
+                  }
+              })
+            }
+          })
+        }
+
+        const runAce = () => {
+          acestream.isDownloaded((downloaded) => {
+            if (downloaded) {
+              acestream.binary.run(function(didRun) {
+                if (didRun) {
+                  tryConnect()
+                } else {
+                  console.log('CAN\'T START ACESTREAM')
+                }
+              })
+            } else {
+              console.log('NO ACESTREAM INSTALLED')
+            }
+          })
+        }
+
+
+        acestream.getVersion((connected) => {
+            if (connected) {
+              acestream.getPort((servPort) => {
+                if (!servPort) {
+                  runAce()
+                } else {
+                  tryConnect()
+                }
+              })
+            } else {
+              runAce()
+            }
+        })
+
+
+      }
+
+    }
+
+  }
+
+  if (method == 'ace' && urlParsed.query && urlParsed.query.torrent) {
+
+    const tryConnect = () => {
+      acestream.getVersion((connected) => {
+        if (connected) {
+          acestream.getPort((servPort) => {
+            if (!servPort) {
+                console.log('NO ACESTREAM PORT')
+                // this means acestream is installed somewhere else and we don't have access to it
+                // SHOULD SHOW INSTALL PROMPT
+                respond({ hasAcestream: false })
+            } else {
+                respond({ hasAcestream: true })
+                acestream.connect(urlParsed.query.torrent, servPort, peerflixProxy, reqToken, null, getReqUrl(req))
+            }
+          })
+        }
+      })
+    }
+
+    const runAce = () => {
+      acestream.isDownloaded((downloaded) => {
+        if (downloaded) {
+          let oneResponse = true
+          acestream.binary.run(function(didRun, exitCode) {
+
+            if (!oneResponse) return
+            oneResponse = false
+
+            if (didRun) {
+              tryConnect()
+            } else {
+              console.log('CAN\'T START ACESTREAM')
+              page500("Can't Start Acestream, Exit Code: " + exitCode)
+            }
+          })
+        } else {
+          console.log('NO ACESTREAM INSTALLED')
+          page500("No Acestream Installed. Please Try Adding a Link Again.")
+        }
+      })
+    }
+
+    acestream.getVersion((connected) => {
+        if (connected) {
+          acestream.getPort((servPort) => {
+            if (!servPort) {
+              runAce()
+            } else {
+              tryConnect()
+            }
+          })
+        } else {
+          runAce()
+        }
+    })
+
+    return
+  }
+
+  if (method == 'aceMsg' && urlParsed.query && urlParsed.query.torrent) {
+    respond(acestream.streamObj(urlParsed.query.torrent))
+    return
+  }
+
+  if (method == 'haveAce') {
+    acestream.isDownloaded((isDownloaded) => {
+      respond({ hasAcestream: isDownloaded })
+    })
+    return
+  }
+
+  if (method == 'aceDownload') {
+    acestream.isDownloaded((isDownloaded) => {
+      if (!isDownloaded) {
+        aceDownloadMsg = 'Starting Download'
+        acestream.binary.download(
+          function downloadCb(percent) {
+            aceDownloadMsg = 'Downloading ' + percent + '%'
+          },
+          function extracting() {
+            aceDownloadMsg = 'Extracting Package'
+          },
+          function doneCb() {
+            aceDownloadMsg = 'Finished!'
+          },
+          function errCb(err) {
+            aceDownloadMsg = 'Error: ' + (err ? err.message ? err.message : err : 'Unknown Error Occured') 
+          }
+        )
+      }
+    })
+    respond({})
+    return
+  }
+
+  if (method == 'aceDownloadMsg') {
+    respond({ msg: aceDownloadMsg })
+    return
+  }
+
+  if (method == 'aceCancel' && urlParsed.query && urlParsed.query.pid) {
+    acestream.close(urlParsed.query.pid, () => {})
+    respond({})
+    return
+  }
+
+  if (method == 'aceDestroy' && urlParsed.query && urlParsed.query.pid) {
+    acestream.destroy(urlParsed.query.pid, () => {})
+    respond({})
+    return
   }
 
   if (method == 'qrCode' && urlParsed.query && urlParsed.query.qrType) {
@@ -550,6 +756,76 @@ const mainServer = http.createServer(function(req, resp) {
     return
   }
 
+  if (uri.startsWith('/getaceplaylist.m3u') && urlParsed.query && urlParsed.query.pid) {
+
+    let doneResp = false
+
+    const setResp = () => { doneResp = true }
+
+    resp.on('finish', setResp)
+    resp.on('close', setResp)
+
+    const tryConnect = () => {
+      acestream.getVersion((connected) => {
+        if (connected) {
+          acestream.getPort((servPort) => {
+              if (!servPort) {
+                  console.log('NO ACESTREAM PORT')
+                  // this means acestream is installed somewhere else and we don't have access to it
+                  // SHOULD SHOW INSTALL PROMPT
+                  page500("Acestream not Installed")
+              } else {
+                  acestream.connect(urlParsed.query.pid, servPort, peerflixProxy, reqToken, (playlist) => {
+                    // playlist cb
+                    if (doneResp) return
+                    resp.writeHead(200, {
+                      "Content-Type": "audio/x-mpegurl",
+                      "Content-Disposition": 'attachment;filename="playlist.m3u"'
+                    })
+                    resp.write(playlist, function(err) { resp.end(); })
+                    resp.end()
+                  }, getReqUrl(req))
+              }
+          })
+        }
+      })
+    }
+
+    const runAce = () => {
+      acestream.isDownloaded((downloaded) => {
+        if (downloaded) {
+          acestream.binary.run(function(didRun, exitCode) {
+            if (didRun) {
+              tryConnect()
+            } else {
+              page500("Can't Start Acestream, Exit Code: " + exitCode)
+              console.log("CAN'T START ACESTREAM")
+            }
+          })
+        } else {
+          page500("Acestream Not Installed")
+          console.log('NO ACESTREAM INSTALLED')
+        }
+      })
+    }
+
+    acestream.getVersion((connected) => {
+        if (connected) {
+          acestream.getPort((servPort) => {
+            if (!servPort) {
+              runAce()
+            } else {
+              tryConnect()
+            }
+          })
+        } else {
+          runAce()
+        }
+    })
+
+    return
+  }
+
   if ((uri.startsWith('/getplaylist.m3u') || method == 'embedStart') && urlParsed.query && urlParsed.query.id) {
 
     let doneResp = false
@@ -634,6 +910,11 @@ const mainServer = http.createServer(function(req, resp) {
 
   if (method == 'getall') {
     respond(streams.getAll())
+    return
+  }
+
+  if (method == 'getallace') {
+    respond(acebook.getAll())
     return
   }
 
@@ -883,7 +1164,7 @@ const mainServer = http.createServer(function(req, resp) {
 
     if (method == 'openInBrowser') {
       const isSSL = settings.get('webServerSSL') || false
-      opn('http' + (isSSL ? 's': '') + '://127.0.0.1:' + serverPort + '/auth?token=' + masterKey)
+      opn('http' + (isSSL ? 's': '') + '://localhost:' + serverPort + '/auth?token=' + masterKey)
       respond({})
       return
     }
@@ -1010,6 +1291,12 @@ const mainServer = http.createServer(function(req, resp) {
       return
     }
 
+    if (method == 'runAcePlaylist' && urlParsed.query.pid) {
+      runAcePlaylist(urlParsed.query.pid)
+      respond({})
+      return
+    }
+
   }
 
   if (method == 'isListening' && urlParsed.query.utime) {
@@ -1117,11 +1404,15 @@ var srv = http.createServer(function (req, res) {
     const tokenParts = uri.split('/')
     reqToken = tokenParts[2]
     uri = uri.replace(reqToken+'/','')
+  } else if (uri.startsWith('/ace-hls/')) {
+    const tokenParts = uri.split('/')
+    reqToken = tokenParts[3]
+    uri = uri.replace(reqToken+'/','')
   }
 
   const embedToken = settings.get('embedToken')
 
-  if (!reqToken || !tokens[reqToken]) {
+  if (!req.url.startsWith('/ace/r/') && !req.url.startsWith('/content/') && !reqToken && !tokens[reqToken] && embedToken != reqToken) {
     res.writeHead(500, { "Content-Type": "text/plain" })
     res.write("Invalid access token\n")
     res.end()
@@ -1129,7 +1420,7 @@ var srv = http.createServer(function (req, res) {
   }
 
   const getParams = (uri) => {
-    const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').split('/')
+    const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').replace('/ace/', '').replace('/ace-hls/', '').split('/')
     let returnObj = {}
     returnObj.infohash = parts[0]
     returnObj.fileId = parts[1]
@@ -1393,6 +1684,37 @@ var srv = http.createServer(function (req, res) {
           res.end()
         }
       })
+    } else if (uri.startsWith('/ace/') || uri.startsWith('/content/')) {
+
+      if (req.url.startsWith('/ace/r/') || req.url.startsWith('/content/')) {
+        req.url = 'http://127.0.0.1:6878' + req.url
+        proxy.web(req, res, { target: req.url });
+      } else {
+
+//      console.log('ace request')
+
+        req.url = acestream.streamLink(params.infohash)
+
+//      console.log('redirect to: ' + req.url)
+
+        proxy.web(req, res, { target: req.url });
+      }
+
+    } else if (uri.startsWith('/ace-hls/')) {
+
+      const aceHlsPort = acestream.hlsPort(params.infohash)
+
+      if (!aceHlsPort) {
+        res.writeHead(404, { "Content-Type": "text/plain" })
+        res.write("404 Not Found\n")
+        res.end()
+        return
+      }
+
+      req.url = 'http://127.0.0.1:' + aceHlsPort + '/' + params.fileId
+
+      proxy.web(req, res, { target: req.url });
+
     } else {
 
       // peerflix proxy
@@ -1426,10 +1748,10 @@ var srv = http.createServer(function (req, res) {
     })
 
     const proxyLogic = [{
-      context: ["/playlist.m3u", "/getplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
+      context: ["/playlist.m3u", "/getplaylist.m3u", "/getaceplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
       target: "http://localhost:" + port
     }, {
-      context: ["/api/", "/web/", "/meta/"],
+      context: ["/api/", "/web/", "/meta/", "/ace-hls/", "/ace/", "/content/"],
       target: "http://localhost:" + peerflixProxy
     }]
 

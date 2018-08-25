@@ -24,6 +24,11 @@ import InputDialog from './components/inputDialog'
 import HistoryListDialog from './components/historyListDialog'
 import SubtitleListDialog from './components/subtitleListDialog'
 import MessageDialog from './components/messageDialog'
+import AceDialog from './components/aceDialog'
+import AceOptsDialog from './components/aceOptsDialog'
+import AceChoiceDialog from './components/aceChoiceDialog'
+import AceInstallDialog from './components/aceInstallDialog'
+import AceNotInstalledDialog from './components/aceNotInstalledDialog'
 import QrCodeDialog from './components/qrcodeDialog'
 
 import events from 'utils/events'
@@ -120,6 +125,21 @@ export default class Modals extends PureComponent {
               break;
           case 'message':
               return <MessageDialog query={this.state.query} />;
+              break
+          case 'ace':
+              return <AceDialog query={this.state.query} />;
+              break
+          case 'aceOpts':
+              return <AceOptsDialog query={this.state.query} />;
+              break
+          case 'aceChoice':
+              return <AceChoiceDialog query={this.state.query} />;
+              break
+          case 'aceInstall':
+              return <AceInstallDialog query={this.state.query} />;
+              break
+          case 'aceNotInstalled':
+              return <AceNotInstalledDialog query={this.state.query} />;
               break
           case 'qrCode':
               return <QrCodeDialog query={this.state.query} />;

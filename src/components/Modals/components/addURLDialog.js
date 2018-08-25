@@ -4,6 +4,7 @@ import { connect } from 'react-redux'
 import { bindActionCreators } from 'redux'
 import _ from 'lodash'
 
+import modals from 'utils/modals'
 import api from 'utils/api'
 
 const focusInput = (elem) => {
@@ -34,11 +35,21 @@ export default class Modals extends PureComponent {
     document.getElementById("addMagnetUrl").removeEventListener('paste', this.pasteClipboard);
   }
 
-  handleAddMagnetInput() {
+  handleAddMagnetInput = async () => {
     const torrentUrl = document.getElementById("addMagnetUrl").value
     document.getElementById("addMagnetUrl").value = ''
+    if (torrentUrl.startsWith('acestream://')) {
+      const aceHash = torrentUrl.replace('acestream://', '')
 
-    api.addMagnet(torrentUrl)
+      const parsed = await api.get({ method: 'haveAce', json: true })
+      if (!parsed || !parsed.hasAcestream) {
+        modals.open('aceInstall', { pid: aceHash })
+      } else {
+        modals.open('aceChoice', { pid: aceHash })
+      }
+    } else {
+      api.addMagnet(torrentUrl)
+    }
 
     document.getElementById("addURLDialog").close()
   }
@@ -75,7 +86,7 @@ export default class Modals extends PureComponent {
             <div style={{margin: '0', marginBottom: '5px', fontSize: '16px'}}>
               <paper-input
                   id={'addMagnetUrl'}
-                  label="Magnet URI, HTTP or HTTPS"
+                  label="Magnet URI, AceStream or Link"
                   style={{cursor: 'pointer', float: 'right', height: '32px', top: '-5px', marginRight: '4px', textAlign: 'left', width: '100%', marginBottom: '15px', padding: '0', marginTop: '0', marginRight: '0'}}
                   onKeyDown={event => event.keyCode === 13 ? this.handleAddMagnetInput() : void 0}
                   fullWidth={true}

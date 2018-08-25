@@ -33,15 +33,18 @@ const getData = async function() {
 
     const parsed = await api.get({ method: 'getall', json: true })
 
-    if (parsed) {
+    const parsedAce = await api.get({ method: 'getallace', json: true})
+
+    if (parsed || parsedAce) {
+
+      const parsedAll = parsed && parsedAce ? Object.assign(parsed, parsedAce) : parsed ? parsed : parsedAce ? parsedAce : null
 
       if (!focused) return
 
-      if (_.size(parsed)) {
+      if (_.size(parsedAll)) {
         let totalUsed = 0
-        const ordered = _.orderBy(parsed, function(e) { if (e.downloaded) totalUsed += e.downloaded; return e.utime }, ['desc'])
+        const ordered = _.orderBy(parsedAll, function(e) { if (e.downloaded) totalUsed += e.downloaded; return e.utime }, ['desc'])
         const readableTotalUsed = readableSize(totalUsed);
-        console.log()
         events.emit('navTitle', { title: readableTotalUsed })
         window.lastTorrentId = ordered[Object.keys(ordered)[0]].utime;
         this.setState({
@@ -78,6 +81,24 @@ export default class Counter extends PureComponent {
 
   openFileMenu = (torrentId) => {
     modals.open('torrentOpts', { torrent: this.state.torrents[torrentId] })
+  }
+
+  openAceFileMenu = (aceObj) => {
+    modals.open('aceOpts', { ace: aceObj })
+  }
+
+  playAceFile = (aceHash) => {
+    const playButtonAction = JSON.parse(localStorage.getItem('playButtonAction'))
+
+    if (playButtonAction) {
+      modals.open('ace', { pid: aceHash, shouldDo: 'web' })
+    } else {
+      if (window.isMaster) {
+        api.get({ method: 'runAcePlaylist', pid: aceHash })
+      } else {
+        modals.open('ace', { pid: aceHash, shouldDo: 'playlist' })
+      }
+    }
   }
 
   playFile = async (el) => {
@@ -196,34 +217,71 @@ export default class Counter extends PureComponent {
 
       backColor = backColor == '#444' ? '#3e3e3e' : '#444'
 
-      const fileFinished = (el.downloaded >= el.totalSize)
-      const filePercent = fileFinished ? 1 : el.downloaded / el.totalSize
-      const fileProgress = Math.round(filePercent * 100)
+      if (el.isLive) {
 
-      const newFile = (
-          <div key={ij} className="dashboardFile" style={{backgroundColor: backColor}}>
-              <div className="dashboardFileButtonHold">
-                  <paper-fab icon={ 'menu' } onClick={this.openFileMenu.bind(this, ij)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
-                  <paper-fab icon={ 'av:play-arrow' } onClick={this.playFile.bind(this, el)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
-              </div>
-              <div className="torrentFile" onClick={this.openTorrent.bind(this, el)}>
-                  <div className="torrentFileProgressHold">
-                      <progress-bubble value={fileProgress} max="100" stroke-width="5">
-                          <strong>{fileProgress}<span>%</span></strong>
-                      </progress-bubble>
-                  </div>
-                  <div className="torrentFileDetails">
-                      <div className="torrentFileName">{el.name} <span className="torrentFileState" style={{ backgroundColor: el.running ? 'rgb(17, 163, 78)' : window.loadingTorrents[el.infoHash] ? '#EFA047' : 'rgb(96, 96, 96)' }}></span></div>
-                      <div className="torrentFileSubtitle">Downloaded: {fileFinished ? readableSize(el.totalSize) : readableSize(el.totalSize * filePercent)} / {readableSize(el.totalSize)}</div>
-                      <div className="torrentFileSubtitle">Uploaded: {readableSize((el.uploadedStart || 0) + el.uploaded)}</div>
-                  </div>
-                  <div style={{clear: 'both'}} />
-              </div>
-              <div style={{clear: 'both'}} />
-          </div>
-      );
-      fileList.push(newFile);
+        const fileFinished = true
+        const filePercent = 1
+        const fileProgress = 100
+
+        const newFile = (
+            <div key={ij} className="dashboardFile" style={{backgroundColor: backColor}}>
+                <div className="dashboardFileButtonHold">
+                    <paper-fab icon={ 'menu' } onClick={this.openAceFileMenu.bind(this, el)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                    <paper-fab icon={ 'av:play-arrow' } onClick={this.playAceFile.bind(this, el.pid)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                </div>
+                <div className="torrentFile" onClick={this.openAceFileMenu.bind(this, el)}>
+                    <div className="torrentFileProgressHold">
+                        <progress-bubble value={fileProgress} max="100" stroke-width="5">
+                            <strong>{fileProgress}<span>%</span></strong>
+                        </progress-bubble>
+                    </div>
+                    <div className="torrentFileDetails">
+                        <div className="torrentFileName">{el.name} <span className="torrentFileState" style={{ backgroundColor: el.running ? 'rgb(17, 163, 78)' : window.loadingTorrents[el.infoHash] ? '#EFA047' : 'rgb(96, 96, 96)' }}></span></div>
+                        <div className="torrentFileSubtitle">Live</div>
+                    </div>
+                    <div style={{clear: 'both'}} />
+                </div>
+                <div style={{clear: 'both'}} />
+            </div>
+        )
+
+        fileList.push(newFile)
+
+      } else {
+
+        const fileFinished = (el.downloaded >= el.totalSize)
+        const filePercent = fileFinished ? 1 : el.downloaded / el.totalSize
+        const fileProgress = Math.round(filePercent * 100)
+
+        const newFile = (
+            <div key={ij} className="dashboardFile" style={{backgroundColor: backColor}}>
+                <div className="dashboardFileButtonHold">
+                    <paper-fab icon={ 'menu' } onClick={this.openFileMenu.bind(this, ij)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                    <paper-fab icon={ 'av:play-arrow' } onClick={this.playFile.bind(this, el)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                </div>
+                <div className="torrentFile" onClick={this.openTorrent.bind(this, el)}>
+                    <div className="torrentFileProgressHold">
+                        <progress-bubble value={fileProgress} max="100" stroke-width="5">
+                            <strong>{fileProgress}<span>%</span></strong>
+                        </progress-bubble>
+                    </div>
+                    <div className="torrentFileDetails">
+                        <div className="torrentFileName">{el.name} <span className="torrentFileState" style={{ backgroundColor: el.running ? 'rgb(17, 163, 78)' : window.loadingTorrents[el.infoHash] ? '#EFA047' : 'rgb(96, 96, 96)' }}></span></div>
+                        <div className="torrentFileSubtitle">Downloaded: {fileFinished ? readableSize(el.totalSize) : readableSize(el.totalSize * filePercent)} / {readableSize(el.totalSize)}</div>
+                        <div className="torrentFileSubtitle">Uploaded: {readableSize((el.uploadedStart || 0) + el.uploaded)}</div>
+                    </div>
+                    <div style={{clear: 'both'}} />
+                </div>
+                <div style={{clear: 'both'}} />
+            </div>
+        )
+
+        fileList.push(newFile)
+
+      }
+
     })
+
 
     return fileList
   }
