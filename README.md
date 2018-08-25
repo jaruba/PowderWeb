@@ -1,6 +1,6 @@
 # Powder Web
 
-Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also supports Acestream Live Streams.
+Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Supports Acestream Live Streams.
 
 [See Screenshots](https://imgur.com/a/Jnxf0wf)
 
@@ -32,6 +32,7 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also su
 - Supports Secondary Torrent Client (you can set a secondary torrent client that will be used if the torrent does not include any video files)
 - Advanced Torrent and Web Server Settings
 - Managing Multiple Torrents
+- Supports Acestream Live Streams
 
 
 ## Install:
