@@ -22,7 +22,7 @@ const rimraf = require('rimraf')
 
 const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
 const tempDir = path.join(os.tmpDir(), 'PowderWeb', 'torrent-stream')
-const fastResumeDir = path.join(app.getPath('appData'), 'fastresume')
+const fastResumeDir = path.join(app.getPath('appData'), 'PowderWeb', 'fastresume')
 
 let loading = {}
 
@@ -171,6 +171,36 @@ let updateInterval = setInterval(() => {
 
 }, 1000)
 
+const completelyRemove = (iHash, engine, cb) => {
+
+    addresses.remove(engine.infoHash)
+    uploadedBook.remove(engine.infoHash)
+
+    const appDataTorrentFilePath = path.join(openerDir, engine.infoHash + '.torrent')
+
+    if (fs.existsSync(appDataTorrentFilePath)) {
+        fs.unlink(appDataTorrentFilePath, () => {})
+    }
+
+    const appDataMagnetLink = path.join(openerDir, engine.infoHash + '.magnet')
+
+    if (fs.existsSync(appDataMagnetLink)) {
+        fs.unlink(appDataMagnetLink, () => {})
+    }
+
+    const appDataFastResume = path.join(fastResumeDir, engine.infoHash + '.fastresume')
+
+    if (fs.existsSync(appDataFastResume)) {
+        fs.unlink(appDataFastResume, () => {})
+    }
+
+    if (engine)
+        engine.kill(cb)
+    else
+        cb()
+
+}
+
 const cancelTorrent = (utime, cb, force, noDelete) => {
 
     engineExists(utime, (engine, ij) => {
@@ -178,27 +208,7 @@ const cancelTorrent = (utime, cb, force, noDelete) => {
 //        if (!noDelete && (force || settings.get('removeLogic') == 1)) {
         if (settings.get('removeLogic') == 1 || (!noDelete && force)) {
 
-            addresses.remove(engine.infoHash)
-            uploadedBook.remove(engine.infoHash)
-            engine.kill(cb)
-
-            const appDataTorrentFilePath = path.join(openerDir, engine.infoHash + '.torrent')
-
-            if (fs.existsSync(appDataTorrentFilePath)) {
-                fs.unlink(appDataTorrentFilePath, () => {})
-            }
-
-            const appDataMagnetLink = path.join(openerDir, engine.infoHash + '.magnet')
-
-            if (fs.existsSync(appDataMagnetLink)) {
-                fs.unlink(appDataMagnetLink, () => {})
-            }
-
-            const appDataFastResume = path.join(fastResumeDir, engine.infoHash + '.fastresume')
-
-            if (fs.existsSync(appDataFastResume)) {
-                fs.unlink(appDataFastResume, () => {})
-            }
+            completelyRemove(engine.infoHash, engine, cb)
 
         } else if (noDelete || settings.get('removeLogic') == 2) {
 
@@ -337,9 +347,7 @@ const actions = {
 
         _.each(allTorrents, (el, ij) => {
             if (!el.running) {
-                if (el.path)
-                    rimraf(el.path, () => {})
-                addresses.remove(el.infoHash)
+                completelyRemove(el.infoHash, null, () => {})
             }
         })
     },
@@ -425,7 +433,6 @@ const actions = {
             checkConcurrency()
 
             const remover = () => {
-                addresses.remove(torrentData.infoHash)
                 delete canceled[utime]
                 if (streams[utime]) {
                     if (streams[utime].forceInterval) {
@@ -434,6 +441,7 @@ const actions = {
                     }
                     delete streams[utime]
                 }
+                completelyRemove(torrentData.infoHash, null, () => {})
             }
 
             const fail = (err) => {
@@ -536,14 +544,10 @@ const actions = {
         if (foundStreamer) {
             cancelTorrent(streamerId, cb, force, noDelete)
         } else {
-            const torrentData = addresses.get(infohash)
-            if (torrentData) {
-
-                if (torrentData.path) {
-                    rimraf(torrentData.path, () => {})
-                }
-
-                addresses.remove(torrentData.infoHash)
+            if (settings.get('removeLogic') == 1 || (!noDelete && force)) {
+                completelyRemove(streamerId, null, cb)
+            } else {
+                // do nothing
             }
         }
 
