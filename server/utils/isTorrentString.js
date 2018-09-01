@@ -20,6 +20,6 @@ module.exports = {
 		return !!(isString(str) && str.endsWith('.torrent') && path.isAbsolute(str))
 	},
 	isTorrentLink: (str) => {
-		return (!!isString(str) && isLink(str) && str.includes('.torrent'))
+		return (!!isString(str) && isLink(str) && (str.includes('.torrent') || str.includes('jackett_apikey=')))
 	}
 }
