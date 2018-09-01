@@ -15,6 +15,7 @@ var isIOSChrome = ua.match("CriOS");
 var isFirefox = ua.toLowerCase().indexOf('firefox') > -1
 var isIE = ((ua.indexOf('MSIE ') > -1) || (ua.indexOf('Trident/') > -1))
 var isSafari = /^((?!chrome|android).)*safari/i.test(ua)
+var isTizen = ua.indexOf('Tizen') > -1
 
 var isChrome = function() {
 	if (isIOSChrome) {
@@ -41,5 +42,6 @@ module.exports = {
 	isOpera: isOpera,
 	isFirefox: isFirefox,
 	isIE: isIE,
-	isSafari: isSafari
+	isSafari: isSafari,
+	isTizen: isTizen
 }
