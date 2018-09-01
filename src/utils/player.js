@@ -45,7 +45,8 @@ const defaultConfig = {
 	playButtonAction: true,
 	historyButtonList: true,
 	playNewTorrent: 0,
-	useMatroska: true
+	useMatroska: true,
+	forceVideoVisibility: false
 }
 
 _.each(defaultConfig, (el, ij) => {
@@ -1029,6 +1030,26 @@ const player = {
 			document.querySelector('.vjs-control-bar .vjs-play-control').blur()
 		})
 
+		// for samsung browser, tizen is also used on some phones,
+		// it can be based on either mozilla or opera, if this breaks
+		// other cases, we should check UA for "SMART-TV; Linux; Tizen"
+		// instead of just "Tizen"
+		// References:
+		// Tizen UAs: http://www.webapps-online.com/online-tools/user-agent-strings/dv/operatingsystem589958/tizen
+		// TV Browser UAs: https://udger.com/resources/ua-list/device-detail?device=Smart%20TV
+
+		const forceVideoVisibility = JSON.parse(localStorage.getItem('forceVideoVisibility'))
+
+		if (detectBrowser.isTizen && document.querySelector('.video-container'))
+			document.querySelector('.video-container').style.opacity = 1
+
+		if (document.getElementById('video') && forceVideoVisibility) {
+			// aditional css styles for better video visibility
+			// might not be needed, might also break Aspect Ratio, Crop, Zoom settings
+			// this class also forces the Tizen hack from above
+			document.getElementById('video').classList.add('force-visibility')
+		}
+
 	},
 
 	toggleSetting: (idx, closeSettings) => {
@@ -1622,6 +1643,11 @@ const player = {
 
     	const forceTranscode = config.alwaysTranscode()
 
+    	if (preferredFormat.isAudio) {
+    		// audio file
+    		qualities = ['audio']
+    	}
+
 		qualities.forEach((elm) => {
 
 		  if (isMatroska && !config.useMatroska()) {
@@ -1655,8 +1681,17 @@ const player = {
 
 		  } else {
 
-			const audioCodec = preferredFormat.audio || browserSupport.containerCodecs.video[preferredFormat.container].audio[0]
-			const videoCodec = preferredFormat.video || browserSupport.containerCodecs.video[preferredFormat.container].video[0]
+		  	let audioCodec
+		  	let videoCodec
+
+		  	if (preferredFormat.isAudio) {
+				audioCodec = preferredFormat.audio || browserSupport.containerCodecs.audio[preferredFormat.container].audio[0]
+		  	} else {
+
+				audioCodec = preferredFormat.audio || browserSupport.containerCodecs.video[preferredFormat.container].audio[0]
+				videoCodec = preferredFormat.video || browserSupport.containerCodecs.video[preferredFormat.container].video[0]
+
+			}
 
 			const webStreamQual = parseUrl({ type: window.location.origin + '/web/' + torrent.infoHash + '/' + el.id + '/' + elm + '.' + preferredFormat.container }).substr(1) + '&maxHeight='+ preferredFormat.maxHeight + '&maxWidth='+ preferredFormat.maxWidth + '&needsAudio=' + preferredFormat.needsAudio + '&needsVideo=' + preferredFormat.needsVideo + '&a=' + audioCodec + '&v=' + videoCodec + '&forAudio=' + preferredFormat.forAudio + '&copyts=' + (copyts ? '1' : '-1') + '&forceTranscode=' + (forceTranscode ? '1' : '-1') + '&useMatroska=' + (isMatroska ? '1' : '-1') + '&audioDelay=' + preferredFormat.audioDelay + (startTime ? '&start=' + startTime : '')
 
@@ -1673,7 +1708,7 @@ const player = {
 				selected: !!(prefQuality == elm)
 			})
 
-			if (prefQuality == elm) {
+			if (prefQuality == elm || preferredFormat.isAudio) {
 				srcList = srcs
 			}
 
@@ -1906,11 +1941,13 @@ const player = {
 
 			    const duration = videoSettings.duration
 
-			    if (duration && duration > 3600) {
-					document.getElementsByClassName('vjs-control-bar')[0].classList.add('hour-long-video')
-			    } else {
-					document.getElementsByClassName('vjs-control-bar')[0].classList.remove('hour-long-video')
-			    }
+			    if (document.getElementsByClassName('vjs-control-bar') && document.getElementsByClassName('vjs-control-bar')[0]) {
+					if (duration && duration > 3600) {
+						document.getElementsByClassName('vjs-control-bar')[0].classList.add('hour-long-video')
+					} else {
+						document.getElementsByClassName('vjs-control-bar')[0].classList.remove('hour-long-video')
+					}
+				}
 
 			    const qualities = videoSettings.qualities
 
@@ -2070,7 +2107,7 @@ const player = {
 //			        document.getElementsByClassName('vjs-control-bar')[0].classList.remove('vjs-control-bar-with-subs')
 			      }
 
-			      if (config.subSearch()) {
+			      if (config.subSearch() && !isAudio) {
 				      setTimeout(() => {
 				        api.findSubs(torrent, el, (subs) => {
 				          if (subs && subs.length) {
@@ -2128,6 +2165,18 @@ const player = {
 			      video.oldCurrentTime = video.currentTime;
 
 			    let lastTime = startTime || 0
+
+			    const isAudio = browserSupport.isAudio(parsed)
+
+			    if (document.getElementById('video') && document.getElementById('video').classList) {
+				    if (isAudio) {
+						if (!document.getElementById('video').classList.contains('vjs-audio-file'))
+							document.getElementById('video').classList.add('vjs-audio-file')
+				    } else {
+						if (document.getElementById('video').classList.contains('vjs-audio-file'))
+							document.getElementById('video').classList.remove('vjs-audio-file')
+				    }
+				}
 
 			    const preferredFormat = browserSupport.isSupported(parsed, null, config.maxCompatibility())
 

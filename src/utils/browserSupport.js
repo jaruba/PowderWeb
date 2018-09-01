@@ -85,15 +85,6 @@ const buildSupportTag = (contentType, vCodec, aCodec) => {
 
 const browserSupport = (video) => {
 
-	if (isSafari) {
-		return {
-			audio: {},
-			video: {
-				'm3u8': [ { video: containerCodecs.video.m3u8.video[0], audio: containerCodecs.video.m3u8.audio[0] } ]
-			}
-		}
-	}
-
 	if ( !video.canPlayType ) return false
 
 	const supp = { video: {}, audio: {} }
@@ -143,6 +134,13 @@ const browserSupport = (video) => {
 
 	})
 
+	if (isSafari) {
+		// overwrite video container support
+		supp.video = {
+			'm3u8': [ { video: containerCodecs.video.m3u8.video[0], audio: containerCodecs.video.m3u8.audio[0] } ]
+		}
+	}
+
 	return supp
 }
 
@@ -153,6 +151,30 @@ export default {
 	contentTypes,
 
 	containerCodecs,
+
+	isAudio: (meta) => {
+		let audioFile
+
+		if (meta.streams && meta.streams.length) {
+			let hasAudio
+			let hasVideo
+			meta.streams.some(stream => {
+				if (stream.codec_type) {
+					if (stream.codec_type == 'video') {
+						hasVideo = true
+					} else if (stream.codec_type == 'audio') {
+						hasAudio = true
+					}
+					if (hasVideo && hasAudio)
+						return true
+				}
+			})
+			audioFile = !!(hasAudio && !hasVideo)
+		}
+
+		return audioFile
+
+	},
 
 	init: (video) => {
 		if (video && !supported)
@@ -289,16 +311,48 @@ console.log('orig container: ' + origContainer)
 									}
 								}
 							})
+						} else if (type == 'audio') {
+
+							if (!supportsAll)
+								_.some(supported[type], (encodings, container) => {
+									return encodings.some(encoding => {
+										// find any valid encoding that we could use
+										if (codecConfig.needsAudio == -1 && fileEncodings.audio.indexOf(encoding.audio) > -1) {
+											codecConfig.needsAudio = fileEncodings.audio.indexOf(encoding.audio)
+										}
+										if (codecConfig.needsAudio > -1) {
+											codecConfig.audio = encoding.audio
+											console.log('set container to: '+ container)
+											origContainer = container
+											return true
+										}
+									})
+								})
+
 						}
 					}
 
-					if (origContainer && (codecConfig.needsVideo > -1 || codecConfig.needsAudio > -1)) {
-						// we set the container to the original then
-						// as we will not transcode audio or video
-						// here depending on circumstances
-						codecConfig.container = origContainer
+					if (origContainer) {
+						if (type == 'video') {
+
+							if (codecConfig.needsVideo > -1 || codecConfig.needsAudio > -1) {
+		 						// we set the container to the original then
+								// as we will not transcode audio or video
+								// here depending on circumstances
+								codecConfig.container = origContainer
+							}
+
+						} else if (type == 'audio') {
+
+							if (codecConfig.needsAudio > -1) {
+		 						// we set the container to the original then
+								// as we will not transcode audio at all
+								codecConfig.container = origContainer
+							}
+						}
 					}
-				} else {
+
+				} else if (type == 'video') {
 					// just get maxWidth && maxHeight, we need those for aspect ratio / crop
 					if (meta.streams && meta.streams.length) {
 
@@ -320,7 +374,6 @@ console.log('orig container: ' + origContainer)
 				const encId = Object.keys(supported[type])[0]
 
 				codecConfig.container = encId
-				console.log('enc id: ' + encId)
 
 				if (supported[type][encId][0].audio)
 					codecConfig.audio = supported[type][encId][0].audio
@@ -328,6 +381,10 @@ console.log('orig container: ' + origContainer)
 				if (supported[type][encId][0].video)
 					codecConfig.video = supported[type][encId][0].video
 
+			}
+
+			if (type == 'audio') {
+				codecConfig.isAudio = true
 			}
 
 			return codecConfig

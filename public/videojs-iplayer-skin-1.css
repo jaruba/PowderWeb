@@ -171,3 +171,52 @@
   width: 100% !important;
   height: 100% !important;
 }
+
+
+.vjs-audio-file .vjs-subs-caps-button {
+  display: none !important;
+}
+
+.vjs-audio-file .vjs-settings.vjs-icon-cog {
+  display: none !important;
+}
+
+.vjs-audio-file .vjs-duration {
+  right: 65px !important;
+}
+
+.vjs-audio-file .vjs-time-divider {
+  right: 71px !important;
+}
+
+.vjs-audio-file .vjs-current-time {
+  right: -17px !important;
+}
+
+.vjs-audio-file .vjs-live-control.vjs-control {
+  display: none !important;
+}
+
+.vjs-audio-file .video-container-hold {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.vjs-audio-file .video-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.force-visibility .video-container-hold {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.force-visibility .video-container {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.force-visibility .video-container {
+  opacity: 1 !important;
+}
