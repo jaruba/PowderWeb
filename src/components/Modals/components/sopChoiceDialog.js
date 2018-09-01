@@ -21,16 +21,18 @@ export default class Modals extends PureComponent {
 
   componentDidMount = () => {
 
+    console.log('sop choice')
+
     const pid = this.props.query.pid
 
     this.setState({ pid })
-    document.querySelector('#aceChoiceDialog').addEventListener('iron-overlay-closed', this.closingDialog.bind(this))
+    document.querySelector('#sopChoiceDialog').addEventListener('iron-overlay-closed', this.closingDialog.bind(this))
 
   }
 
   componentWillUnmount = () => {
 
-    document.querySelector('#aceChoiceDialog').removeEventListener('iron-overlay-closed', this.closingDialog.bind(this))
+    document.querySelector('#sopChoiceDialog').removeEventListener('iron-overlay-closed', this.closingDialog.bind(this))
 
   }
 
@@ -41,27 +43,27 @@ export default class Modals extends PureComponent {
   }
 
   startWeb() {
-    modals.open('ace', { pid: this.state.pid, shouldDo: 'web' })
+    modals.open('sop', { pid: this.state.pid, shouldDo: 'web' })
   }
 
   streamFiles() {
-    modals.open('ace', { pid: this.state.pid, shouldDo: 'playlist' })
+    modals.open('sop', { pid: this.state.pid, shouldDo: 'playlist' })
   }
 
   runPlaylist() {
-    api.get({ method: 'runAcePlaylist', pid: this.state.pid })
+    api.get({ method: 'runSopPlaylist', pid: this.state.pid })
     this.close()
   }
 
   close() {
-    document.getElementById("aceChoiceDialog").close()
+    document.getElementById("sopChoiceDialog").close()
     this.closingDialog()
   }
 
   render() {
     return (
         <paper-dialog
-            id="aceChoiceDialog"
+            id="sopChoiceDialog"
             class="modalScroll"
             style={{display: 'none', width: '440px', textAlign: 'left', borderRadius: '3px', maxWidth: '90%', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'center', overflowX: 'auto'}}
             opened={true}

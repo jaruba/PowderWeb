@@ -216,6 +216,14 @@ export default class Modals extends PureComponent {
   generalAssociateTorrentFile = () => {
     api.get({ method: 'associateTorrentFile' })
   }
+
+  generalAssociateAce = () => {
+    api.get({ method: 'associateAce' })
+  }
+  generalAssociateSop = () => {
+    api.get({ method: 'associateSop' })
+  }
+
   generalOpenDownloadFolder = () => {
     api.get({ method: 'openDefaultFolder' })
   }
@@ -524,6 +532,26 @@ export default class Modals extends PureComponent {
     this.saveLocalValue('subSearch', newValue, () => {
       this.setState({
         subSearch: newValue
+      })
+    })
+  }
+
+  generalForceVideoVisibility = () => {
+    const newValue = !this.state.forceVideoVisibility
+    if (document.getElementById('video')) {
+      if (newValue) {
+        if (!document.getElementById('video').classList.contains('force-visibility')) {
+          document.getElementById('video').classList.add('force-visibility')
+        }
+      } else {
+        if (document.getElementById('video').classList.contains('force-visibility')) {
+          document.getElementById('video').classList.remove('force-visibility')
+        }
+      }
+    }
+    this.saveLocalValue('forceVideoVisibility', newValue, () => {
+      this.setState({
+        forceVideoVisibility: newValue
       })
     })
   }
@@ -859,10 +887,46 @@ export default class Modals extends PureComponent {
 
               <paper-button
                   raised
+                  onClick={this.generalForceVideoVisibility.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                  className='playerButtons' >
+              Force Video Visibility:
+              </paper-button>
+              
+              <paper-button
+                  raised
+                  id="forcedButton"
+                  onClick={this.generalForceVideoVisibility.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center'}}
+                  className='playerButtons' >
+              { this.state.forceVideoVisibility ? 'On' : 'Off' }
+              </paper-button>
+
+              <paper-button
+                  raised
+                  id="forcedButton"
+                  onClick={this.showInfo.bind(this, 'forceVideoVisibility')}
+                  style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                  className='playerButtons' >
+              { '?' }
+              </paper-button>
+
+              <div className="settingsInfo forceVideoVisibilityInfo">
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <i>For higher compatibility with browsers, we use a method that might or might not break video visibility in the web player (although sound should still be heard) on less evolved browsers. This was initially discovered on a Samsung TV while using it's in-built browser called Tizen. Setting this to "ON" would attempt to make the video work in these rare cases too.</i>
+
+              </div>
+
+              <div style={{clear: 'both', height: '15px'}} />
+
+              <paper-button
+                  raised
                   onClick={this.generalPlayerHotkeys.bind(this)}
                   style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
                   className='playerButtons' >
-              Player Hotkeys
+              See Player Hotkeys
               </paper-button>
               
               <div style={{clear: 'both', height: '15px'}} />
@@ -982,7 +1046,42 @@ export default class Modals extends PureComponent {
 
                   <div style={{clear: 'both', height: '15px'}} />
 
-                  <i>Associating with magnet links or torrent files will automatically start video playback of a playlist with all the torrent's video files. By default, this playlist will be played with your operating system's default video player. You can although set your preferred video player from the "Video Player" setting below. However, if "Use Web Player" is set to "True", it will open a browser page with the Web Player streaming a transcoded version of the torrent's videos in order to support playback in your browser instead of opening an external video player.</i>
+                  <i>Associating with magnet links or torrent files will automatically start video playback of a playlist with all the torrent's video files. By default, this playlist will be played with your operating system's default video player. You can although set your preferred video player from the "Video Player" setting below. However, if "Use Web Player" is set to "True", it will open a browser page with the Web Player streaming a transcoded (or transmuxed) version of the torrent's videos in order to support playback in your browser instead of opening an external video player.</i>
+
+                </div>
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <paper-button
+                    raised
+                    onClick={this.generalAssociateAce.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', display: 'block', fontSize: '16px', marginRight: '15px', display: 'inline-block'}}
+                    className='playerButtons' >
+                Acestream Links
+                </paper-button>
+
+                <paper-button
+                    raised
+                    onClick={this.generalAssociateSop.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', display: 'block', fontSize: '16px', display: 'inline-block'}}
+                    className='playerButtons' >
+                SopCast Links
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.showInfo.bind(this, 'assoc')}
+                    style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                    className='playerButtons' >
+                { '?' }
+                </paper-button>
+
+                <div className="settingsInfo assocInfo">
+
+                  <div style={{clear: 'both', height: '15px'}} />
+
+                  <i>Associating with acestream or sopcast links will automatically start video playback of a playlist containing a live stream when you click links that use the "acestream://" or "sop://" protocols. By default, this playlist will be played with your operating system's default video player. You can although set your preferred video player from the "Video Player" setting below. However, if "Use Web Player" is set to "True", it will open a browser page with the Web Player streaming a transcoded (or transmuxed) version of the live stream in order to support playback in your browser instead of opening an external video player.</i>
 
                 </div>
 
@@ -1025,7 +1124,7 @@ export default class Modals extends PureComponent {
                     External Applications
                 </div>
 
-                <i>These options only apply for magnet link / torrent file associations locally. If a torrent includes video files (and the "Use Web Player" setting above is set to "False"), a video playlist will be made and loaded with the selected video player or with the default one for your operating system. If a torrent does not include video files it will start with the selected external torrent client or alternatively with the internal one.</i>
+                <i>These options only apply for link / torrent file associations locally. If a torrent includes video files (and the "Use Web Player" setting above is set to "False"), a video playlist will be made and loaded with the selected video player or with the default one for your operating system. If a torrent does not include video files it will start with the selected external torrent client or alternatively with the internal one.</i>
 
                 <div style={{clear: 'both', height: '15px'}} />
 
@@ -1059,7 +1158,7 @@ export default class Modals extends PureComponent {
 
                   <div style={{clear: 'both', height: '15px'}} />
 
-                  <i>This reffers to the video player that will be used when running from magnet link / torrent file associations in the case of a torrent that includes video files.</i>
+                  <i>This reffers to the video player that will be used when running from link / torrent file associations in the case of a torrent that includes video files.</i>
 
                 </div>
 
@@ -1718,7 +1817,7 @@ export default class Modals extends PureComponent {
 
                 <div style={{clear: 'both', height: '7px'}} />
 
-                <i>Searching for torrents is done exclusively through Jackett, a separate software that needs to be installed and configured before searching can work.</i>
+                <i>Searching for torrents is done exclusively through Jackett, a separate software that needs to be <span className="whiteLink" onClick={window.externalJackettLink.bind(this)}>installed and configured</span> before searching can work.</i>
 
                 <div style={{clear: 'both', height: '15px'}} />
 

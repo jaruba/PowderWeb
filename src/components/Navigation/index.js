@@ -18,6 +18,7 @@ import _ from 'lodash'
 import isElectron from 'utils/electron'
 import { jackettLinkAnchor } from 'utils/misc'
 import NavTitle from './navTitle'
+import { getParameterByName } from 'utils/misc'
 
 window.externalJackettLink = () => {
   api.get({ method: 'jackettLink', anchor: jackettLinkAnchor() })
@@ -40,17 +41,20 @@ const goToDashboard = (props) => {
 }
 
 const openSettings = () => {
-  if (window.torrentDataPage && window.torrentDataHash) {
-    const openSettingsDataPage = async () => {
-      const parsed = await api.get({ method: 'getall', json: true })
-      if (parsed) {
-        if (_.size(parsed) && parsed[window.torrentDataHash]) {
-          const torrent = parsed[window.torrentDataHash]
-          modals.open('torrentOpts', { torrent })
+  if (window.torrentDataPage) {
+    const iHash = getParameterByName('hash')
+    if (iHash) {
+      const openSettingsDataPage = async () => {
+        const parsed = await api.get({ method: 'getall', json: true })
+        if (parsed) {
+          if (_.size(parsed) && parsed[iHash]) {
+            const torrent = parsed[iHash]
+            modals.open('torrentOpts', { torrent })
+          }
         }
       }
+      openSettingsDataPage()
     }
-    openSettingsDataPage()
   } else {
 
     modals.open('settings')
@@ -131,7 +135,7 @@ const searchButtonPressed = async () => {
       settings = {}
 
     if (!settings.jackettHost || !settings.jackettKey)
-      modals.open('message', { message: 'Searching works exclusively through Jackett. This means that <span class="whiteLink" onClick="window.externalJackettLink()">Jackett</span> needs to be installed and configured on your system then setup in Powder Web in order for Searching to work.' })
+      modals.open('message', { message: 'Searching works exclusively through Jackett. <span class="whiteLink" onClick="window.externalJackettLink()">Install and configure Jackett</span> on your system to enable the searching feature.' })
     else
       modals.open('doSearch')
 

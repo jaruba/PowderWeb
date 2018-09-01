@@ -1,7 +1,7 @@
 const _ = require('lodash')
 const settings = require('electron-settings')
 
-let addresses = settings.get('acebook')
+let addresses = settings.get('sopbook')
 
 if (_.size(addresses)) {
 	for (var pid in addresses) {
@@ -18,16 +18,16 @@ module.exports = {
 		return addresses
 	},
 	get: (pid) => {
-		return addresses[pid]
+		return addresses[pid] || false
 	},
 	add: (address) => {
 		addresses[address.pid] = address
-		settings.set('acebook', addresses)
+		settings.set('sopbook', addresses)
 	},
 	remove: (pid) => {
 		if (addresses[pid]) {
 			delete addresses[pid]
-			settings.set('acebook', addresses)
+			settings.set('sopbook', addresses)
 		}
 	}
 }

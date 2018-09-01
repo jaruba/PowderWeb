@@ -45,9 +45,6 @@ const getData = async function() {
 
       events.emit('navTitle', { title: parsed.name })
 
-      if (!window.torrentDataHash)
-        window.torrentDataHash = parsed.infoHash
-
       this.setState({ torrent: parsed })
 
     } else {

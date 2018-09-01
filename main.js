@@ -28,6 +28,7 @@ const autoLauncher = new AutoLaunch({
 const server = require('./server')
 const streams = require('./server/streams')
 const acestream = require('./server/acestream')
+const sop = require('./server/sopcast')
 
 const btoa = require('./server/utils/btoa')
 
@@ -94,6 +95,26 @@ function createServer() {
   })
 }
 
+const quit = () => {
+
+//  if (mainWindow)
+//    mainWindow.destroy()
+
+  var ticks = 3
+
+  const tick = () => {
+    ticks--
+    if (!ticks)
+      process.exit()
+  }
+
+  sop.unhackSopPlayer(() => {
+    sop.kill(tick, tick)
+  })
+  streams.closeAll(tick)
+  acestream.binary.kill(tick, tick)
+}
+
 function createWindow() {
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -135,15 +156,7 @@ function createWindow() {
   mainWindow.on('close', (e) => {
 
     if (process.platform == 'linux') {
-      mainWindow.destroy()
-      streams.closeAll(() => {
-        process.exit()
-      })
-      acestream.binary.kill(() => {
-
-      }, () => {
-
-      })
+      quit()
       return
     }
 
@@ -218,17 +231,6 @@ app.on('ready', () => {
   const copyInternetLink = () => { copyLink('internet') }
   const showBrowser = () => {
     opn('http' + (server.isSSL ? 's': '') + '://127.0.0.1:' + server.port() + '/auth?token=' + server.masterKey)
-  }
-  const quit = () => {
-    mainWindow.destroy()
-    streams.closeAll(() => {
-      process.exit()
-    })
-    acestream.binary.kill(() => {
-
-    }, () => {
-
-    })
   }
 
   const toggleStartUp = () => {

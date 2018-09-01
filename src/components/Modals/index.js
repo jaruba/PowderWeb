@@ -30,6 +30,11 @@ import AceChoiceDialog from './components/aceChoiceDialog'
 import AceInstallDialog from './components/aceInstallDialog'
 import AceNotInstalledDialog from './components/aceNotInstalledDialog'
 import QrCodeDialog from './components/qrcodeDialog'
+import SopDialog from './components/sopDialog'
+import SopOptsDialog from './components/sopOptsDialog'
+import SopChoiceDialog from './components/sopChoiceDialog'
+import SopInstallDialog from './components/sopInstallDialog'
+import SopNotInstalledDialog from './components/sopNotInstalledDialog'
 
 import events from 'utils/events'
 
@@ -143,6 +148,21 @@ export default class Modals extends PureComponent {
               break
           case 'qrCode':
               return <QrCodeDialog query={this.state.query} />;
+              break
+          case 'sop':
+              return <SopDialog query={this.state.query} />;
+              break
+          case 'sopOpts':
+              return <SopOptsDialog query={this.state.query} />;
+              break
+          case 'sopChoice':
+              return <SopChoiceDialog query={this.state.query} />;
+              break
+          case 'sopInstall':
+              return <SopInstallDialog query={this.state.query} />;
+              break
+          case 'sopNotInstalled':
+              return <SopNotInstalledDialog query={this.state.query} />;
               break
       }
   }

@@ -36,6 +36,8 @@ const map = {
     peerID: 'PW0700',
     addressbook: {},
     acebook: {},
+    acenamebook: {},
+    sopbook: {},
     uploaded: {},
     maxConcurrency: 2,
     users: {},

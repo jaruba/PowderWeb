@@ -47,6 +47,15 @@ export default class Modals extends PureComponent {
       } else {
         modals.open('aceChoice', { pid: aceHash })
       }
+    } else if (torrentUrl.startsWith('sop://')) {
+      const sopHash = torrentUrl
+
+      const parsed = await api.get({ method: 'haveSop', json: true })
+      if (!parsed || !parsed.hasSopcast) {
+        modals.open('sopInstall', { pid: sopHash })
+      } else {
+        modals.open('sopChoice', { pid: sopHash })
+      }
     } else {
       api.addMagnet(torrentUrl)
     }
@@ -86,7 +95,7 @@ export default class Modals extends PureComponent {
             <div style={{margin: '0', marginBottom: '5px', fontSize: '16px'}}>
               <paper-input
                   id={'addMagnetUrl'}
-                  label="Magnet URI, AceStream or Link"
+                  label="Magnet URI, AceStream, SopCast or Link"
                   style={{cursor: 'pointer', float: 'right', height: '32px', top: '-5px', marginRight: '4px', textAlign: 'left', width: '100%', marginBottom: '15px', padding: '0', marginTop: '0', marginRight: '0'}}
                   onKeyDown={event => event.keyCode === 13 ? this.handleAddMagnetInput() : void 0}
                   fullWidth={true}

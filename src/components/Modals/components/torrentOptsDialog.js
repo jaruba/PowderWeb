@@ -25,7 +25,7 @@ export default class Modals extends PureComponent {
 
     const torrent = this.props.query.torrent
 
-    this.setState({ torrent, pulsing: torrent.pulsing, forced: torrent.forced })
+    this.setState({ torrent, pulsing: torrent.pulsing, forced: torrent.forced, update: Date.now() })
     document.querySelector('#torrentOptsDialog').addEventListener('iron-overlay-closed', this.closingDialog.bind(this))
 
   }
@@ -99,7 +99,7 @@ export default class Modals extends PureComponent {
             })
     torrent.forced = !torrent.forced
     torrent.pulsing = false
-    this.setState({ torrent, pulsing: torrent.pulsing, forced: torrent.forced })
+    this.setState({ torrent, pulsing: torrent.pulsing, forced: torrent.forced, update: Date.now() })
   }
 
   runPlaylist = async () => {
@@ -192,7 +192,7 @@ export default class Modals extends PureComponent {
       torrent.forced = false
       torrent.pulsing = newValue || false
 
-      this.setState({ torrent, pulsing: torrent.pulsing, forced: torrent.forced })
+      this.setState({ torrent, pulsing: torrent.pulsing, forced: torrent.forced, update: Date.now() })
 
     })
 

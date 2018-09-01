@@ -3,24 +3,16 @@ const needle = require('needle')
 const fs = require('fs')
 const path = require('path')
 
-const ffmpeg = require('easy-ffmpeg')
-
-const http = require('http')
-const pUrl = require('url')
-
-const pump = require('pump')
-
-const getPort = require('get-port')
-
-const rangeParser = require('range-parser')
-
 const rimraf = require('rimraf')
 
 const acebook = require('./utils/acebook')
-
-const _ = require('lodash')
+const acenamebook = require('./utils/acenamebook')
 
 const atob = require('./utils/atob')
+
+const downloader = require('./utils/downloadPackage')
+
+const hlsLink = require('./utils/live-trans')
 
 let acestreamUsed = false
 
@@ -37,293 +29,7 @@ const timeouts = {}
 let linuxProcess = null
 let linuxPort = null
 
-const cleanAceCache = () => {
-	// This would of cleared old cache files from ace,
-	// and it would of worked great if ace didn't lock it's cache files..
-	// keeping it here ftm, maybe i'll get other ideas regarding it:
-
-	// let cacheLoc
-
-	// if (process.platform == 'darwin') {
-	// 	cacheLoc = path.join(app.getPath("appData"), "PowderWeb", "acestream", "Contents/Resources/wineprefix/drive_c/_acestream_cache_")
-	// } else if (process.platform = 'win32') {
-	// 	cacheLoc = path.join((downloadLoc.split('\\')[0] || 'C:'), '_acestream_cache_')
-	// }
-
-	// if (cacheLoc && streams[pid] && streams[pid].infohash) {
-	// 	// now clear ace cache too
-	// 	fs.readdir(cacheLoc, (err, files) => {
-	// 		if (!err && files && files.length) {
-	// 			function indexFromFile(fl) {
-	// 				let flIndex = -1
-
-	// 				if (fl.startsWith('live.' + streams[pid].infohash + '.'))
-	// 					flIndex = parseInt(fl.replace('live.' + streams[pid].infohash + '.', ''))
-	// 				else if (fl.startsWith('hls.' + streams[pid].infohash + '.'))
-	// 					flIndex = parseInt(fl.replace('hls.' + streams[pid].infohash + '.', ''))
-
-	// 				return flIndex
-	// 			}
-	// 			let largestIndex = 0
-	// 			files.forEach(file => {
-	// 				const flIndex = indexFromFile(file)
-	// 				if (flIndex > -1 && largestIndex < flIndex)
-	// 					largestIndex = flIndex
-	// 			})
-	// 			if (largestIndex && largestIndex > 1) {
-	// 				files.forEach(file => {
-	// 					const flIndex = indexFromFile(file)
-	// 					if (flIndex > -1 && flIndex < largestIndex -1) {
-	// 						const rmFile = file
-	// 						rimraf(path.join(cacheLoc, file), { maxBusyTries: 100 }, (err, data) => {
-	// 							if (err && err.message)
-	// 								console.log(err.message)
-	// 							console.log('GC Removed Ace File: '+rmFile)
-	// 						})
-	// 					}
-	// 				})
-	// 			}
-	// 		}
-	// 	})
-	// }
-}
-
-function transToFile(args, file, isHls, cb, pid) {
-
-	var timestamp = new Date().getTime();
-	var hlsFolder = 'hls-' + pid;
-
-	try {
-		fs.mkdirSync(path.join(TMP, hlsFolder));
-	} catch(e) {}
-
-	function log(msg) {
-		console.log(msg)
-	}
-
-	var command = ffmpeg({ source: streams[pid].hlsLink || ace.streamLink(pid), timeout: false, logger: {debug: log, info: log, warn: log, error: log} });
-	
-	command.on('start', function(commandLine) {
-
-//	   console.log('Spawned Ffmpeg with command: ', commandLine);
-	   
-	   cb && cb(null, path.join(TMP, hlsFolder));
-
-	}).on('error', function(err) {
-		if (err && err.msg) {
-			if (err.msg.includes('Error opening filters!')) {
-				// retry
-				if (retries[pid] && retries[pid] > 0) {
-					retries[pid]--
-					// restart process without cb
-					transToFile(args, file, isHls, null, pid)
-				} else {
-					console.log('Gave up Starting FFmpeg')
-				}
-			}
-			console.log('Ffmpeg Error: '+err.message)
-		}
-//		cb(err.message);
-	}).on('close', function(err,msg) {
-		console.log('ffmpeg close')
-		console.log(err)
-		console.log(msg)
-	}).on('exit', function(err, msg) {
-		console.log('ffmpeg exit')
-		console.log(err)
-		console.log(msg)
-	})
-	.on('end', function(err, stdout, stderr) {
-		console.log('Finished processing', err, stdout, stderr);
-	})
-
-	command.outputOptions(args);
-	
-	command.save(path.join(TMP, hlsFolder, 'out' + (isHls ? '.m3u8' : '')));
-	
-	commands[pid] = command
-	
-}
-
-function hlsServer(filePath, cb, prebufTime, port, pid, ffmpegFlags, urlToTranscode) {
-  const server = http.createServer();
-
-  requests[pid] = {}
-
-  const connections = {}
-
-  server.on('connection', function(conn) {
-    const key = conn.remoteAddress + ':' + conn.remotePort
-    connections[key] = conn
-    conn.on('close', function() {
-      delete connections[key]
-    })
-  })
-
-  server.destroy = function(cb) {
-    server.close(cb)
-    for (var key in connections)
-      connections[key].destroy()
-  }
-
-  servers[pid] = server
-
-  server.on('request', function (request, response) {
-
-	var u = pUrl.parse(request.url);
-    var file = path.join(filePath, u.pathname.substr(1));
-
-    if (u.pathname.endsWith('.ts')) {
-	    requests[pid][u.pathname.substr(1)] = Date.now()
-	    lastTsFile[pid] = parseInt(u.pathname.substr(1).replace('out','').replace('.ts',''))
-    }
-
-//	console.log('http request: ', file);
-
-    if (request.method === 'OPTIONS' && request.headers['access-control-request-headers']) {
-      response.setHeader('Access-Control-Allow-Origin', request.headers.origin)
-      response.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-      response.setHeader(
-          'Access-Control-Allow-Headers',
-          request.headers['access-control-request-headers'])
-      response.setHeader('Access-Control-Max-Age', '1728000')
-
-      response.end()
-      return
-    }
-
-    if (request.headers.origin) response.setHeader('Access-Control-Allow-Origin', request.headers.origin)
-
-    if (u.pathname === '/favicon.ico' || !fs.existsSync(file)) {
-      response.statusCode = 404
-      response.end()
-      return
-    }
-
-    var range = request.headers.range
-	var fileLength = fs.lstatSync(file).size;
-    range = range && rangeParser(fileLength, range)[0]
-    response.setHeader('Accept-Ranges', 'bytes')
-	if (file.endsWith('.m3u8')) {
-//		response.setHeader('Content-Type', 'application/x-mpegURL')
-        response.setHeader('Content-Type', 'application/vnd.apple.mpegurl')
-	} else {
-	    response.setHeader('Content-Type', 'video/MP2T')
-	}
-
-    if (!range) {
-      response.setHeader('Content-Length', fileLength)
-      if (request.method === 'HEAD') return response.end()
-
-      pump(fs.createReadStream(file), response);
-
-      return
-    }
-
-    response.statusCode = 206
-    response.setHeader('Content-Length', range.end - range.start + 1)
-    response.setHeader('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + fileLength)
-    if (request.method === 'HEAD') return response.end()
-	  
-    pump(fs.createReadStream(file, range), response);
-  })
-
-  server.on('connection', function (socket) {
-    socket.setTimeout(Number.MAX_SAFE_INTEGER)
-  })
-  
-  server.on('listening', function () {
-
-	var streamer = 'http://127.0.0.1:' + server.address().port + '/out.m3u8';
-
-//	console.log('Streaming URL: ', streamer);
-
-	let startTime = Date.now()
-
-	var checkForFile = function() {
-		delete timerStart[pid]
-		fs.readdir(filePath, (err, files) => {
-			if (err == null && files && files.length > 2) {
-				if (timeouts[pid]) {
-					clearTimeout(timeouts[pid])
-					delete timeouts[pid]
-				}
-				cb(null, server, streamer)
-			} else {
-				timerStart[pid] = setTimeout(checkForFile, prebufTime || 2000)
-			}
-		})
-	}
-
-	timeouts[pid] = setTimeout(() => {
-		delete timeouts[pid]
-		if (streams[pid] && !streams[pid].transcodeLink) {
-			streams[pid].status = 'Torrent failed to load in Web Player. Please try again later or try downloading the playlist.'
-			ace.close(pid, () => {})
-		}
-	}, 300000) // 5 min timeout
-	
-	timerStart[pid] = setTimeout(checkForFile, prebufTime || 2000);
-
-	var gc = function() {
-
-		delete timerGC[pid]
-
-		const lastTs = lastTsFile[pid]
-		const lastTsFiles = ['out'+(lastTs-3)+'.ts', 'out'+(lastTs-2)+'.ts', 'out'+(lastTs-1)+'.ts', 'out'+lastTs+'.ts']
-		if (requests[pid] && _.size(requests[pid]) > 20) {
-			// garbace cleaning old ts files
-			for (var key in requests[pid]) {
-				if (lastTsFiles.indexOf(key) == -1) {
-					const tsIndex = parseInt(key.replace('out', '').replace('.ts', ''))
-					if (requests[pid][key] && requests[pid][key] < Date.now() - 180000) {
-						if (tsIndex < lastTs) {
-							// remove ts files that have not been requested in the last 3 min and are not the last 4 ts files requested
-							const flPath = path.join(filePath, key)
-							const rmKey = key
-							rimraf(flPath, { maxBusyTries: 100 }, (err, data) => {
-//								console.log('GC Removed HLS TS: '+rmKey)
-								delete requests[pid][key]
-							})
-						}
-					}
-				}
-			}
-		}
-
-		if (filePath) {
-			// remove old, unrequested ts files too
-			fs.readdir(filePath, (err, files) => {
-				if (!err && files && files.length) {
-					files.forEach(file => {
-						if (file.endsWith('.ts')) {
-							const tsIndex = parseInt(file.replace('out', '').replace('.ts', ''))
-							if (!requests[pid][file] && tsIndex < lastTs - 10) {
-								const flPath = path.join(filePath, file)
-								const rmKey = file
-								rimraf(flPath, { maxBusyTries: 100 }, (err, data) => {
-//									console.log('GC Removed HLS TS: '+rmKey)
-								})
-							}
-						}
-					})
-				}
-			})
-		}
-
-//		cleanAceCache()
-
-		timerGC[pid] = setTimeout(gc, 120000); // every 2 minutes
-	}
-
-	timerGC[pid] = setTimeout(gc, 120000); // every 2 minutes
-
-  });
-
-  console.log('starting hls server with port: ' + port);
-
-  server.listen(port || null);
-}
+let triedHack = false
 
 const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlistCb, requestHost) => {
 
@@ -360,50 +66,15 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 			// needs transcoding
 			if (!streams[torrentHash].transcodeLink) {
 
-				if (commands[torrentHash]) {
-					commands[torrentHash].kill('SIGINT')
-					delete commands[torrentHash]
-				}
-
-				if (timeouts[torrentHash]) {
-					clearTimeout(timeouts[torrentHash])
-					delete timeouts[torrentHash]
-				}
-
-				if (timerStart[torrentHash]) {
-					clearTimeout(timerStart[torrentHash])
-					delete timerStart[torrentHash]
-				}
-
-				if (servers[torrentHash]) {
-					// stop transcoding server
-					servers[torrentHash].destroy(() => {})
-					delete servers[torrentHash]
-				}
-
-				// should start transcoding server
-				let ffmpegFlags = [
-					'-c:v', 'libx264', // libx264 || copy
-					'-c:a', 'aac', // aac || copy
-					'-strict', '-2',
-					'-vbsf', 'h264_mp4toannexb',
-					'-pix_fmt', 'yuv420p',
-					'-copyts',
-					'-mpegts_copyts', '1',
-					'-preset', 'veryfast',
-					'-hls_list_size', '0',
-	//				"-hls_playlist_type", "vod",
-				];
-
-				getPort({ port: 12859 }).then((port) => {
-					transToFile(ffmpegFlags, streams[torrentHash].directLink, true, function(err, filePath) {
-						hlsServer(filePath, function(err, server, url) {
-//							console.log('http://127.0.0.1:3000/embed?url='+encodeURIComponent(url))
-							streams[torrentHash].transcodeLink = (requestHost || ('http://127.0.0.1:' + peerflixProxy)) + '/ace-hls/' + streams[torrentHash].pid + '/' + reqToken + '/out.m3u8'
-							acebook.add(streams[torrentHash])
-						}, 2000, port, streams[torrentHash].pid, ffmpegFlags, streams[torrentHash].directLink);
-					}, streams[torrentHash].pid)
+				hlsLink.start(torrentHash, (streams[torrentHash].hlsLink || ace.streamLink(torrentHash)), (err, server, url) => {
+//					console.log('http://127.0.0.1:3000/embed?url='+encodeURIComponent(url))
+					streams[torrentHash].transcodeLink = (requestHost || ('http://127.0.0.1:' + peerflixProxy)) + '/hls/' + streams[torrentHash].pid + '/' + reqToken + '/out.m3u8'
+					acebook.add(streams[torrentHash])
+				}, (err) => {
+					streams[torrentHash].status = err || 'Unknown Error'
+					acebook.add(streams[torrentHash])
 				})
+
 			} else {
 				// do nothing, handled on UI side
 			}
@@ -526,27 +197,13 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 							return
 						}
 
-						let ffmpegFlags = [
-							'-c:v', 'libx264', // libx264 || copy
-							'-c:a', 'aac', // aac || copy
-							'-strict', '-2',
-							'-vbsf', 'h264_mp4toannexb',
-							'-pix_fmt', 'yuv420p',
-							'-copyts',
-							'-mpegts_copyts', '1',
-							'-preset', 'veryfast',
-							'-hls_list_size', '0',
-			//				"-hls_playlist_type", "vod",
-						];
-
-						getPort({ port: 12859 }).then((port) => {
-							transToFile(ffmpegFlags, streamLink, true, function(err, filePath) {
-								hlsServer(filePath, function(err, server, url) {
-//									console.log('http://127.0.0.1:3000/embed?url='+encodeURIComponent(url))
-									streams[torrentHash].transcodeLink = (requestHost || ('http://127.0.0.1:' + peerflixProxy)) + '/ace-hls/' + streams[torrentHash].pid + '/' + reqToken + '/out.m3u8'
-									acebook.add(streams[torrentHash])
-								}, 2000, port, streams[torrentHash].pid, ffmpegFlags, streamLink);
-							}, streams[torrentHash].pid)
+						hlsLink.start(torrentHash, (streams[torrentHash].hlsLink || ace.streamLink(torrentHash)), (err, server, url) => {
+		//					console.log('http://127.0.0.1:3000/embed?url='+encodeURIComponent(url))
+							streams[torrentHash].transcodeLink = (requestHost || ('http://127.0.0.1:' + peerflixProxy)) + '/hls/' + streams[torrentHash].pid + '/' + reqToken + '/out.m3u8'
+							acebook.add(streams[torrentHash])
+						}, (err) => {
+							streams[torrentHash].status = err || 'Unknown Error'
+							acebook.add(streams[torrentHash])
 						})
 
 						return
@@ -609,7 +266,7 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 									const infoDataParsed = JSON.parse(infoData)
 									streams[torrentHash].infohash = infoDataParsed.infohash
 									const videoTitle = decodeURIComponent(infoDataParsed.files[0][0])
-									streams[torrentHash].name = videoTitle
+									streams[torrentHash].name = acenamebook.get(torrentHash) || videoTitle
 									acebook.add(streams[torrentHash])
 									return
 								}
@@ -675,10 +332,6 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 
 }
 
-const getStream = async () => {
-
-}
-
 let aceVersion
 
 const { app } = require('electron')
@@ -693,91 +346,79 @@ const spawn = child.spawn
 const downloadLoc = path.join(app.getPath('appData'), 'PowderWeb')
 
 const ace = {
-	getStream,
+	rename: (pid, name) => {
+		if (streams[pid]) {
+			streams[pid].name = name
+			acebook.add(streams[pid])
+		} else {
+			const streamObj = acebook.get(pid)
+			streamObj.name = name
+			acebook.add(streamObj)
+		}
+		acenamebook.add(pid, name)
+	},
 	connect,
 	close: (pid, cb) => {
-		if (timeouts[pid]) {
-			clearTimeout(timeouts[pid])
-			delete timeouts[pid]
-		}
-		if (timerStart[pid]) {
-			clearTimeout(timerStart[pid])
-			delete timerStart[pid]
-		}
-		if (timerGC[pid]) {
-			clearTimeout(timerGC[pid])
-			delete timerGC[pid]
-		}
-		function afterSocketClose() {
+		hlsLink.destroy(pid, () => {
+			function afterSocketClose() {
 
-			function stopStream() {
-				if (streams[pid] && streams[pid].infohash) {
-					// delete torrent cache files
-					let cacheLoc
+				function stopStream() {
+					if (streams[pid] && streams[pid].infohash) {
+						// delete torrent cache files
+						let cacheLoc
 
-					if (process.platform == 'darwin') {
-						cacheLoc = path.join(app.getPath("appData"), "PowderWeb", "acestream", "Contents/Resources/wineprefix/drive_c/_acestream_cache_")
-					} else if (process.platform = 'win32') {
-						cacheLoc = path.join((downloadLoc.split('\\')[0] || 'C:'), '_acestream_cache_')
-					}
+						if (process.platform == 'darwin') {
+							cacheLoc = path.join(app.getPath("appData"), "PowderWeb", "acestream", "Contents/Resources/wineprefix/drive_c/_acestream_cache_")
+						} else if (process.platform = 'win32') {
+							cacheLoc = path.join((downloadLoc.split('\\')[0] || 'C:'), '_acestream_cache_')
+						}
 
-					if (cacheLoc) {
-						rimraf(path.join(cacheLoc, 'live.'+streams[pid].infohash+'.*'), { maxBusyTries: 100 }, (err, data) => {
-							rimraf(path.join(cacheLoc, 'hls.'+streams[pid].infohash+'.*'), { maxBusyTries: 100 }, (err, data) => {
-								cb()
+						if (cacheLoc) {
+							rimraf(path.join(cacheLoc, 'live.'+streams[pid].infohash+'.*'), { maxBusyTries: 100 }, (err, data) => {
+								rimraf(path.join(cacheLoc, 'hls.'+streams[pid].infohash+'.*'), { maxBusyTries: 100 }, (err, data) => {
+									cb()
+								})
 							})
-						})
+						} else {
+							cb()
+						}
 					} else {
 						cb()
 					}
-				} else {
-					cb()
+					if (streams[pid]) {
+						delete streams[pid].directLink
+						delete streams[pid].transcodeLink
+						streams[pid].status = 'Could not load torrent. Please try again later.'
+						streams[pid].running = false
+						acebook.add(streams[pid])
+					}
 				}
-				if (streams[pid]) {
-					delete streams[pid].directLink
-					delete streams[pid].transcodeLink
-					streams[pid].status = 'Could not load torrent. Please try again later.'
-					streams[pid].running = false
-					acebook.add(streams[pid])
-				}
-			}
 
-			if (sockets[pid]) {
-				// delete socket
-				delete sockets[pid]
-			}
-			if (commands[pid]) {
-				// stop transcoding process
-				commands[pid].kill('SIGINT')
-				delete commands[pid]
-			}
-			if (servers[pid]) {
-				// stop transcoding server
-				servers[pid].destroy(function() {
-					delete servers[pid]
-					// delete the temporary transcoding server files
-					rimraf(path.join(TMP, 'hls-' + pid), { maxBusyTries: 100 }, (err, data) => { stopStream() })
-				})
-			} else {
+				if (sockets[pid]) {
+					// delete socket
+					delete sockets[pid]
+				}
+
 				stopStream()
 			}
-		}
 
-		if (sockets[pid] && sockets[pid].write) {
-			// stop torrent
-			sockets[pid].on('close', function() {
+			if (sockets[pid] && sockets[pid].write) {
+				// stop torrent
+				sockets[pid].on('close', function() {
+					afterSocketClose()
+				})
+				sockets[pid].write('STOP\r\n')
+				sockets[pid].write('SHUTDOWN\r\n')
+			} else {
 				afterSocketClose()
-			})
-			sockets[pid].write('STOP\r\n')
-			sockets[pid].write('SHUTDOWN\r\n')
-		} else {
-			afterSocketClose()
-		}
+			}
+		})
 	},
 	destroy: (pid, cb) => {
 		if (streams[pid] && streams[pid].running) {
 			ace.close(pid, () => {
 				acebook.remove(pid)
+				acenamebook.remove(pid)
 			})
 		} else {
 			acebook.remove(pid)
@@ -806,9 +447,6 @@ const ace = {
 	},
 	streamLink: (pid) => {
 		return 'http://127.0.0.1:6878/ace/getstream?id=' + pid
-	},
-	hlsPort: (pid) => {
-		return servers[pid] && servers[pid].address ? servers[pid].address().port : false
 	},
 	getVersion: (cb) => {
 		// check if we can connect to the server
@@ -852,7 +490,7 @@ const ace = {
 			const getDirectories = source => fs.readdirSync(source)
 
 			getDirectories(app.getPath('appData')).forEach((dirNm) => {
-				if (dirNm.startsWith('com.aceengine.pow-'))
+				if (dirNm.startsWith('com.aceengine.powder'))
 					portLocs.push(path.join(app.getPath('appData'), dirNm, locOnDrive))
 			})
 		} else if (process.platform == 'win32') {
@@ -896,7 +534,7 @@ const ace = {
 			const getDirectories = source => fs.readdirSync(source)
 
 			getDirectories(app.getPath('appData')).forEach((dirNm) => {
-				if (dirNm.startsWith('com.aceengine.pow-'))
+				if (dirNm.startsWith('com.aceengine.powder'))
 					portLocs.push(path.join(app.getPath('appData'), dirNm, locOnDrive))
 			})
 		} else if (process.platform == 'win32') {
@@ -954,108 +592,212 @@ const ace = {
 	binary: {
 		run: (cb) => {
 
-			ace.binary.kill(() => {
-				ace.deletePortFile(() => {
-					let binaryLoc
+			// const tryHack = () => {
+			// 	triedHack = true
+			// 	const wineLoc = path.join(downloadLoc, 'acestream/Contents/MacOS/startwine')
+			// 	fs.readFile(wineLoc, (err, data) => {
+			// 	  if (err || !data) {
+			// 	  	cb(false, code)
+			// 	  } else {
+			// 	  	const wineLines = data.toString().split('\n')
 
-					if (process.platform == 'darwin') {
-						binaryLoc = path.join(downloadLoc, 'acestream/Contents/MacOS/startwine')
-					} else if (process.platform == 'win32') {
-						binaryLoc = path.join(downloadLoc, 'acestream\\engine\\ace_engine.exe')
-					} else if (process.platform == 'linux') {
-						binaryLoc = 'acestreamplayer.engine'
+			// 	  	wineLines.splice(2, 0, '#')
+
+			// 	  	fs.writeFile(wineLoc, wineLines.join('\n'), (err) => {
+			// 			if (err) {
+			// 				cb(false, code)
+			// 			} else {
+			// 				const plistLoc = path.join(downloadLoc, 'acestream/Contents/Info.plist')
+			// 				fs.readFile(plistLoc, (err, data) => {
+			// 				  if (err || !data) {
+			// 				  	cb(false, code)
+			// 				  } else {
+			// 				  	const lines = data.toString().split('\n')
+			// 				  	const randomNumber = Math.floor(Math.random() * 100)
+			// 				  	lines.forEach((line, ij) => {
+			// 				  		if (line.includes('com.aceengine.powderweb_dep')) {
+			// 				  			lines[ij] = '    <string>com.aceengine.powderweb_dep'+randomNumber+'</string>'
+			// 				  		} else if (line.includes('aceenginepowderweb')) {
+			// 				  			lines[ij] = '    <string>aceenginepowderweb'+randomNumber+'</string>'
+			// 				  		}
+			// 				  	})
+
+			// 				  	fs.writeFile(plistLoc, lines.join('\n'), (err) => {
+			// 						if (err) {
+			// 							cb(false, code)
+			// 						} else {
+			// 							triedHack = true
+			// 							ace.binary.run(cb)
+			// 						}
+			// 					})
+			// 				  }
+			// 				})
+			// 			}
+			// 		})
+			// 	  }
+			// 	})
+			// }
+
+			// if (!triedHack) {
+			// 	tryHack()
+			// 	return
+			// }
+
+			const afterKill = () => {
+				let binaryLoc
+
+				if (process.platform == 'darwin') {
+					binaryLoc = path.join(downloadLoc, 'acestream/Contents/MacOS/startwine')
+				} else if (process.platform == 'win32') {
+					binaryLoc = path.join(downloadLoc, 'acestream\\engine\\ace_engine.exe')
+				} else if (process.platform == 'linux') {
+					binaryLoc = 'acestreamplayer.engine'
+				}
+
+				if (!binaryLoc)
+					return cb()
+
+				let aceProcess
+
+				if (process.platform == 'linux') {
+					aceProcess = spawn(binaryLoc, ['--client-console'])
+					linuxProcess = true
+					linuxPort = false
+				} else {
+//						console.log('SPAWNING: ' + binaryLoc)
+					aceProcess = spawn(binaryLoc)
+				}
+
+				aceProcess.stdout.on("data", data => {
+					const dt = data.toString()
+//					console.log("[ace out]", dt);
+					if (process.platform == 'linux' && dt.includes('ready to receive remote commands on ')) {
+						linuxPort = parseInt(dt.split('ready to receive remote commands on ')[1])
+						cb(true)
 					}
+				})
 
-					if (!binaryLoc)
-						return cb()
+				let noError = true
 
-					let aceProcess
+				if (process.platform != 'linux') {
+					const startRunTime = Date.now()
+					const findAcePort = () => {
+						if (noError) {
+							ace.getPort((acePort) => {
+								if (!acePort) {
+									if (Date.now() - startRunTime > 180000) {
+										cb(false) // 3 min timeout
+									} else {
+										setTimeout(findAcePort, 2000)
+									}
+								} else {
+									cb(true)
+								}
+							})
+						}
+					}
+					setTimeout(findAcePort, 3000)
+				}
+
+
+				aceProcess.stderr.on("data", data => {
+					console.log("[ace msg]", data.toString())
+					if ("darwin" === process.platform && data.toString().includes("fixme:msvcrt:__clean_type_info_names_internal")) {
+						console.warn('[ace bug] fixme:msvcrt:__clean_type_info_names_internal')
+					}
+				})
+
+				const startTime = Date.now()
+
+				aceProcess.on("close", (code, signal) => {
+
+					console.warn("[ace close]", code, signal)
+
+					aceProcess = null
 
 					if (process.platform == 'linux') {
-						aceProcess = spawn(binaryLoc, ['--client-console'])
-						linuxProcess = true
+						linuxProcess = false
 						linuxPort = false
-					} else {
-//						console.log('SPAWNING: ' + binaryLoc)
-						aceProcess = spawn(binaryLoc)
-					}
+					} else if (process.platform === "darwin" && code === 0 && Date.now() - startTime < 15000) {
+						console.warn("[ace restart]")
+						ace.binary.run(cb)
+					} else if (process.platform != 'linux') {
+						if (process.platform === "darwin" && code === 2 && !triedHack) {
+							triedHack = true
+							const wineLoc = path.join(downloadLoc, 'acestream/Contents/MacOS/startwine')
+							fs.readFile(wineLoc, (err, data) => {
+							  if (err || !data) {
+							  	cb(false, code)
+							  } else {
+							  	const wineLines = data.split('\n')
 
-					aceProcess.stdout.on("data", data => {
-						const dt = data.toString()
-	//					console.log("[ace out]", dt);
-						if (process.platform == 'linux' && dt.includes('ready to receive remote commands on ')) {
-							linuxPort = parseInt(dt.split('ready to receive remote commands on ')[1])
-							cb(true)
-						}
-					})
+							  	wineLines.splice(2, 0, '#')
 
-					let noError = true
-
-					if (process.platform != 'linux') {
-						const startRunTime = Date.now()
-						const findAcePort = () => {
-							if (noError) {
-								ace.getPort((acePort) => {
-									if (!acePort) {
-										if (Date.now() - startRunTime > 180000) {
-											cb(false) // 3 min timeout
-										} else {
-											setTimeout(findAcePort, 2000)
-										}
+							  	fs.writeFile(wineLoc, wineLines.join('\n'), (err) => {
+									if (err) {
+										cb(false, code)
 									} else {
-										cb(true)
+										const plistLoc = path.join(downloadLoc, 'acestream/Contents/Info.plist')
+										fs.readFile(plistLoc, (err, data) => {
+										  if (err || !data) {
+										  	cb(false, code)
+										  } else {
+										  	const lines = data.split('\n')
+										  	const randomNumber = Math.floor(Math.random() * 100)
+										  	lines.forEach((line, ij) => {
+										  		if (line.includes('com.aceengine.powderweb_dep')) {
+										  			lines[ij] = '    <string>com.aceengine.powderweb_dep'+randomNumber+'</string>'
+										  		} else if (line.includes('aceenginepowderweb')) {
+										  			lines[ij] = '    <string>aceenginepowderweb'+randomNumber+'</string>'
+										  		}
+										  	})
+
+										  	fs.writeFile(plistLoc, lines.join('\n'), (err) => {
+												if (err) {
+													cb(false, code)
+												} else {
+													triedHack = true
+													ace.binary.run(cb)
+												}
+											})
+										  }
+										})
 									}
 								})
-							}
-						}
-						setTimeout(findAcePort, 3000)
-					}
-
-
-					aceProcess.stderr.on("data", data => {
-						console.log("[ace msg]", data.toString())
-						if ("darwin" === process.platform && data.toString().includes("fixme:msvcrt:__clean_type_info_names_internal")) {
-							console.warn('[ace bug] fixme:msvcrt:__clean_type_info_names_internal')
-						}
-					})
-
-					const startTime = Date.now()
-
-					aceProcess.on("close", (code, signal) => {
-
-						console.warn("[ace close]", code, signal)
-
-						aceProcess = null
-
-						if (process.platform == 'linux') {
-							linuxProcess = false
-							linuxPort = false
-						} else if (process.platform === "darwin" && code === 0 && Date.now() - startTime < 15000) {
-							console.warn("[ace restart]")
-							ace.binary.run(cb)
-						} else if (process.platform != 'linux') {
+							  }
+							})
+						} else {
 							cb(false, code)
 						}
+					}
 
-					})
-
-					aceProcess.on("exit", (code, signal) => {
-						console.warn("[ace exit]", code, signal)
-						noError = false
-					})
-
-					aceProcess.on("error", err => {
-					  console.warn("[ace error]", err);
-					})
 				})
-			}, (killErr) => { console.log('Kill Ace Error: ' + killErr) })
+
+				aceProcess.on("exit", (code, signal) => {
+					console.warn("[ace exit]", code, signal)
+					noError = false
+				})
+
+				aceProcess.on("error", err => {
+				  console.warn("[ace error]", err);
+				})
+			}
+
+			if (!acestreamUsed) {
+				// kill acestream only if it's being ran by a different process
+				ace.binary.kill(() => {
+					ace.deletePortFile(() => {
+						afterKill()
+					})
+				}, (killErr) => { console.log('Kill Ace Error: ' + killErr) })
+			}
 		},
 
 		kill: (cb, errorCb) => {
-			if (!acestreamUsed && process.platfrom != 'darwin') {
-				cb()
-				return
-			}
+//			if (!acestreamUsed && process.platfrom != 'darwin') {
+//				cb()
+//				return
+//			}
 			if (process.platform == 'darwin') {
 				exec('kill $(ps aux | grep -E "PowderWeb/acestream" | grep -v grep | awk \'{print $2}\')', () => {
 					exec('kill $(ps aux | grep -E "'+atob("U29kYSBQbGF5ZXI=")+'/acestream" | grep -v grep | awk \'{print $2}\')', () => {
@@ -1063,19 +805,16 @@ const ace = {
 					})
 				})
 			} else if (process.platform == 'win32') {
-				exec('tasklist', (body, data, err) => {
-					if (body || err) {
-						errorCb(err.message || err)
-					} else if (/ace_engine\.exe/.test(data)) {
+				exec('tasklist', (err, data, stderr) => {
+					if (!err && !stderr && /ace_engine\.exe/.test(data)) {
 						console.warn('[ace running] killing it')
 						exec('taskkill /IM ace_engine.exe /F', (err, stdout, stderr) => {
 							if (err || stderr) {
 								console.warn('[ace err] can\'t kill process', err, stderr)
-								errorCb('can\'t kill process')
 							} else {
 								console.log('[ace] killed process')
-								setTimeout(cb, 100)
 							}
+							setTimeout(cb, 100)
 						})
 					} else {
 						cb()
@@ -1088,63 +827,14 @@ const ace = {
 			}
 		},
 
-		extract: (fromPath, toPath, cb, errorCb) => {
-
-			const unzipper = new (require('decompress-zip'))(fromPath)
-
-			unzipper.on('error', function(err) {
-				console.warn(err)
-				errorCb('Couldn\'t Decompress Archive')
-			})
-
-			unzipper.on('extract', cb)
-
-			unzipper.extract({
-				path: toPath
-			})
-
-		},
-
 		download: (downloading, extracting, cb, errorCb) => {
 
 			const fileLink = 'https://powder.media/ace/' + process.platform + '/acestream.zip'
 
 			const tempFile = path.join(TMP, 'acestream.zip')
-			const fileStream = fs.createWriteStream(tempFile)
 
-			require('simple-get')(fileLink, (err, p) => {
+			downloader.download(fileLink, tempFile, downloading, extracting, cb, errorCb)
 
-				let retain
-				let lowestDelta
-
-				if (err) {
-
-					errorCb(err.message || err)
-
-				} else {
-
-					lowDelta = p.headers['content-length']
-					retain = 0
-					let percent = 0
-
-					p.on('data', (pack) => {
-						const lastPercent = percent
-						retain = retain + pack.length
-						percent = Math.round(100 * retain / lowDelta)
-						if (percent !== lastPercent)
-							downloading(percent)
-					})
-
-					fileStream.on('finish', () => {
-						fileStream.close(() => {
-							extracting()
-							ace.binary.extract(tempFile, downloadLoc, cb, errorCb)
-						})
-					})
-
-					p.pipe(fileStream)
-				}
-			})
 		}
 	}
 }

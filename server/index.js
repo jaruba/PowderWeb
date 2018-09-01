@@ -11,6 +11,11 @@ const fastResumeDir = path.join(dir, 'fastresume')
 
 const hlsVod = require('../node_modules/hls-vod/hls-vod.js')
 
+const rimraf = require('rimraf')
+
+// remove old playlist files
+rimraf(path.join(dir, 'playlist*.m3u'), { maxBusyTries: 100 }, (err, data) => { })
+
 //hlsVod(ffmpeg)
 
 var transcoderPath = ffmpeg()
@@ -22,6 +27,7 @@ transcoderPath._getFfmpegPath(function(err, ffpath) { ffmpegPath = ffpath })
 transcoderPath._getFfprobePath(function(err, ffpath) { ffprobePath = ffpath })
 
 const videoPresets = require('./presets/videoPresets')
+const audioPresets = require('./presets/audioPresets')
 
 // without this, `electron-settings` fails on very first run:
 if (!fs.existsSync(dir))
@@ -64,6 +70,8 @@ const subtitles = require('./utils/subtitles')
 
 const sslUtil = require('./utils/ssl')
 
+const hlsLink = require('./utils/live-trans')
+
 const srt2vtt = require('srt-to-vtt')
 
 const opn = require('opn')
@@ -80,9 +88,15 @@ const acestream = require('./acestream')
 
 const acebook = require('./utils/acebook')
 
+const sopbook = require('./utils/sopbook')
+
 const qrCode = require('./utils/qrcode')
 
+const sop = require('./sopcast')
+
 let aceDownloadMsg = ''
+
+let sopDownloadMsg = ''
 
 let tokens = {
   [masterKey]: 'master',
@@ -383,7 +397,7 @@ const mainServer = http.createServer(function(req, resp) {
           // open with default player
 
           streams.createPlaylist(torrentId, organizedFiles, reqToken, false, playlist => {
-            const filePath = path.join(app.getPath('appData'), 'playlist'+(Date.now())+'.m3u')
+            const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
             fs.writeFile(filePath, playlist, function(err) {
                 if (err) {
                     return console.log(err);
@@ -397,6 +411,60 @@ const mainServer = http.createServer(function(req, resp) {
     }
   }
 
+  const runSopPlaylist = (pid) => {
+    if (pid) {
+
+      const reqUrl = getReqUrl(req)
+
+      // create playlist of streams
+
+      if (settings.get('extPlayer')) {
+
+        // open with selected external player
+
+        const playlist = reqUrl + '/getsopplaylist.m3u?pid=' + pid + '&token=' + reqToken
+
+        helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), playlist)
+
+      } else {
+
+
+        let doneResp = false
+
+        const setResp = () => { doneResp = true }
+
+        resp.on('finish', setResp)
+        resp.on('close', setResp)
+
+        const tryConnect = () => {
+          sop.connect(urlParsed.query.pid, peerflixProxy, reqToken, (playlist) => {
+            // playlist cb
+            const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+            fs.writeFile(filePath, playlist, (err) => {
+                if (err) {
+                    return console.log(err);
+                }
+                shell.openItem(filePath)
+            })
+          }, reqUrl)
+        }
+
+        const runSop = () => {
+          sop.isDownloaded((downloaded) => {
+            if (downloaded) {
+              tryConnect()
+            } else {
+              page500("Sopcast Not Installed")
+              console.log('NO SOPCAST INSTALLED')
+            }
+          })
+        }
+
+        runSop()
+
+      }
+    }
+  }
 
   const runAcePlaylist = (pid) => {
     if (pid) {
@@ -427,7 +495,7 @@ const mainServer = http.createServer(function(req, resp) {
                   } else {
                       acestream.connect(pid, servPort, peerflixProxy, reqToken, (playlist) => {
                         // playlist cb
-                        const filePath = path.join(app.getPath('appData'), 'playlist'+(Date.now())+'.m3u')
+                        const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
                         fs.writeFile(filePath, playlist, function(err) {
                             if (err) {
                                 return console.log(err);
@@ -477,6 +545,88 @@ const mainServer = http.createServer(function(req, resp) {
 
     }
 
+  }
+
+  if (method == 'sop' && urlParsed.query && urlParsed.query.torrent) {
+
+    const tryConnect = () => {
+      respond({ hasSopcast: true })
+      sop.connect(urlParsed.query.torrent, peerflixProxy, reqToken, null, getReqUrl(req))
+    }
+
+    const runSop = () => {
+      sop.isDownloaded((downloaded) => {
+        if (downloaded) {
+          tryConnect()
+        } else {
+          console.log('NO SOPCAST INSTALLED')
+          page500("No Sopcast Installed. Please Try Adding a Link Again.")
+        }
+      })
+    }
+
+    runSop()
+
+    return
+  }
+
+  if (method == 'sopMsg' && urlParsed.query && urlParsed.query.torrent) {
+    respond(sop.streamObj(urlParsed.query.torrent))
+    return
+  }
+
+  if (method == 'haveSop') {
+    sop.isDownloaded((isDownloaded) => {
+      respond({ hasSopcast: isDownloaded })
+    })
+    return
+  }
+
+  if (method == 'sopDownload') {
+    sop.isDownloaded((isDownloaded) => {
+      if (!isDownloaded) {
+        sopDownloadMsg = 'Starting Download'
+        sop.download(
+          function downloadCb(percent) {
+            sopDownloadMsg = 'Downloading ' + percent + '%'
+          },
+          function extracting() {
+            sopDownloadMsg = 'Extracting Package'
+          },
+          function doneCb() {
+            sopDownloadMsg = 'Finished!'
+          },
+          function errCb(err) {
+            sopDownloadMsg = 'Error: ' + (err ? err.message ? err.message : err : 'Unknown Error Occured') 
+          }
+        )
+      }
+    })
+    respond({})
+    return
+  }
+
+  if (method == 'sopDownloadMsg') {
+    respond({ msg: sopDownloadMsg })
+    return
+  }
+
+  if (method == 'sopRename' && urlParsed.query && urlParsed.query.pid && urlParsed.query.name) {
+    sop.rename(urlParsed.query.pid, urlParsed.query.name)
+    respond({})
+    return
+  }
+
+  if (method == 'sopCancel' && urlParsed.query && urlParsed.query.pid) {
+    sop.close(urlParsed.query.pid, () => {})
+    respond({})
+    return
+  }
+
+  if (method == 'sopDestroy' && urlParsed.query && urlParsed.query.pid) {
+    sop.destroy(urlParsed.query.pid, () => {})
+    respond({})
+    return
   }
 
   if (method == 'ace' && urlParsed.query && urlParsed.query.torrent) {
@@ -577,6 +727,12 @@ const mainServer = http.createServer(function(req, resp) {
 
   if (method == 'aceDownloadMsg') {
     respond({ msg: aceDownloadMsg })
+    return
+  }
+
+  if (method == 'aceRename' && urlParsed.query && urlParsed.query.pid && urlParsed.query.name) {
+    acestream.rename(urlParsed.query.pid, urlParsed.query.name)
+    respond({})
     return
   }
 
@@ -756,6 +912,44 @@ const mainServer = http.createServer(function(req, resp) {
     return
   }
 
+  if (uri.startsWith('/getsopplaylist.m3u') && urlParsed.query && urlParsed.query.pid) {
+
+    let doneResp = false
+
+    const setResp = () => { doneResp = true }
+
+    resp.on('finish', setResp)
+    resp.on('close', setResp)
+
+    const tryConnect = () => {
+      sop.connect(urlParsed.query.pid, peerflixProxy, reqToken, (playlist) => {
+        // playlist cb
+        if (doneResp) return
+        resp.writeHead(200, {
+          "Content-Type": "audio/x-mpegurl",
+          "Content-Disposition": 'attachment;filename="playlist.m3u"'
+        })
+        resp.write(playlist, function(err) { resp.end(); })
+        resp.end()
+      }, getReqUrl(req))
+    }
+
+    const runSop = () => {
+      sop.isDownloaded((downloaded) => {
+        if (downloaded) {
+          tryConnect()
+        } else {
+          page500("Sopcast Not Installed")
+          console.log('NO SOPCAST INSTALLED')
+        }
+      })
+    }
+
+    runSop()
+
+    return
+  }
+
   if (uri.startsWith('/getaceplaylist.m3u') && urlParsed.query && urlParsed.query.pid) {
 
     let doneResp = false
@@ -865,7 +1059,7 @@ const mainServer = http.createServer(function(req, resp) {
 
               streams.createPlaylist(torrentId, organizedFiles, reqToken, urlParsed.query.fileID || false, playlist => {
                 if (isMaster && urlParsed.query.openNow) {
-                  const filePath = path.join(app.getPath('appData'), 'playlist'+(Date.now())+'.m3u')
+                  const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
                   fs.writeFile(filePath, playlist, function(err) {
                       if (err) {
                           return console.log(err);
@@ -913,8 +1107,8 @@ const mainServer = http.createServer(function(req, resp) {
     return
   }
 
-  if (method == 'getallace') {
-    respond(acebook.getAll())
+  if (method == 'getallextra') {
+    respond(Object.assign({}, acebook.getAll() || {}, sopbook.getAll() || {}))
     return
   }
 
@@ -1155,7 +1349,13 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (method == 'jackettLink') {
-    shell.openExternal('https://github.com/Jackett/Jackett' + (urlParsed.query && urlParsed.query.anchor ? ('#'+urlParsed.query.anchor) : ''))
+    shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Jackett')
+    respond({})
+    return
+  }
+
+  if (method == 'sopGuideLink') {
+    shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Sopcast')
     respond({})
     return
   }
@@ -1212,13 +1412,25 @@ const mainServer = http.createServer(function(req, resp) {
     }
 
     if (method == 'associateMagnetLink') {
-      register.magnet()
+      register.link('magnet')
       respond({})
       return
     }
 
     if (method == 'associateTorrentFile') {
       register.torrent()
+      respond({})
+      return
+    }
+
+    if (method == 'associateAce') {
+      register.link('acestream')
+      respond({})
+      return
+    }
+
+    if (method == 'associateSop') {
+      register.link('sop')
       respond({})
       return
     }
@@ -1293,6 +1505,12 @@ const mainServer = http.createServer(function(req, resp) {
 
     if (method == 'runAcePlaylist' && urlParsed.query.pid) {
       runAcePlaylist(urlParsed.query.pid)
+      respond({})
+      return
+    }
+
+    if (method == 'runSopPlaylist' && urlParsed.query.pid) {
+      runSopPlaylist(urlParsed.query.pid)
       respond({})
       return
     }
@@ -1404,7 +1622,7 @@ var srv = http.createServer(function (req, res) {
     const tokenParts = uri.split('/')
     reqToken = tokenParts[2]
     uri = uri.replace(reqToken+'/','')
-  } else if (uri.startsWith('/ace-hls/')) {
+  } else if (uri.startsWith('/hls/')) {
     const tokenParts = uri.split('/')
     reqToken = tokenParts[3]
     uri = uri.replace(reqToken+'/','')
@@ -1420,25 +1638,35 @@ var srv = http.createServer(function (req, res) {
   }
 
   const getParams = (uri) => {
-    const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').replace('/ace/', '').replace('/ace-hls/', '').split('/')
+    const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').replace('/ace/', '').replace('/hls/', '').replace('/sop/', '').split('/')
     let returnObj = {}
     returnObj.infohash = parts[0]
     returnObj.fileId = parts[1]
     if (parts[2]) {
       const moreParts = parts[2].split('.')
-      returnObj.videoQuality = moreParts[0]
-      returnObj.videoContainer = parts[2].split('.').pop()
-      returnObj.needsVideo = urlParsed.query.needsVideo
-      returnObj.needsAudio = urlParsed.query.needsAudio
-      returnObj.forAudio = urlParsed.query.forAudio
-      returnObj.maxHeight = urlParsed.query.maxHeight
-      returnObj.maxWidth = urlParsed.query.maxWidth
-      returnObj.audio = urlParsed.query.a ? videoPresets.codecMap[urlParsed.query.a] : false
-      returnObj.video = urlParsed.query.v ? videoPresets.codecMap[urlParsed.query.v] : false
-      returnObj.copyts = urlParsed.query.copyts
-      returnObj.forceTranscode = urlParsed.query.forceTranscode
-      returnObj.useMatroska = urlParsed.query.useMatroska
-      returnObj.audioDelay = parseFloat(urlParsed.query.audioDelay)
+      if (moreParts[0] == 'audio') {
+        returnObj.isAudio = true
+        returnObj.videoContainer = parts[2].split('.').pop()
+        returnObj.needsAudio = urlParsed.query.needsAudio
+        returnObj.forAudio = urlParsed.query.forAudio
+        returnObj.audio = urlParsed.query.a ? audioPresets.codecMap[urlParsed.query.a] : false
+        returnObj.copyts = urlParsed.query.copyts
+        returnObj.forceTranscode = urlParsed.query.forceTranscode
+      } else {
+        returnObj.videoQuality = moreParts[0]
+        returnObj.videoContainer = parts[2].split('.').pop()
+        returnObj.needsVideo = urlParsed.query.needsVideo
+        returnObj.needsAudio = urlParsed.query.needsAudio
+        returnObj.forAudio = urlParsed.query.forAudio
+        returnObj.maxHeight = urlParsed.query.maxHeight
+        returnObj.maxWidth = urlParsed.query.maxWidth
+        returnObj.audio = urlParsed.query.a ? videoPresets.codecMap[urlParsed.query.a] : false
+        returnObj.video = urlParsed.query.v ? videoPresets.codecMap[urlParsed.query.v] : false
+        returnObj.copyts = urlParsed.query.copyts
+        returnObj.forceTranscode = urlParsed.query.forceTranscode
+        returnObj.useMatroska = urlParsed.query.useMatroska
+        returnObj.audioDelay = parseFloat(urlParsed.query.audioDelay)
+      }
     }
     return returnObj
   }
@@ -1457,8 +1685,19 @@ var srv = http.createServer(function (req, res) {
   if (uri.startsWith('/web/')) {
     // ffmpeg proxy
 
-    const videoParams = videoPresets[params.videoContainer]
-    const sizeParams = videoPresets.quality[params.videoQuality]
+    let videoParams
+    let sizeParams
+
+    if (params.isAudio) {
+
+      videoParams = audioPresets[params.videoContainer]
+
+    } else {
+
+      videoParams = videoPresets[params.videoContainer]
+      sizeParams = videoPresets.quality[params.videoQuality]
+
+    }
 
     res.setHeader('content-type', videoParams.contentType)
 
@@ -1475,24 +1714,30 @@ var srv = http.createServer(function (req, res) {
 
     let outputOpts = []
 
-    const resized = params.needsVideo > -1 && (params.videoQuality == params.maxHeight+'p' || sizeParams.resolution == params.maxWidth+'x?') ? false : true
+    let resized = false
+
+    if (!params.isAudio) {
+      resized = params.needsVideo > -1 && (params.videoQuality == params.maxHeight+'p' || sizeParams.resolution == params.maxWidth+'x?') ? false : true
+    }
 
     if (!params.videoContainer)
       params.videoContainer = urlParsed.pathname.split('.').pop()
 
 //    if (params.needsVideo > -1 && !resized)
-    outputOpts.unshift('-map 0:v:'+(params.needsVideo > -1 ? params.needsVideo : 0))
+    if (!params.isAudio) {
+      outputOpts.unshift('-map 0:v:'+(params.needsVideo > -1 ? params.needsVideo : 0))
+    }
+
     outputOpts.unshift('-map ' + (params.audioDelay ? '1' : '0') + ':a:'+(params.forAudio > -1 ? params.forAudio : params.needsAudio > -1 ? params.needsAudio : 0))
 
     const chromeProfile = (params.useMatroska > -1 && params.videoContainer == 'mp4')
 
-    if (chromeProfile)
-      outputOpts = outputOpts.concat(videoParams.chromeOptions)
-    else
-      outputOpts = outputOpts.concat(videoParams.outputOptions)
+    if (!params.isAudio) {
+      outputOpts = outputOpts.concat(videoParams[(chromeProfile ? 'chrome' : 'output') + 'Options'])
 
-    if (!params.audioDelay && (params.copyts > -1 || chromeProfile)) {
-      outputOpts.push('-copyts')
+      if (!params.audioDelay && (params.copyts > -1 || chromeProfile)) {
+        outputOpts.push('-copyts')
+      }
     }
 
 
@@ -1500,6 +1745,37 @@ var srv = http.createServer(function (req, res) {
 
     if (params.forceTranscode > -1 || params.forAudio > -1 || params.needsAudio == -1) {
       shouldAudio = true
+    }
+
+    if (params.isAudio) {
+
+      const whichAudio = shouldAudio ? (params.audio ? params.audio : videoParams.codecs.audio) : 'copy'
+
+      if (['mp4', 'mp3', 'oga'].indexOf(params.videoContainer) > -1) {
+
+        var command = ffmpeg(peerflixUrl)
+
+        if(start) {
+          command.seekInput(convertSecToTime(start))
+        }
+
+        command.format(params.videoContainer == 'oga' ? 'ogg' : params.videoContainer)
+
+        command
+        .addOptions('-acodec ' + whichAudio)
+        .addOptions('-ac 2')
+        .outputOptions(outputOpts)
+        .on('error', function(err) {
+          console.log('an error happened: ' + err.message);
+        })
+
+
+        command.pipe(res, { end: true });
+
+      } else {
+        page404()
+      }
+      return
     }
 
     let shouldVideo = false
@@ -1700,9 +1976,17 @@ var srv = http.createServer(function (req, res) {
         proxy.web(req, res, { target: req.url });
       }
 
-    } else if (uri.startsWith('/ace-hls/')) {
+    } else if (uri.startsWith('/sop/')) {
 
-      const aceHlsPort = acestream.hlsPort(params.infohash)
+      req.url = sop.streamLink(params.infohash)
+
+//      console.log('redirect to: ' + req.url)
+
+      proxy.web(req, res, { target: req.url });
+
+    } else if (uri.startsWith('/hls/')) {
+
+      const aceHlsPort = hlsLink.port(params.infohash)
 
       if (!aceHlsPort) {
         res.writeHead(404, { "Content-Type": "text/plain" })
@@ -1748,10 +2032,10 @@ var srv = http.createServer(function (req, res) {
     })
 
     const proxyLogic = [{
-      context: ["/playlist.m3u", "/getplaylist.m3u", "/getaceplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
+      context: ["/playlist.m3u", "/getplaylist.m3u", "/getaceplaylist.m3u", "/getsopplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
       target: "http://localhost:" + port
     }, {
-      context: ["/api/", "/web/", "/meta/", "/ace-hls/", "/ace/", "/content/"],
+      context: ["/api/", "/web/", "/meta/", "/hls/", "/ace/", "/content/", "/sop/"],
       target: "http://localhost:" + peerflixProxy
     }]
 

@@ -38,22 +38,22 @@ export default class Modals extends PureComponent {
     super(props)
 
     this.state = {
-      ace: false
+      sop: false
     }
   }
 
   componentDidMount = () => {
 
-    const ace = this.props.query.ace
+    const sop = this.props.query.sop
 
-    this.setState({ ace, update: Date.now() })
-    document.querySelector('#aceOptsDialog').addEventListener('iron-overlay-closed', this.closingDialog.bind(this))
+    this.setState({ sop, update: Date.now() })
+    document.querySelector('#sopOptsDialog').addEventListener('iron-overlay-closed', this.closingDialog.bind(this))
 
   }
 
   componentWillUnmount = () => {
 
-    document.querySelector('#aceOptsDialog').removeEventListener('iron-overlay-closed', this.closingDialog.bind(this))
+    document.querySelector('#sopOptsDialog').removeEventListener('iron-overlay-closed', this.closingDialog.bind(this))
 
   }
 
@@ -64,54 +64,53 @@ export default class Modals extends PureComponent {
   }
 
   togglePauseTorrent = async () => {
-    const ace = this.state.ace
-    if (ace) {
-      if (ace.running) {
-        api.get({ method: 'aceCancel', pid: ace.pid })
+    const sop = this.state.sop
+    if (sop) {
+      if (sop.running) {
+        api.get({ method: 'sopCancel', pid: sop.pid })
         this.close()
       }
     }
   }
 
   deleteTorrent() {
-    const ace = this.state.ace
-    if (ace) {
-      api.get({ method: 'aceDestroy', pid: ace.pid })
+    const sop = this.state.sop
+    if (sop) {
+      api.get({ method: 'sopDestroy', pid: sop.pid })
       this.close()
     }
   }
 
   streamFiles() {
-    const ace = this.state.ace
-    if (ace) {
-      window.open(api.parseUrl({ type: 'getaceplaylist.m3u', pid: ace.pid }), "_blank")
+    const sop = this.state.sop
+    if (sop) {
+      window.open(api.parseUrl({ type: 'getsopplaylist.m3u', pid: sop.pid }), "_blank")
     }
     this.close()
+  }
+
+  runPlaylist = async () => {
+
+    api.get({ method: 'runSopPlaylist', pid: this.state.sop.pid })
+
+    this.close()
+
   }
 
   renameChannel() {
 
     getValueString('New Channel Name:', '', '[^]', 10000, (newValue, cb) => {
-      api.get({ method: 'aceRename', pid: this.state.ace.pid, name: newValue })
+      api.get({ method: 'sopRename', pid: this.state.sop.pid, name: newValue })
       cb()
     })
-
-  }
-
-  runPlaylist = async () => {
-
-    api.get({ method: 'runAcePlaylist', pid: this.state.ace.pid })
-
-    this.close()
-
   }
 
   streamWebPlayer = async () => {
 
-    const ace = this.state.ace
+    const sop = this.state.sop
 
-    if (ace) {
-      modals.open('ace', { pid: ace.pid, shouldDo: 'web' })
+    if (sop) {
+      modals.open('sop', { pid: sop.pid, shouldDo: 'web' })
     }
 
     this.close()
@@ -119,14 +118,14 @@ export default class Modals extends PureComponent {
   }
 
   close() {
-    document.getElementById("aceOptsDialog").close()
+    document.getElementById("sopOptsDialog").close()
     this.closingDialog()
   }
 
   render() {
     return (
         <paper-dialog
-            id="aceOptsDialog"
+            id="sopOptsDialog"
             class="modalScroll"
             style={{display: 'none', width: '440px', textAlign: 'left', borderRadius: '3px', maxWidth: '90%', backgroundColor: '#303030', color: 'white', padding: '20px', textAlign: 'center', overflowX: 'auto'}}
             opened={true}
@@ -134,7 +133,7 @@ export default class Modals extends PureComponent {
             <div>
               <paper-button
                   raised
-                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: this.state.ace && this.state.ace.running ? 'block' : 'none'}}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: this.state.sop && this.state.sop.running ? 'block' : 'none'}}
                   onClick={this.togglePauseTorrent.bind(this)}
                   className='playerButtons' >
               Pause Torrent

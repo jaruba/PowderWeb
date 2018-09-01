@@ -33,11 +33,11 @@ const getData = async function() {
 
     const parsed = await api.get({ method: 'getall', json: true })
 
-    const parsedAce = await api.get({ method: 'getallace', json: true})
+    const parsedExtra = await api.get({ method: 'getallextra', json: true})
 
-    if (parsed || parsedAce) {
+    if (parsed || parsedAce || parsedSop) {
 
-      const parsedAll = parsed && parsedAce ? Object.assign(parsed, parsedAce) : parsed ? parsed : parsedAce ? parsedAce : null
+      const parsedAll = Object.assign(parsed || {}, parsedExtra || {})
 
       if (!focused) return
 
@@ -97,6 +97,24 @@ export default class Counter extends PureComponent {
         api.get({ method: 'runAcePlaylist', pid: aceHash })
       } else {
         modals.open('ace', { pid: aceHash, shouldDo: 'playlist' })
+      }
+    }
+  }
+
+  openSopFileMenu = (sopObj) => {
+    modals.open('sopOpts', { sop: sopObj })
+  }
+
+  playSopFile = (sopHash) => {
+    const playButtonAction = JSON.parse(localStorage.getItem('playButtonAction'))
+
+    if (playButtonAction) {
+      modals.open('sop', { pid: sopHash, shouldDo: 'web' })
+    } else {
+      if (window.isMaster) {
+        api.get({ method: 'runSopPlaylist', pid: sopHash })
+      } else {
+        modals.open('sop', { pid: sopHash, shouldDo: 'playlist' })
       }
     }
   }
@@ -223,27 +241,57 @@ export default class Counter extends PureComponent {
         const filePercent = 1
         const fileProgress = 100
 
-        const newFile = (
-            <div key={ij} className="dashboardFile" style={{backgroundColor: backColor}}>
-                <div className="dashboardFileButtonHold">
-                    <paper-fab icon={ 'menu' } onClick={this.openAceFileMenu.bind(this, el)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
-                    <paper-fab icon={ 'av:play-arrow' } onClick={this.playAceFile.bind(this, el.pid)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
-                </div>
-                <div className="torrentFile" onClick={this.openAceFileMenu.bind(this, el)}>
-                    <div className="torrentFileProgressHold">
-                        <progress-bubble value={fileProgress} max="100" stroke-width="5">
-                            <strong>{fileProgress}<span>%</span></strong>
-                        </progress-bubble>
-                    </div>
-                    <div className="torrentFileDetails">
-                        <div className="torrentFileName">{el.name} <span className="torrentFileState" style={{ backgroundColor: el.running ? 'rgb(17, 163, 78)' : window.loadingTorrents[el.infoHash] ? '#EFA047' : 'rgb(96, 96, 96)' }}></span></div>
-                        <div className="torrentFileSubtitle">Live</div>
-                    </div>
-                    <div style={{clear: 'both'}} />
-                </div>
-                <div style={{clear: 'both'}} />
-            </div>
-        )
+        let newFile
+
+        if (el.isSopcast) {
+
+          newFile = (
+              <div key={ij} className="dashboardFile" style={{backgroundColor: backColor}}>
+                  <div className="dashboardFileButtonHold">
+                      <paper-fab icon={ 'menu' } onClick={this.openSopFileMenu.bind(this, el)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                      <paper-fab icon={ 'av:play-arrow' } onClick={this.playSopFile.bind(this, el.pid)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                  </div>
+                  <div className="torrentFile" onClick={this.openSopFileMenu.bind(this, el)}>
+                      <div className="torrentFileProgressHold">
+                          <progress-bubble value={fileProgress} max="100" stroke-width="5">
+                              <strong>{fileProgress}<span>%</span></strong>
+                          </progress-bubble>
+                      </div>
+                      <div className="torrentFileDetails">
+                          <div className="torrentFileName">{el.name} <span className="torrentFileState" style={{ backgroundColor: el.running ? 'rgb(17, 163, 78)' : window.loadingTorrents[el.infoHash] ? '#EFA047' : 'rgb(96, 96, 96)' }}></span></div>
+                          <div className="torrentFileSubtitle">Live</div>
+                      </div>
+                      <div style={{clear: 'both'}} />
+                  </div>
+                  <div style={{clear: 'both'}} />
+              </div>
+          )
+
+        } else {
+
+          newFile = (
+              <div key={ij} className="dashboardFile" style={{backgroundColor: backColor}}>
+                  <div className="dashboardFileButtonHold">
+                      <paper-fab icon={ 'menu' } onClick={this.openAceFileMenu.bind(this, el)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                      <paper-fab icon={ 'av:play-arrow' } onClick={this.playAceFile.bind(this, el.pid)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                  </div>
+                  <div className="torrentFile" onClick={this.openAceFileMenu.bind(this, el)}>
+                      <div className="torrentFileProgressHold">
+                          <progress-bubble value={fileProgress} max="100" stroke-width="5">
+                              <strong>{fileProgress}<span>%</span></strong>
+                          </progress-bubble>
+                      </div>
+                      <div className="torrentFileDetails">
+                          <div className="torrentFileName">{el.name} <span className="torrentFileState" style={{ backgroundColor: el.running ? 'rgb(17, 163, 78)' : window.loadingTorrents[el.infoHash] ? '#EFA047' : 'rgb(96, 96, 96)' }}></span></div>
+                          <div className="torrentFileSubtitle">Live</div>
+                      </div>
+                      <div style={{clear: 'both'}} />
+                  </div>
+                  <div style={{clear: 'both'}} />
+              </div>
+          )
+
+        }
 
         fileList.push(newFile)
 

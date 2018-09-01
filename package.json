@@ -30,6 +30,7 @@
     "bluebird": "^3.1.5",
     "decompress-zip": "https://github.com/jaruba/decompress-zip/tarball/master",
     "duti-prebuilt": "https://github.com/jaruba/duti-prebuilt/tarball/master",
+    "window-prebuilt": "https://github.com/jaruba/window-prebuilt/tarball/master",
     "easy-ffmpeg": "https://github.com/jaruba/easy-ffmpeg/tarball/master",
     "electron-settings": "^3.1.4",
     "formidable": "^1.2.1",

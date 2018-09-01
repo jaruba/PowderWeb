@@ -22,7 +22,7 @@ export default class Modals extends PureComponent {
 
   componentDidMount = () => {
 
-    this.setState(this.props.query)
+    this.setState(Object.assign({ update: Date.now() }, this.props.query))
     document.querySelector('#fileOptsDialog').addEventListener('iron-overlay-closed', this.closingDialog.bind(this))
 
   }
@@ -40,7 +40,7 @@ export default class Modals extends PureComponent {
   }
 
   streamFile() {
-    const pattern = { type: 'getplaylist.m3u', id: this.state.torrent.infoHash, fileID: this.state.file.id }
+    const pattern = { type: 'getplaylist.m3u', id: this.state.torrent.infoHash, fileID: this.state.file.id, update: Date.now() }
     if (window.isMaster) {
       pattern.openNow = true
       api.get(pattern)

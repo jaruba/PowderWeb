@@ -75,6 +75,41 @@ const playTorrent = async () => {
         modals.open('aceNotInstalled')
       }
 
+    } else if (opener && opener.startsWith('sop://')) {
+
+      const attemptResp = await api.get({ method: 'sop', torrent: opener, json: true}, (err) => {
+        if (err)
+          events.emit('embedLoadingMsg', err)
+      })
+
+
+      if (attemptResp && attemptResp.hasSopcast == true) {
+
+        let dataTimer
+
+        const checkMsg = async () => {
+          const checkResp = await api.get({ method: 'sopMsg', torrent: opener.replace(/[^a-z0-9]/gi,''), json: true})
+          if (checkResp && checkResp.status) {
+            events.emit('embedLoadingMsg', checkResp.status)
+            if (checkResp.transcodeLink) {
+              console.log('Transcode Link: ' + checkResp.transcodeLink)
+              modals.close()
+              setTimeout(() => {
+                player.modal.openLive(checkResp.transcodeLink, checkResp.name)
+              })
+              return
+            }
+          }
+          dataTimer = setTimeout(checkMsg, 2000)
+        }
+
+        dataTimer = setTimeout(checkMsg, 2000)
+
+      } else {
+        // acestream not installed, prompt for install
+        modals.open('aceNotInstalled')
+      }
+
     } else {
 
       const runningTorrent = await api.get({ method: 'embedStart', id: getParameterByName('hash') || getParameterByName('opener'), json: true })

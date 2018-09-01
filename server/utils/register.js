@@ -48,18 +48,18 @@ register.torrent = () => {
     notify();
 };
 
-register.magnet = () => {
+register.link = (linkType) => {
     if (process.platform == 'linux') {
         this._writeDesktopFile(err => {
             if (err) throw err;
             var desktopFile = dataPath+'/powderweb.desktop';
-            var tempMime = 'x-scheme-handler/magnet';
-            child.exec('gnome-terminal -x bash -c "echo \'Associating Files or URls with Applications requires Admin Rights\'; echo; sudo echo; sudo echo \'Authentication Successful\'; sudo echo; sudo mv -f '+desktopFile+' /usr/share/applications; sudo xdg-mime default powderweb.desktop '+tempMime+'; sudo gvfs-mime --set '+tempMime+' powderweb.desktop; echo; echo \'Association Complete! Press any key to close ...\'; read" & disown');
+            var tempMime = 'x-scheme-handler/' + linkType;
+            child.exec('gnome-terminal -x bash -c "echo \'Associating Files or URLs with Applications requires Admin Rights\'; echo; sudo echo; sudo echo \'Authentication Successful\'; sudo echo; sudo mv -f '+desktopFile+' /usr/share/applications; sudo xdg-mime default powderweb.desktop '+tempMime+'; sudo gvfs-mime --set '+tempMime+' powderweb.desktop; echo; echo \'Association Complete! Press any key to close ...\'; read" & disown');
         });
     } else if (process.platform == 'darwin') {
-        duti('com.electron.powderweb', 'magnet');
+        duti('com.electron.powderweb', linkType);
     } else {
-        app.setAsDefaultProtocolClient('magnet');
+        app.setAsDefaultProtocolClient(linkType);
     }
     notify();
 };
