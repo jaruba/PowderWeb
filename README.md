@@ -1,6 +1,6 @@
 # Powder Web
 
-Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Supports Acestream Live Streams.
+Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Supports Acestream and SopCast Live Streams.
 
 [See Screenshots](https://imgur.com/a/Jnxf0wf)
 
@@ -11,12 +11,14 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 
 ## Possible use cases include:
 
-- Use your PC as a Torrent Streaming Server for all your Devices either for your Entire Home, or for when you're On the Go
-- Streaming Torrents to your Browser (works on all Devices and all Browsers)
+- Use your PC as a Streaming Server for all your Devices either for your Entire Home, or for when you're On the Go
+- Streaming Torrents, Acestream, SopCast to your Smart TV's Browser (no other devices or direct conectivity needed), or your Phone's Browser, or any device that has a browser!
+- Associate Magnet / Acestream / SopCast Links or Torrent Files to Powder Web and configure it to start playback automatically with your favorite video player (or even the web player)
 - Finding Subtitles Easily for Videos in Torrents (subtitles are fetched automatically for the Web Player, there is also a button to manually get and download subtitles if you prefer using a different player)
 - Watch with Friends from a Distance, you can Sync Playback with one or more Friends (supports creating accounts for the web view, if multiple people log in on the same account, you can sync playback with what others are watching by using the history feature)
 - Allowing Websites to Embed Torrent Streaming (for security reasons users need to allow websites to embed torrents through Powder Web individually, either allowing one session or always allowing that specific website)
 - Replace your Favorite Torrent Sites with one Search that searches them all (supports [Jackett](https://github.com/Jackett/Jackett), 'nuf said)
+- Web Player that is embeddable in Websites! If you're a web developer, you can create websites that support torrent, acestream and sopcast streaming in the browser through Powder Web
 
 
 ## Features:
@@ -33,6 +35,7 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 - Advanced Torrent and Web Server Settings
 - Managing Multiple Torrents
 - Supports Acestream Live Streams
+- Supports SopCast Live Streams
 
 
 ## Install:
@@ -60,7 +63,7 @@ npm run build
 
 ## Embedding in Websites
 
-Can be started with either Magnet Link or Torrent File HTTP(S) Link.
+Can be started with either Magnet Links, Acestream Links, SopCast Links or Torrent File HTTP(S) Link.
 
 Add Script to `<head>`:
 
@@ -86,7 +89,7 @@ Start Web Player on a `<div>`:
 
 [Embed Demo](http://powder.media/embed-test.html)
 
-**Note**: Embedding will not work on websites that use SSL unless the user activates "Use SSL" in Powder Web's settings and then sets the Self-Signed SSL Certificate as Trusted by right clicking Powder Web in the tray, selecting "Show in Browser" and then accepting the certificate on the security page shown by the Browser.
+**Note**: Embedding will not work on websites that use SSL unless [users follow this guide](https://github.com/jaruba/PowderWeb/wiki/Guide#enabling-ssl) to enable SSL in Powder Web too.
 
 
 ### Technologies Used
