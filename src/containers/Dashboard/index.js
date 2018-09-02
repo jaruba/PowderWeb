@@ -35,7 +35,7 @@ const getData = async function() {
 
     const parsedExtra = await api.get({ method: 'getallextra', json: true})
 
-    if (parsed || parsedAce || parsedSop) {
+    if (parsed || parsedExtra) {
 
       const parsedAll = Object.assign(parsed || {}, parsedExtra || {})
 
@@ -117,6 +117,47 @@ export default class Counter extends PureComponent {
         modals.open('sop', { pid: sopHash, shouldDo: 'playlist' })
       }
     }
+  }
+
+
+  playLocalFile = async (localHash) => {
+    const playButtonAction = JSON.parse(localStorage.getItem('playButtonAction'))
+
+    const loc = await api.get({ method: 'getLoc', pid: localHash, json: true })
+
+    if (loc) {
+
+      let flLoc
+
+      if (loc.files && loc.files.length) {
+        flLoc = loc.files[0]
+      } else {
+        flLoc = { id: 0, name: loc.name }
+        loc.files = [flLoc]
+      }
+
+      if (playButtonAction) {
+        player.modal.open(loc, flLoc, 0, true, null, null, true)
+      } else {
+        if (window.isMaster) {
+          api.get({ method: 'runLocalPlaylist', pid: localHash })
+        } else {
+
+          let pattern = {
+            type: 'getlocalplaylist.m3u',
+            pid: loc.pid
+          }
+
+          window.open(api.parseUrl(pattern), "_blank")
+
+        }
+      }
+
+    }
+  }
+
+  openLocalFileMenu = async (localObj) => {
+    modals.open('localOpts', { loc: localObj })
   }
 
   playFile = async (el) => {
@@ -235,7 +276,39 @@ export default class Counter extends PureComponent {
 
       backColor = backColor == '#444' ? '#3e3e3e' : '#444'
 
-      if (el.isLive) {
+      if (el.isLocal) {
+
+        const fileFinished = true
+        const filePercent = 1
+        const fileProgress = 100
+
+        let newFile
+
+        newFile = (
+            <div key={ij} className="dashboardFile" style={{backgroundColor: backColor}}>
+                <div className="dashboardFileButtonHold">
+                    <paper-fab icon={ 'menu' } onClick={this.openLocalFileMenu.bind(this, el)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                    <paper-fab icon={ 'av:play-arrow' } onClick={this.playLocalFile.bind(this, el.pid)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                </div>
+                <div className="torrentFile" onClick={this.openLocalFileMenu.bind(this, el)}>
+                    <div className="torrentFileProgressHold">
+                        <progress-bubble value={fileProgress} max="100" stroke-width="5">
+                            <strong>{fileProgress}<span>%</span></strong>
+                        </progress-bubble>
+                    </div>
+                    <div className="torrentFileDetails">
+                        <div className="torrentFileName">{el.name} <span className="torrentFileState" style={{ backgroundColor: el.running ? 'rgb(17, 163, 78)' : 'rgb(96, 96, 96)' }}></span></div>
+                        <div className="torrentFileSubtitle">Local</div>
+                    </div>
+                    <div style={{clear: 'both'}} />
+                </div>
+                <div style={{clear: 'both'}} />
+            </div>
+        )
+
+        fileList.push(newFile)
+
+      } else if (el.isLive) {
 
         const fileFinished = true
         const filePercent = 1

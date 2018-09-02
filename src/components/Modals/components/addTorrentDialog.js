@@ -69,6 +69,11 @@ export default class Modals extends PureComponent {
     this.closingDialog()
   }
 
+  openLocalMedia() {
+    api.get({ method: 'addLocal' })
+    this.cancelAddTorrent()
+  }
+
   render() {
     return (
 
@@ -82,10 +87,10 @@ export default class Modals extends PureComponent {
                 How would you like to add your torrent?
             </div>
             
-            <div style={{marginTop: '25px', marginBottom: '0', display: 'inline-block'}}>
+            <div style={{marginTop: '25px', marginBottom: '0', display: 'block'}}>
                 <paper-button
                     raised
-                    style={{cursor: 'pointer', float: 'none', marginRight: '15px', marginBottom: '0', display: 'inline-block'}}
+                    style={{cursor: 'pointer', float: 'none', display: 'block', marginBottom: '10px'}}
                     className='playerButtons-primary' >
                 <input style={{ cursor: 'pointer', position: 'absolute', top: '0', left: '0', width: '100%', height: '100%', opacity: '0' }} type="file" id="fileInput" onChange={this.torrent2magnet.bind(this)} />
                 From Torrent File
@@ -93,14 +98,21 @@ export default class Modals extends PureComponent {
                 <paper-button
                     raised
                     onClick={this.openAddMagnet.bind(this)}
-                    style={{cursor: 'pointer', float: 'none', margin: '0', marginRight: '15px'}}
+                    style={{cursor: 'pointer', float: 'none', display: 'block', marginBottom: '10px'}}
                     className='playerButtons' >
                 From URL
                 </paper-button>
                 <paper-button
                     raised
+                    onClick={this.openLocalMedia.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', display: window.isMaster ? 'block' : 'none', marginBottom: '10px'}}
+                    className='playerButtons' >
+                From Local Media
+                </paper-button>
+                <paper-button
+                    raised
                     onClick={this.cancelAddTorrent.bind(this)}
-                    style={{cursor: 'pointer', float: 'none', margin: '0'}}
+                    style={{cursor: 'pointer', float: 'none', display: 'block', marginBottom: '0px'}}
                     className='playerButtons' >
                 Close
                 </paper-button>

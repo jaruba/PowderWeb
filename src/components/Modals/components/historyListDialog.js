@@ -77,50 +77,73 @@ export default class Modals extends PureComponent {
 
   playHistoryItem = async (histObj) => {
 
-    if (histObj && histObj.infohash) {
-      const allTors = await api.get({ method: 'getall', json: true })
+    if (histObj) {
+      if (histObj.isLocal) {
 
-      if (allTors) {
-        if (_.size(allTors) && allTors[histObj.infohash]) {
-          const el = allTors[histObj.infohash]
-          modals.open('loading')
-          let isCanceled = false
-          const hasCanceled = () => {
-            events.off('canceledLoading', hasCanceled)
-            isCanceled = true
+        const loc = await api.get({ method: 'getLoc', pid: histObj.infohash, json: true })
+
+        if (loc) {
+
+          let flLoc
+
+          if (loc.files && histObj.fileID && loc.files[histObj.fileID]) {
+            flLoc = loc.files[histObj.fileID]
+          } else {
+            flLoc = { id: 0, name: loc.name }
+            loc.files = [flLoc]
           }
-          events.on('canceledLoading', hasCanceled)
-          if (!el.running) {
-            window.loadingTorrents[el.infoHash] = true
-            await api.get({ type: 'getplaylist.m3u', id: el.infoHash || el.opener })
-            delete window.loadingTorrents[el.infoHash]
-          }
-   
-          if (isCanceled)
-            return
 
-          const torData = await api.get({ method: 'torrentData', id: histObj.infohash, json: true })
+          modals.close()
 
-          if (isCanceled)
-            return
+          player.modal.open(loc, flLoc, parseFloat(histObj.time), true, null, null, true)
 
-          const torrent = torData
-          let file
-          torData.files.some((fl) => {
-            if (fl.id == histObj.fileID) {
-              file = fl
-              return true
+        }
+
+      } else if (histObj.infohash) {
+        const allTors = await api.get({ method: 'getall', json: true })
+
+        if (allTors) {
+          if (_.size(allTors) && allTors[histObj.infohash]) {
+            const el = allTors[histObj.infohash]
+            modals.open('loading')
+            let isCanceled = false
+            const hasCanceled = () => {
+              events.off('canceledLoading', hasCanceled)
+              isCanceled = true
             }
-          })
-          if (file) {
-            if (document.getElementById("loadingDialog"))
-              document.getElementById("loadingDialog").close()
+            events.on('canceledLoading', hasCanceled)
+            if (!el.running) {
+              window.loadingTorrents[el.infoHash] = true
+              await api.get({ type: 'getplaylist.m3u', id: el.infoHash || el.opener })
+              delete window.loadingTorrents[el.infoHash]
+            }
+     
+            if (isCanceled)
+              return
 
-            player.modal.open(torrent, file, parseFloat(histObj.time))
+            const torData = await api.get({ method: 'torrentData', id: histObj.infohash, json: true })
+
+            if (isCanceled)
+              return
+
+            const torrent = torData
+            let file
+            torData.files.some((fl) => {
+              if (fl.id == histObj.fileID) {
+                file = fl
+                return true
+              }
+            })
+            if (file) {
+              if (document.getElementById("loadingDialog"))
+                document.getElementById("loadingDialog").close()
+
+              player.modal.open(torrent, file, parseFloat(histObj.time))
+            }
+
+          } else {
+            modals.open('message', { message: 'The torrent related to this item has been deleted and can no longer be accessed.' })
           }
-
-        } else {
-          modals.open('message', { message: 'The torrent related to this item has been deleted and can no longer be accessed.' })
         }
       }
     }

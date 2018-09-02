@@ -82,7 +82,8 @@
     "winreg": "^1.2.4",
     "workerjs": "*",
     "xml-js": "^1.6.3",
-    "yup": "^0.22.0"
+    "yup": "^0.22.0",
+    "walk": "^2.3.14"
   },
   "devDependencies": {
     "cross-env": "^5.0.0",

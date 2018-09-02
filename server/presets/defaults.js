@@ -38,6 +38,7 @@ const map = {
     acebook: {},
     acenamebook: {},
     sopbook: {},
+    locbook: {},
     uploaded: {},
     maxConcurrency: 2,
     users: {},

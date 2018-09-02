@@ -35,6 +35,7 @@ import SopOptsDialog from './components/sopOptsDialog'
 import SopChoiceDialog from './components/sopChoiceDialog'
 import SopInstallDialog from './components/sopInstallDialog'
 import SopNotInstalledDialog from './components/sopNotInstalledDialog'
+import LocalOptsDialog from './components/localOptsDialog'
 
 import events from 'utils/events'
 
@@ -163,6 +164,9 @@ export default class Modals extends PureComponent {
               break
           case 'sopNotInstalled':
               return <SopNotInstalledDialog query={this.state.query} />;
+              break
+          case 'localOpts':
+              return <LocalOptsDialog query={this.state.query} />;
               break
       }
   }

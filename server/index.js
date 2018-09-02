@@ -13,6 +13,12 @@ const hlsVod = require('../node_modules/hls-vod/hls-vod.js')
 
 const rimraf = require('rimraf')
 
+const supported = require('./utils/isSupported')
+
+const rangeParser = require('range-parser')
+
+const pump = require('pump')
+
 // remove old playlist files
 rimraf(path.join(dir, 'playlist*.m3u'), { maxBusyTries: 100 }, (err, data) => { })
 
@@ -93,6 +99,8 @@ const sopbook = require('./utils/sopbook')
 const qrCode = require('./utils/qrcode')
 
 const sop = require('./sopcast')
+
+const local = require('./local')
 
 let aceDownloadMsg = ''
 
@@ -463,6 +471,42 @@ const mainServer = http.createServer(function(req, resp) {
         runSop()
 
       }
+    } else {
+      page500('Invalid Resource ID')
+    }
+  }
+
+  const runLocalPlaylist = (pid) => {
+    if (pid) {
+
+
+      // no transcoding needed
+      let newM3U = "#EXTM3U";
+
+      const loc = local.get(pid)
+
+      if (loc) {
+        if (loc.location && !loc.isDirectory) {
+          newM3U += os.EOL+"#EXTINF:0,"+loc.name+os.EOL+loc.location
+        } else if (loc.files) {
+          loc.files.forEach((fl) => {
+            newM3U += os.EOL+"#EXTINF:0,"+fl.name+os.EOL+fl.location
+          })
+        }
+      }
+
+      const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+
+      fs.writeFile(filePath, newM3U, (err) => {
+          if (err) {
+              return console.log(err);
+          }
+          if (settings.get('extPlayer')) {
+            helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), filePath)
+          } else {
+            shell.openItem(filePath)
+          }
+      })
     }
   }
 
@@ -543,6 +587,8 @@ const mainServer = http.createServer(function(req, resp) {
 
       }
 
+    } else {
+      page500('Invalid Resource ID')
     }
 
   }
@@ -613,6 +659,18 @@ const mainServer = http.createServer(function(req, resp) {
 
   if (method == 'sopRename' && urlParsed.query && urlParsed.query.pid && urlParsed.query.name) {
     sop.rename(urlParsed.query.pid, urlParsed.query.name)
+    respond({})
+    return
+  }
+
+  if (method == 'locRename' && urlParsed.query && urlParsed.query.pid && urlParsed.query.name) {
+    local.rename(urlParsed.query.pid, urlParsed.query.name)
+    respond({})
+    return
+  }
+
+  if (method == 'locDestroy' && urlParsed.query && urlParsed.query.pid) {
+    local.remove(urlParsed.query.pid)
     respond({})
     return
   }
@@ -757,6 +815,11 @@ const mainServer = http.createServer(function(req, resp) {
     } else {
       page404()
     }
+    return
+  }
+
+  if (method == 'getLoc' && urlParsed.query && urlParsed.query.pid) {
+    respond(local.get(urlParsed.query.pid))
     return
   }
 
@@ -909,6 +972,48 @@ const mainServer = http.createServer(function(req, resp) {
 
   if (method == 'haveTorrent' && urlParsed.query && urlParsed.query.id) {
     respond({ value: streams.haveTorrent(urlParsed.query.id) ? true : false })
+    return
+  }
+
+  if (uri.startsWith('/getlocalplaylist.m3u') && urlParsed.query && urlParsed.query.pid) {
+    const pid = urlParsed.query.pid
+    if (pid) {
+
+      // no transcoding needed
+      let newM3U = "#EXTM3U";
+
+      const loc = local.get(pid)
+
+      const requestHost = getReqUrl(req)
+      const altHost = 'http://127.0.0.1:' + peerflixProxy
+
+      if (loc) {
+        if (loc.location && !loc.isDirectory) {
+          const uri = (requestHost || altHost) + '/local/' + pid + '/0?token=' + reqToken
+          newM3U += os.EOL+"#EXTINF:0,"+loc.name+os.EOL+uri
+        } else if (loc.files) {
+          loc.files.forEach((fl, idx) => {
+            const uri = (requestHost || altHost) + '/local/' + pid + '/' + idx + '?token=' + reqToken
+            newM3U += os.EOL+"#EXTINF:0,"+fl.name+os.EOL+uri
+          })
+        } else {
+          page500('Invalid Resource')
+        }
+      } else {
+        page500('Invalid Resource ID')
+      }
+
+      resp.writeHead(200, {
+        "Content-Type": "audio/x-mpegurl",
+        "Content-Disposition": 'attachment;filename="playlist.m3u"'
+      })
+
+      resp.write(newM3U, function(err) { resp.end() })
+
+    } else {
+      page500('Invalid Resource ID')
+    }
+
     return
   }
 
@@ -1108,7 +1213,7 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (method == 'getallextra') {
-    respond(Object.assign({}, acebook.getAll() || {}, sopbook.getAll() || {}))
+    respond(Object.assign({}, acebook.getAll() || {}, sopbook.getAll() || {}, local.getAll()))
     return
   }
 
@@ -1116,13 +1221,15 @@ const mainServer = http.createServer(function(req, resp) {
     const historyObj = settings.get('history')
     const params = urlParsed.query
 
+
+    params.isLocal = !!(params.isLocal && params.isLocal == '1')
+
     const tokenId = tokens[reqToken]
 
     if (!historyObj[tokenId])
       historyObj[tokenId] = []
 
     params.utime = Date.now()
-
 
     historyObj[tokenId].some((histObj, ij) => {
       if (histObj.infohash == params.infohash && histObj.fileID == params.fileID) {
@@ -1266,53 +1373,76 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (method == 'getSubs' && urlParsed.query.infohash && urlParsed.query.id) {
-    streams.torrentData(urlParsed.query.infohash, (data, pieceBank) => {
-      if (!data) {
-        page500('Could not get torrent info 1')
-      } else if (data.files && data.files.length) {
-        let foundFile
-        data.files.some((file) => {
-          if (file.fileID == urlParsed.query.id) {
-            foundFile = file
-            return
-          }
-        })
-        if (foundFile) {
-          const subQuery = {}
-          subQuery.filepath = path.join(data.path, foundFile.path)
-          subQuery.torrentHash = urlParsed.query.infohash
-          subQuery.byteLength = foundFile.length
-          subQuery.isFinished = !!(pieceBank.filePercent(foundFile.offset, foundFile.length) >= 1)
-            subQuery.cb = subs => {
-              if (!subs) {
-                page500('No subtitles found')
-              } else {
-                const orderedSubs = []
-                _.each(subs, (el, ij) => {
-                  orderedSubs.push({
-                    label: ij.split('[lg]')[0],
-                    sublang: ij.split('[lg]')[1],
-                    src: el,
-                    ext: el.split('.').pop()
+
+
+    const subStart = (fileLoc, fileSize, torrentHash, isFinished) => {
+            const subQuery = {}
+            subQuery.filepath = fileLoc
+            subQuery.torrentHash = torrentHash
+            subQuery.byteLength = fileSize
+            subQuery.isFinished = isFinished
+              subQuery.cb = subs => {
+                if (!subs) {
+                  page500('No subtitles found')
+                } else {
+                  const orderedSubs = []
+                  _.each(subs, (el, ij) => {
+                    orderedSubs.push({
+                      label: ij.split('[lg]')[0],
+                      sublang: ij.split('[lg]')[1],
+                      src: el,
+                      ext: el.split('.').pop()
+                    })
                   })
-                })
-                respond(orderedSubs.map((subEl) => {
-                  if (subEl.ext == 'srt')
-                    subEl.src = getReqUrl(req)+'/srt2vtt/subtitle.vtt?token='+reqToken+'&from='+btoa(subEl.src)
-                  return subEl
-                }))
-              }
+                  respond(orderedSubs.map((subEl) => {
+                    if (subEl.ext == 'srt')
+                      subEl.src = getReqUrl(req)+'/srt2vtt/subtitle.vtt?token='+reqToken+'&from='+btoa(subEl.src)
+                    return subEl
+                  }))
+                }
+            }
+
+            subtitles.fetchSubs(subQuery);
+    }
+
+    if (!isNaN(urlParsed.query.infohash)) {
+      // local file
+      const loc = local.get(urlParsed.query.infohash)
+      if (loc) {
+        if (loc.location && !loc.isDirectory) {
+            const stats = fs.statSync(loc.location)
+            subStart(loc.location, stats.size, null, true)
+        } else if (loc.files && loc.files.length) {
+          const fl = loc.files[urlParsed.query.id]
+          if (fl && fl.location) {
+            const stats = fs.statSync(fl.location)
+            subStart(fl.location, stats.size, null, true)
           }
-
-          subtitles.fetchSubs(subQuery);
-        } else {
-          page500('Could not get torrent info 3')
         }
-      } else {
-        page500('Could not get torrent info 2')
-
       }
-    }, true)
+    } else {
+      streams.torrentData(urlParsed.query.infohash, (data, pieceBank) => {
+        if (!data) {
+          page500('Could not get torrent info 1')
+        } else if (data.files && data.files.length) {
+          let foundFile
+          data.files.some((file) => {
+            if (file.fileID == urlParsed.query.id) {
+              foundFile = file
+              return
+            }
+          })
+          if (foundFile) {
+            subStart(path.join(data.path, foundFile.path), foundFile.length, urlParsed.query.infohash, !!(pieceBank.filePercent(foundFile.offset, foundFile.length) >= 1))
+          } else {
+            page500('Could not get torrent info 3')
+          }
+        } else {
+          page500('Could not get torrent info 2')
+
+        }
+      }, true)
+    }
     return
   }
 
@@ -1376,6 +1506,16 @@ const mainServer = http.createServer(function(req, resp) {
         mainWindow.maximize()
       }
       respond({})
+      return
+    }
+
+    if (method == 'addLocal') {
+      const loc = dialog.showOpenDialog({filters: { name: 'media', extensions: supported.ext.allMedia.map(el => { return el.replace('.','') })}, properties: ['openFile', 'openDirectory', 'createDirectory']})
+      if (!loc || !loc.length) {
+        respond({})
+      } else {
+        local.add(loc[0], (pid) => { respond({ pid }) }, (errMsg) => { page500(errMsg) })
+      }
       return
     }
 
@@ -1515,6 +1655,12 @@ const mainServer = http.createServer(function(req, resp) {
       return
     }
 
+    if (method == 'runLocalPlaylist' && urlParsed.query.pid) {
+      runLocalPlaylist(urlParsed.query.pid)
+      respond({})
+      return
+    }
+
   }
 
   if (method == 'isListening' && urlParsed.query.utime) {
@@ -1638,7 +1784,7 @@ var srv = http.createServer(function (req, res) {
   }
 
   const getParams = (uri) => {
-    const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').replace('/ace/', '').replace('/hls/', '').replace('/sop/', '').split('/')
+    const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').replace('/ace/', '').replace('/hls/', '').replace('/sop/', '').replace('/local/', '').split('/')
     let returnObj = {}
     returnObj.infohash = parts[0]
     returnObj.fileId = parts[1]
@@ -1652,6 +1798,7 @@ var srv = http.createServer(function (req, res) {
         returnObj.audio = urlParsed.query.a ? audioPresets.codecMap[urlParsed.query.a] : false
         returnObj.copyts = urlParsed.query.copyts
         returnObj.forceTranscode = urlParsed.query.forceTranscode
+        returnObj.isLocal = urlParsed.query.isLocal
       } else {
         returnObj.videoQuality = moreParts[0]
         returnObj.videoContainer = parts[2].split('.').pop()
@@ -1666,6 +1813,7 @@ var srv = http.createServer(function (req, res) {
         returnObj.forceTranscode = urlParsed.query.forceTranscode
         returnObj.useMatroska = urlParsed.query.useMatroska
         returnObj.audioDelay = parseFloat(urlParsed.query.audioDelay)
+        returnObj.isLocal = urlParsed.query.isLocal
       }
     }
     return returnObj
@@ -1679,7 +1827,88 @@ var srv = http.createServer(function (req, res) {
 
   const useIp = (process.platform == 'linux')
 
-  if (enginePort)
+  if (uri.startsWith('/local/')) {
+    const loc = local.get(params.infohash)
+
+    const serveFile = (fileLoc) => {
+      if (req.method === 'OPTIONS' && req.headers['access-control-request-headers']) {
+        res.setHeader('Access-Control-Allow-Origin', req.headers.origin)
+        res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+        res.setHeader(
+            'Access-Control-Allow-Headers',
+            req.headers['access-control-request-headers'])
+        res.setHeader('Access-Control-Max-Age', '1728000')
+
+        res.end()
+        return
+      }
+
+      if (req.headers.origin) res.setHeader('Access-Control-Allow-Origin', req.headers.origin)
+
+      var range = req.headers.range
+      var fileLength = fs.lstatSync(fileLoc).size
+      range = range && rangeParser(fileLength, range)[0]
+
+      res.setHeader('Accept-Ranges', 'bytes')
+
+      const parts = fileLoc.split('.')
+
+      const ext = parts[parts.length-1]
+
+      res.setHeader('Content-Type', supported.contentType(ext))
+
+      if (!range) {
+        res.setHeader('Content-Length', fileLength)
+        if (req.method === 'HEAD') return res.end()
+
+        pump(fs.createReadStream(fileLoc), res)
+
+        return
+      }
+
+      res.statusCode = 206
+      res.setHeader('Content-Length', range.end - range.start + 1)
+      res.setHeader('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + fileLength)
+
+      if (req.method === 'HEAD') return res.end()
+      
+      pump(fs.createReadStream(fileLoc, range), res)
+    }
+
+    if (loc) {
+
+      if (loc.location && !loc.isDirectory && fs.existsSync(loc.location)) {
+        serveFile(loc.location)
+        return
+      } else if (loc.files && loc.files.length) {
+        loc.files.some((fl, idx) => {
+          if (idx == params.fileId) {
+            if (fl.location && fs.existsSync(fl.location)) {
+              serveFile(fl.location)
+            } else {
+              res.writeHead(500, { "Content-Type": "text/plain" })
+              res.write("Invalid Resource\n")
+              res.end()
+            }
+            return true
+          }
+        })
+        return
+      }
+      res.writeHead(500, { "Content-Type": "text/plain" })
+      res.write("Invalid Resource\n")
+      res.end()
+    } else {
+      res.writeHead(500, { "Content-Type": "text/plain" })
+      res.write("Invalid Resource ID\n")
+      res.end()
+    }
+    return
+  }
+
+  if (params.isLocal || (uri.startsWith('/meta') && !isNaN(params.infohash))) {
+    peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+peerflixProxy+'/local/'+params.infohash+'/'+params.fileId+'?token='+reqToken
+  } else if (enginePort)
     peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+enginePort+'/'+params.fileId
 
   if (uri.startsWith('/web/')) {
@@ -2032,10 +2261,10 @@ var srv = http.createServer(function (req, res) {
     })
 
     const proxyLogic = [{
-      context: ["/playlist.m3u", "/getplaylist.m3u", "/getaceplaylist.m3u", "/getsopplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
+      context: ["/playlist.m3u", "/getplaylist.m3u", "/getaceplaylist.m3u", "/getsopplaylist.m3u", "/getlocalplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
       target: "http://localhost:" + port
     }, {
-      context: ["/api/", "/web/", "/meta/", "/hls/", "/ace/", "/content/", "/sop/"],
+      context: ["/api/", "/web/", "/meta/", "/hls/", "/ace/", "/content/", "/sop/", "/local/"],
       target: "http://localhost:" + peerflixProxy
     }]
 
