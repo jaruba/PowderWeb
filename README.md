@@ -1,6 +1,6 @@
 # Powder Web
 
-Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Supports Acestream and SopCast Live Streams.
+Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Supports Acestream / SopCast Live Streams and All Youtube-dl [Supported Sites](https://rg3.github.io/youtube-dl/supportedsites.html)
 
 [See Screenshots](https://imgur.com/a/Jnxf0wf)
 
@@ -26,6 +26,7 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 - Supports Streaming Torrents (both video and audio files)
 - Supports Acestream Live Streams
 - Supports SopCast Live Streams
+- Supports All Youtube-dl [Supported Sites](https://rg3.github.io/youtube-dl/supportedsites.html)
 - Supports Streaming Local Files (can add individual files or entire folders)
 - Streaming to your Preferred Video Player (by generating M3U playlists)
 - Streaming to your Browser (works on all Devices and all Browsers)
