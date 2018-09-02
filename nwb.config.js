@@ -46,12 +46,12 @@ module.exports = {
   },
   devServer: {
     proxy: [{
-      context: ["/playlist.m3u", "/getplaylist.m3u", "/getaceplaylist.m3u", "/getsopplaylist.m3u", "/getlocalplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
+      context: ["/playlist.m3u", "/getplaylist.m3u", "/getaceplaylist.m3u", "/getsopplaylist.m3u", "/getlocalplaylist.m3u", "/getytdlplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
       target: "http://localhost:" + port,
       proxyTimeout: Number.MAX_SAFE_INTEGER,
       onProxyReq: (proxyReq, req, res) => req.setTimeout(Number.MAX_SAFE_INTEGER)
     }, {
-      context: ["/api/", "/web/", "/meta/", "/hls/", "/ace/", "/content/", "/sop/", "/local/"],
+      context: ["/api/", "/web/", "/meta/", "/hls/", "/ace/", "/content/", "/sop/", "/local/", "/ytdl/"],
       target: "http://localhost:" + peerflixProxy,
       proxyTimeout: Number.MAX_SAFE_INTEGER,
       onProxyReq: (proxyReq, req, res) => req.setTimeout(Number.MAX_SAFE_INTEGER)

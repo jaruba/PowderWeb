@@ -99,6 +99,37 @@ export default class Modals extends PureComponent {
 
         }
 
+      } else if (histObj.isYtdl) {
+
+          const ytdlObjOld = await api.get({ method: 'getYtdl', pid: histObj.infohash, json: true })
+
+          if (ytdlObjOld && ytdlObjOld.originalURL) {
+
+            modals.open('loading')
+
+            let isCanceled = false
+
+            const hasCanceled = () => {
+              events.off('canceledLoading', hasCanceled)
+              isCanceled = true
+            }
+
+            events.on('canceledLoading', hasCanceled)
+
+            const ytdlObj = await api.get({ method: 'ytdlAdd', pid: ytdlObjOld.originalURL, json: true })
+
+            if (ytdlObj && ytdlObj.extracted && !isCanceled) {
+              modals.close()
+              player.modal.open(ytdlObj, { id: 0, name: ytdlObj.name, streamable: true }, parseFloat(histObj.time), true, null, null, null, true)
+            } else {
+              modals.open('message', { message: 'Could not load Youtube-DL link' })
+            }
+
+          } else {
+            modals.open('message', { message: 'Could not load Youtube-DL link' })
+          }
+
+
       } else if (histObj.infohash) {
         const allTors = await api.get({ method: 'getall', json: true })
 

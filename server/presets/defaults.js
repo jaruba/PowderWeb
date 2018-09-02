@@ -39,6 +39,7 @@ const map = {
     acenamebook: {},
     sopbook: {},
     locbook: {},
+    ytdlbook: {},
     uploaded: {},
     maxConcurrency: 2,
     users: {},
@@ -48,6 +49,8 @@ const map = {
     downloadFolder: '',
     history: {},
     torrentTrackers: '',
+
+    ytdlQuality: 2,
 
     subLimits: ['best', 'all', 3, 4 ,5],
     subLimit: 0,

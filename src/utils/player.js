@@ -1342,8 +1342,8 @@ const player = {
 	            })
 	          }
 
-	          if (!duration && el.duration && el.duration != 'N/A') {
-	            duration = el.duration
+	          if (!duration && elm.duration && elm.duration != 'N/A') {
+	            duration = elm.duration
 	            return true
 	          }
 	        }
@@ -1388,7 +1388,7 @@ const player = {
 
 	},
 
-	parsePlaylist: (torrent, files, el, isLocal) => {
+	parsePlaylist: (torrent, files, el, isLocal, isYtdl) => {
 	  let needsPlaylist = 0
 	  const playlistArr = []
 	  let playlistIj = -1
@@ -1440,12 +1440,12 @@ const player = {
 
       video.playlistCustomPrev = () => {
         if (playlistIj > 0)
-          player.modal.playFile(torrent, playlistArr[playlistIj -1], isLocal)
+          player.modal.playFile(torrent, playlistArr[playlistIj -1], isLocal, isYtdl)
       }
 
       video.playlistCustomNext = () => {
         if (playlistIj +1 < playlistArr.length)
-          player.modal.playFile(torrent, playlistArr[playlistIj +1], isLocal)
+          player.modal.playFile(torrent, playlistArr[playlistIj +1], isLocal, isYtdl)
       }
 
 	},
@@ -1629,7 +1629,7 @@ const player = {
 		return filename.replace(new RegExp('\.' + ext + '$', 'g'), '').replace(/\./g, ' ')
 	},
 
-	startForQuality: (torrent, el, prefQuality, startTime, preferredFormat, parseUrl, cb, isLocal) => {
+	startForQuality: (torrent, el, prefQuality, startTime, preferredFormat, parseUrl, cb, isLocal, isYtdl) => {
 
 		const newSrc = []
 
@@ -1663,7 +1663,7 @@ const player = {
 				const audioCodec = browserSupport.containerCodecs.video[format].audio[0]
 				const videoCodec = browserSupport.containerCodecs.video[format].video[0]
 
-				const webStreamQual = parseUrl({ type: window.location.origin + '/web/' + torrent.infoHash + '/' + el.id + '/' + elm + '.' + format }).substr(1) + '&maxHeight='+ preferredFormat.maxHeight + '&maxWidth='+ preferredFormat.maxWidth + '&needsAudio=' + preferredFormat.needsAudio + '&needsVideo=' + preferredFormat.needsVideo + '&a=' + audioCodec + '&v=' + videoCodec + '&forAudio=' + preferredFormat.forAudio + '&copyts=' + (copyts ? '1' : '-1') + '&forceTranscode=' + (forceTranscode ? '1' : '-1') + '&useMatroska=' + (isMatroska && !preferredFormat.isAudio ? '1' : '-1') + '&audioDelay=' + preferredFormat.audioDelay + (startTime ? '&start=' + startTime : '') + (isLocal ? '&isLocal=1' : '')
+				const webStreamQual = parseUrl({ type: window.location.origin + '/web/' + torrent.infoHash + '/' + el.id + '/' + elm + '.' + format }).substr(1) + '&maxHeight='+ preferredFormat.maxHeight + '&maxWidth='+ preferredFormat.maxWidth + '&needsAudio=' + preferredFormat.needsAudio + '&needsVideo=' + preferredFormat.needsVideo + '&a=' + audioCodec + '&v=' + videoCodec + '&forAudio=' + preferredFormat.forAudio + '&copyts=' + (copyts ? '1' : '-1') + '&forceTranscode=' + (forceTranscode ? '1' : '-1') + '&useMatroska=' + (isMatroska && !preferredFormat.isAudio ? '1' : '-1') + '&audioDelay=' + preferredFormat.audioDelay + (startTime ? '&start=' + startTime : '') + (isLocal ? '&isLocal=1' : '') + (isYtdl ? '&isYtdl=1' : '')
 
 				if (playerType && playerType == contentType && prefQuality == elm) {
 					dedicatedSrc = {
@@ -1693,7 +1693,7 @@ const player = {
 
 			}
 
-			const webStreamQual = parseUrl({ type: window.location.origin + '/web/' + torrent.infoHash + '/' + el.id + '/' + elm + '.' + preferredFormat.container }).substr(1) + '&maxHeight='+ preferredFormat.maxHeight + '&maxWidth='+ preferredFormat.maxWidth + '&needsAudio=' + preferredFormat.needsAudio + '&needsVideo=' + preferredFormat.needsVideo + '&a=' + audioCodec + '&v=' + videoCodec + '&forAudio=' + preferredFormat.forAudio + '&copyts=' + (copyts ? '1' : '-1') + '&forceTranscode=' + (forceTranscode ? '1' : '-1') + '&useMatroska=' + (isMatroska && !preferredFormat.isAudio ? '1' : '-1') + '&audioDelay=' + preferredFormat.audioDelay + (startTime ? '&start=' + startTime : '') + (isLocal ? '&isLocal=1' : '')
+			const webStreamQual = parseUrl({ type: window.location.origin + '/web/' + torrent.infoHash + '/' + el.id + '/' + elm + '.' + preferredFormat.container }).substr(1) + '&maxHeight='+ preferredFormat.maxHeight + '&maxWidth='+ preferredFormat.maxWidth + '&needsAudio=' + preferredFormat.needsAudio + '&needsVideo=' + preferredFormat.needsVideo + '&a=' + audioCodec + '&v=' + videoCodec + '&forAudio=' + preferredFormat.forAudio + '&copyts=' + (copyts ? '1' : '-1') + '&forceTranscode=' + (forceTranscode ? '1' : '-1') + '&useMatroska=' + (isMatroska && !preferredFormat.isAudio ? '1' : '-1') + '&audioDelay=' + preferredFormat.audioDelay + (startTime ? '&start=' + startTime : '') + (isLocal ? '&isLocal=1' : '') + (isYtdl ? '&isYtdl=1' : '')
 
 			srcs.push({
 				src: webStreamQual,
@@ -1786,7 +1786,7 @@ const player = {
 
 	modal: {
 
-		playFile: (torrent, file, isLocal) => {
+		playFile: (torrent, file, isLocal, isYtdl) => {
 
 			console.log('is local? ' + isLocal)
 
@@ -1808,7 +1808,7 @@ const player = {
 
 		  freezetime(0,0)
 
-		  player.modal.open(torrent, file, null, true, window.selectedQuality, oldAudioTrack, isLocal)
+		  player.modal.open(torrent, file, null, true, window.selectedQuality, oldAudioTrack, isLocal, isYtdl)
 		},
 
 		openUrl: (url) => {
@@ -1859,14 +1859,18 @@ const player = {
 
 		},
 
-		open: async (torrent, file, initTime, noLoader, prefQuality, oldAudioTrack, isLocal) => {
+		open: async (torrent, file, initTime, noLoader, prefQuality, oldAudioTrack, isLocal, isYtdl) => {
 
 			console.log('is local 2? ' + isLocal)
 
-			if (torrent && torrent.pid && !torrent.infoHash) {
-				torrent.infoHash = torrent.pid
-				if (torrent.files && torrent.files.length)
-					torrent.files = torrent.files.map((plItm) => { plItm.streamable = true; return plItm })
+			if (torrent) {
+				if (torrent.pid && !torrent.infoHash) {
+					torrent.infoHash = torrent.pid
+					if (torrent.files && torrent.files.length)
+						torrent.files = torrent.files.map((plItm) => { plItm.streamable = true; return plItm })
+					if (torrent.extracted && !torrent.files)
+						torrent.files = [file]
+				}
 			}
 
 			if (document.getElementById('video') && document.getElementById('video').classList && document.getElementById('video').classList.contains('vjs-live'))
@@ -1910,7 +1914,7 @@ const player = {
 
 			  if (iOS) {
 			    noLoader = true
-			    events.emit('openPlayer', { torrent, file: el, isLocal: isLocal || false })
+			    events.emit('openPlayer', { torrent, file: el, isLocal: isLocal || false, isYtdl: isYtdl || false })
 			    video.requestFullscreen()
 			  }
 
@@ -1935,7 +1939,7 @@ const player = {
 
 			  player.setTitle(el.name)
 
-			  const playlistObj = player.parsePlaylist(torrent, torrent.files, el, isLocal)
+			  const playlistObj = player.parsePlaylist(torrent, torrent.files, el, isLocal, isYtdl)
 
 			  const parsed = await api.get({ type: '/meta/'+torrent.infoHash+'/'+el.id, json: true })
 
@@ -1976,7 +1980,7 @@ const player = {
 
 					player.syncSubtitle(time, subtitleDiffTime)
 
-					player.startForQuality(torrent, el, label, time, preferredFormat, api.parseUrl, null, isLocal)
+					player.startForQuality(torrent, el, label, time, preferredFormat, api.parseUrl, null, isLocal, isYtdl)
 
 				}
 
@@ -2041,7 +2045,9 @@ const player = {
 			        clearInterval(historyInterval)
 			        historyInterval = false
 			      }
-			      api.get({ method: 'updateHistory', filename: el.name, time: 0, duration: video.theDuration, infohash: torrent.infoHash, fileID: el.id, ended: true, isLocal: isLocal ? '1' : undefined })
+				  if (video && video.theDuration) {
+				      api.get({ method: 'updateHistory', filename: el.name, time: 0, duration: video.theDuration, infohash: torrent.infoHash, fileID: el.id, ended: true, isLocal: isLocal ? '1' : undefined, isYtdl: isYtdl ? '1' : undefined })
+				  }
 			      video.playlistCustomNext()
 			      clearFrozenPlayer()
 			    }
@@ -2063,7 +2069,7 @@ const player = {
 			      delete window.shouldStopVideoIfCancel
 
 			      if (!iOS) {
-					events.emit('openPlayer', { torrent, file: el, isLocal: isLocal || false })
+					events.emit('openPlayer', { torrent, file: el, isLocal: isLocal || false, isYtdl: isYtdl || false })
 				  }
 
 		  		  isHls = ['application/x-mpegURL', 'application/vnd.apple.mpegurl'].indexOf(video.currentType()) > -1
@@ -2096,8 +2102,8 @@ const player = {
 
 			      const updateHistory = function() {
 			        const currentTime = video.currentTime()
-			        if (currentTime)
-			          api.get({ method: 'updateHistory', filename: el.name, time: currentTime, duration: video.theDuration, infohash: torrent.infoHash, fileID: el.id, ended: false, isLocal: isLocal ? '1' : undefined })
+			        if (currentTime && video.theDuration)
+			          api.get({ method: 'updateHistory', filename: el.name, time: currentTime, duration: video.theDuration, infohash: torrent.infoHash, fileID: el.id, ended: false, isLocal: isLocal ? '1' : undefined, isYtdl: isYtdl ? '1' : undefined })
 			      }
 
 			      historyInterval = setInterval(updateHistory, 5000) // update history every 5s
@@ -2116,7 +2122,7 @@ const player = {
 //			        document.getElementsByClassName('vjs-control-bar')[0].classList.remove('vjs-control-bar-with-subs')
 			      }
 
-			      if (config.subSearch() && !isAudio) {
+			      if (config.subSearch() && !isAudio && !isYtdl) {
 				      setTimeout(() => {
 				        api.findSubs(torrent, el, (subs) => {
 				          if (subs && subs.length) {
@@ -2159,7 +2165,7 @@ const player = {
 					if (torrent && torrent.files) {
 						torrent.files.some((fl) => {
 							if (fl.id == flId) {
-								player.modal.playFile(torrent, fl, isLocal)
+								player.modal.playFile(torrent, fl, isLocal, isYtdl)
 								return true
 							}
 						})
@@ -2251,7 +2257,7 @@ const player = {
 
 				  }
 
-			      player.startForQuality(torrent, el, window.selectedQuality, time, preferredFormat, api.parseUrl, null, isLocal)
+			      player.startForQuality(torrent, el, window.selectedQuality, time, preferredFormat, api.parseUrl, null, isLocal, isYtdl)
 
 			      return this
 			    }
@@ -2294,7 +2300,7 @@ const player = {
 
 			        video.src(sources)
 
-//			        player.startForQuality(torrent, el, window.selectedQuality, window.frozenTime, preferredFormat, api.parseUrl, null, isLocal)
+//			        player.startForQuality(torrent, el, window.selectedQuality, window.frozenTime, preferredFormat, api.parseUrl, null, isLocal, isYtdl)
 
 			        setTimeout(function() {
 			          video.play();
@@ -2304,7 +2310,7 @@ const player = {
 
 			    player.startForQuality(torrent, el, window.selectedQuality, startTime, preferredFormat, api.parseUrl, () => {
 			      showVideo()
-			    }, isLocal)
+			    }, isLocal, isYtdl)
 
 			    startTime = false
 

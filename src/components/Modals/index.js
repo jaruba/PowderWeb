@@ -36,6 +36,7 @@ import SopChoiceDialog from './components/sopChoiceDialog'
 import SopInstallDialog from './components/sopInstallDialog'
 import SopNotInstalledDialog from './components/sopNotInstalledDialog'
 import LocalOptsDialog from './components/localOptsDialog'
+import YtdlOptsDialog from './components/ytdlOptsDialog'
 
 import events from 'utils/events'
 
@@ -167,6 +168,9 @@ export default class Modals extends PureComponent {
               break
           case 'localOpts':
               return <LocalOptsDialog query={this.state.query} />;
+              break
+          case 'ytdlOpts':
+              return <YtdlOptsDialog query={this.state.query} />;
               break
       }
   }

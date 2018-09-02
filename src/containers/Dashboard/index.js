@@ -158,8 +158,85 @@ export default class Counter extends PureComponent {
     }
   }
 
-  openLocalFileMenu = async (localObj) => {
+  openLocalFileMenu = (localObj) => {
     modals.open('localOpts', { loc: localObj })
+  }
+
+  playYtdlFile = async (ytdlObj) => {
+    const playButtonAction = JSON.parse(localStorage.getItem('playButtonAction'))
+
+    if (ytdlObj) {
+
+      if (Date.now() - ytdlObj.utime > 600000 && ytdlObj.originalURL) { // 10 min timeout on ytdl streams
+
+        modals.open('loading')
+
+        let isCanceled = false
+        const hasCanceled = () => {
+          events.off('canceledLoading', hasCanceled)
+          isCanceled = true
+        }
+
+        events.on('canceledLoading', hasCanceled)
+
+        console.log('timed out')
+
+        await api.get({ method: 'ytdlAdd', pid: ytdlObj.originalURL })
+
+        if (isCanceled)
+          return
+
+      }
+
+      api.get({ method: 'ytdlUpdateTime', pid: ytdlObj.pid })
+
+
+      modals.close()
+
+      if (playButtonAction) {
+        player.modal.open(ytdlObj, { id: 0, name: ytdlObj.name, streamable: true }, 0, true, null, null, null, true)
+      } else {
+        if (window.isMaster) {
+          api.get({ method: 'runYtdlPlaylist', pid: ytdlObj.pid })
+        } else {
+
+          let pattern = {
+            type: 'getytdlplaylist.m3u',
+            pid: ytdlObj.pid
+          }
+
+          window.open(api.parseUrl(pattern), "_blank")
+
+        }
+      }
+
+    }
+  }
+
+  openYtdlFileMenu = async (ytdlObj) => {
+
+    if (Date.now() - ytdlObj.utime > 600000 && ytdlObj.originalURL) { // 10 min timeout on ytdl streams
+
+      modals.open('loading')
+
+      let isCanceled = false
+      const hasCanceled = () => {
+        events.off('canceledLoading', hasCanceled)
+        isCanceled = true
+      }
+
+      events.on('canceledLoading', hasCanceled)
+
+      console.log('timed out')
+
+      await api.get({ method: 'ytdlAdd', pid: ytdlObj.originalURL })
+
+      if (isCanceled)
+        return
+
+    }
+
+    modals.open('ytdlOpts', { ytdl: ytdlObj })
   }
 
   playFile = async (el) => {
@@ -280,7 +357,39 @@ export default class Counter extends PureComponent {
 
       backColor = backColor == '#444' ? '#3e3e3e' : '#444'
 
-      if (el.isLocal) {
+      if (el.isYtdl) {
+
+        const fileFinished = true
+        const filePercent = 1
+        const fileProgress = 100
+
+        let newFile
+
+        newFile = (
+            <div key={ij} className="dashboardFile" style={{backgroundColor: backColor}}>
+                <div className="dashboardFileButtonHold">
+                    <paper-fab icon={ 'menu' } onClick={this.openYtdlFileMenu.bind(this, el)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                    <paper-fab icon={ 'av:play-arrow' } onClick={this.playYtdlFile.bind(this, el)} style={{ backgroundColor: fileFinished ? '#11a34e' : el.selected ? '#e38318' : '#e3b618' }} />
+                </div>
+                <div className="torrentFile" onClick={this.openYtdlFileMenu.bind(this, el)}>
+                    <div className="torrentFileProgressHold">
+                        <progress-bubble value={fileProgress} max="100" stroke-width="5">
+                            <strong>{fileProgress}<span>%</span></strong>
+                        </progress-bubble>
+                    </div>
+                    <div className="torrentFileDetails">
+                        <div className="torrentFileName">{el.name} <span className="torrentFileState" style={{ backgroundColor: el.running ? 'rgb(17, 163, 78)' : 'rgb(96, 96, 96)' }}></span></div>
+                        <div className="torrentFileSubtitle">Link</div>
+                    </div>
+                    <div style={{clear: 'both'}} />
+                </div>
+                <div style={{clear: 'both'}} />
+            </div>
+        )
+
+        fileList.push(newFile)
+
+      } else if (el.isLocal) {
 
         const fileFinished = true
         const filePercent = 1

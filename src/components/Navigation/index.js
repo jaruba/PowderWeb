@@ -89,6 +89,7 @@ const syncBrowsers = async () => {
           events.off('canceledLoading', hasCanceled)
           isCanceled = true
         }
+        events.on('canceledLoading', hasCanceled)
 
         if (!el.running) {
           window.loadingTorrents[el.infoHash] = true

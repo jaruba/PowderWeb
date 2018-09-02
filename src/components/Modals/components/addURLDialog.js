@@ -6,6 +6,7 @@ import _ from 'lodash'
 
 import modals from 'utils/modals'
 import api from 'utils/api'
+import events from 'utils/events'
 
 const focusInput = (elem) => {
   const focus = () => {
@@ -57,10 +58,36 @@ export default class Modals extends PureComponent {
         modals.open('sopChoice', { pid: sopHash })
       }
     } else {
-      api.addMagnet(torrentUrl)
+      const urlType = await api.get({ method: 'urlType', pid: torrentUrl, json: true })
+
+      if (urlType) {
+        if (urlType.isTorrent) {
+          api.addMagnet(torrentUrl)
+        } else if (urlType.isYoutubeDl) {
+
+          modals.open('loading')
+
+          let isCanceled = false
+
+          const hasCanceled = () => {
+            events.off('canceledLoading', hasCanceled)
+            isCanceled = true
+          }
+
+          events.on('canceledLoading', hasCanceled)
+
+          const ytdlObj = await api.get({ method: 'ytdlAdd', pid: torrentUrl, json: true })
+          if (ytdlObj && ytdlObj.extracted && !isCanceled) {
+            modals.open('ytdlOpts', { ytdl: ytdlObj })
+          } else {
+            modals.open('message', { message: 'Could not load Youtube-DL link' })
+          }
+        }
+      }
     }
 
-    document.getElementById("addURLDialog").close()
+    if (document.getElementById("addURLDialog"))
+      document.getElementById("addURLDialog").close()
   }
 
   cancelAddMagnet() {

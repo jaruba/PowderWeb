@@ -311,7 +311,7 @@ const mainServer = http.createServer(function(req, resp) {
   if (tokens[reqToken] == 'master')
     isMaster = true
 
-  if (isEmbed && ['embedStart', 'torrentData', 'getSubs', 'updateHistory', 'haveAce', 'ace', 'aceMsg'].indexOf(method) == -1 && !uri.startsWith('/srt2vtt/subtitle.vtt'))
+  if (isEmbed && ['embedStart', 'torrentData', 'getSubs', 'updateHistory', 'haveAce', 'ace', 'aceMsg', 'urlType', 'ytdlAdd', 'sop', 'sopMsg'].indexOf(method) == -1 && !uri.startsWith('/srt2vtt/subtitle.vtt'))
     return page500('Invalid access token')
 
   if (method == 'settings') {
@@ -495,6 +495,36 @@ const mainServer = http.createServer(function(req, resp) {
             newM3U += os.EOL+"#EXTINF:0,"+fl.name+os.EOL+fl.location
           })
         }
+      }
+
+      const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+
+      fs.writeFile(filePath, newM3U, (err) => {
+          if (err) {
+              return console.log(err);
+          }
+          if (settings.get('extPlayer')) {
+            helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), filePath)
+          } else {
+            shell.openItem(filePath)
+          }
+      })
+    }
+  }
+
+  const runYtdlPlaylist = (pid) => {
+    if (pid) {
+
+      // no transcoding needed
+      let newM3U = "#EXTM3U";
+
+      const ytdl = youtube.get(pid)
+
+      const reqUrl = getReqUrl(req)
+
+      if (ytdl) {
+        const uri = reqUrl + '/ytdl/' + pid + '/0&token=' + reqToken
+        newM3U += os.EOL+"#EXTINF:0,"+ytdl.name+os.EOL+uri
       }
 
       const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
@@ -808,6 +838,34 @@ const mainServer = http.createServer(function(req, resp) {
     return
   }
 
+  if (method == 'ytdlAdd' && urlParsed.query && urlParsed.query.pid) {
+    youtube.add(urlParsed.query.pid, (ytdlObj) => {
+      respond(ytdlObj)
+    }, (errMsg) => {
+      page500(errMsg)
+    })
+    return
+  }
+
+  if (method == 'ytdlDestroy' && urlParsed.query && urlParsed.query.pid) {
+    youtube.remove(urlParsed.query.pid)
+    return
+  }
+
+  if (method == 'ytdlRename' && urlParsed.query && urlParsed.query.pid && urlParsed.query.name) {
+    youtube.rename(urlParsed.query.pid, urlParsed.query.name)
+    return
+  }
+
+  if (method == 'urlType' && urlParsed.query && urlParsed.query.pid) {
+    helpers.urlType(urlParsed.query.pid, (urlType) => {
+      respond(urlType)
+    }, (errMsg) => {
+      page500(errMsg)
+    })
+    return
+  }
+
   if (method == 'qrCode' && urlParsed.query && urlParsed.query.qrType) {
 
     const qrKey = isMaster ? argsKey : reqToken
@@ -822,6 +880,11 @@ const mainServer = http.createServer(function(req, resp) {
 
   if (method == 'getLoc' && urlParsed.query && urlParsed.query.pid) {
     respond(local.get(urlParsed.query.pid))
+    return
+  }
+
+  if (method == 'getYtdl' && urlParsed.query && urlParsed.query.pid) {
+    respond(youtube.get(urlParsed.query.pid))
     return
   }
 
@@ -1001,6 +1064,39 @@ const mainServer = http.createServer(function(req, resp) {
         } else {
           page500('Invalid Resource')
         }
+      } else {
+        page500('Invalid Resource ID')
+      }
+
+      resp.writeHead(200, {
+        "Content-Type": "audio/x-mpegurl",
+        "Content-Disposition": 'attachment;filename="playlist.m3u"'
+      })
+
+      resp.write(newM3U, function(err) { resp.end() })
+
+    } else {
+      page500('Invalid Resource ID')
+    }
+
+    return
+  }
+
+  if (uri.startsWith('/getytdlplaylist.m3u') && urlParsed.query && urlParsed.query.pid) {
+    const pid = urlParsed.query.pid
+    if (pid) {
+
+      // no transcoding needed
+      let newM3U = "#EXTM3U";
+
+      const ytdl = youtube.get(pid)
+
+      const requestHost = getReqUrl(req)
+      const altHost = 'http://127.0.0.1:' + peerflixProxy
+
+      if (ytdl) {
+        const urii = (requestHost || altHost) + '/ytdl/' + pid + '/0?token=' + reqToken
+        newM3U += os.EOL+"#EXTINF:0,"+ytdl.name+os.EOL+urii
       } else {
         page500('Invalid Resource ID')
       }
@@ -1221,6 +1317,12 @@ const mainServer = http.createServer(function(req, resp) {
 
   if (method == 'locUpdateTime' && urlParsed.query && urlParsed.query.pid) {
     local.updateTime(urlParsed.query.pid)
+    respond({})
+    return
+  }
+
+  if (method == 'ytdlUpdateTime' && urlParsed.query && urlParsed.query.pid) {
+    youtube.updateTime(urlParsed.query.pid)
     respond({})
     return
   }
@@ -1698,6 +1800,12 @@ const mainServer = http.createServer(function(req, resp) {
       return
     }
 
+    if (method == 'runYtdlPlaylist' && urlParsed.query.pid) {
+      runYtdlPlaylist(urlParsed.query.pid)
+      respond({})
+      return
+    }
+
   }
 
   if (method == 'isListening' && urlParsed.query.utime) {
@@ -1821,7 +1929,7 @@ var srv = http.createServer(function (req, res) {
   }
 
   const getParams = (uri) => {
-    const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').replace('/ace/', '').replace('/hls/', '').replace('/sop/', '').replace('/local/', '').split('/')
+    const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').replace('/ace/', '').replace('/hls/', '').replace('/sop/', '').replace('/ytdl/', '').replace('/local/', '').split('/')
     let returnObj = {}
     returnObj.infohash = parts[0]
     returnObj.fileId = parts[1]
@@ -1836,6 +1944,7 @@ var srv = http.createServer(function (req, res) {
         returnObj.copyts = urlParsed.query.copyts
         returnObj.forceTranscode = urlParsed.query.forceTranscode
         returnObj.isLocal = urlParsed.query.isLocal
+        returnObj.isYtdl = urlParsed.query.isYtdl
       } else {
         returnObj.videoQuality = moreParts[0]
         returnObj.videoContainer = parts[2].split('.').pop()
@@ -1851,6 +1960,7 @@ var srv = http.createServer(function (req, res) {
         returnObj.useMatroska = urlParsed.query.useMatroska
         returnObj.audioDelay = parseFloat(urlParsed.query.audioDelay)
         returnObj.isLocal = urlParsed.query.isLocal
+        returnObj.isYtdl = urlParsed.query.isYtdl
       }
     }
     return returnObj
@@ -1864,7 +1974,50 @@ var srv = http.createServer(function (req, res) {
 
   const useIp = (process.platform == 'linux')
 
-  if (uri.startsWith('/local/')) {
+  if (uri.startsWith('/ytdl/')) {
+
+    if (params.infohash.startsWith('http')) {
+
+      const ytdlObj = youtube.get(params.infohash)
+
+      if (ytdlObj && ytdlObj.extracted) {
+
+        const urlParsed = require('url').parse(ytdlObj.extracted)
+
+        var configProxy = { target: ytdlObj.extracted }
+
+        configProxy.headers = {
+            host: urlParsed.host,
+            pathname: urlParsed.pathname,
+            referer: ytdlObj.originalURL,
+            agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/610.0.3239.132 Safari/537.36'
+        }
+
+        if (urlParsed.protocol == 'https:')
+            configProxy.agent = require('https').globalAgent
+
+        req.headers['host'] = configProxy.headers.host
+
+        req.headers['referer'] = ytdlObj.originalURL
+        req.headers['user-agent'] = configProxy.headers.agent
+
+        res.setHeader('Access-Control-Allow-Origin', '*')
+
+        req.url = ytdlObj.extracted
+
+        proxy.web(req, res, configProxy);
+
+      }
+    } else {
+      res.writeHead(500, { "Content-Type": "text/plain" })
+      res.write("Invalid Resource\n")
+      res.end()
+    }
+
+    return
+
+  } else if (uri.startsWith('/local/')) {
+
     const loc = local.get(params.infohash)
 
     const serveFile = (fileLoc) => {
@@ -1943,10 +2096,14 @@ var srv = http.createServer(function (req, res) {
     return
   }
 
-  if (params.isLocal || (uri.startsWith('/meta') && !isNaN(params.infohash))) {
+  if (params.isYtdl || (uri.startsWith('/meta') && params.infohash.startsWith('http'))) {
+    peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+peerflixProxy+'/ytdl/'+params.infohash+'/'+params.fileId+'?token='+reqToken
+  } else if (params.isLocal || (uri.startsWith('/meta') && (!isNaN(params.infohash) || params.infohash.startsWith('http')))) {
     peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+peerflixProxy+'/local/'+params.infohash+'/'+params.fileId+'?token='+reqToken
   } else if (enginePort)
     peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+enginePort+'/'+params.fileId
+
+    console.log('peerflix url: '+ peerflixUrl)
 
   if (uri.startsWith('/web/')) {
     // ffmpeg proxy
@@ -2147,8 +2304,10 @@ var srv = http.createServer(function (req, res) {
           command.addOptions(['-itsoffset '+params.audioDelay, '-i '+peerflixUrl])
         }
 
+console.log('start is: '+start)
+console.log('converted time is: '+convertSecToTime(start))
         if(start)
-          command.seekInput(convertSecToTime(start))
+          command.seekInput(convertSecToTime(start) || 0)
 
 //      command.format('mp4')
         if (resized) {
@@ -2298,10 +2457,10 @@ var srv = http.createServer(function (req, res) {
     })
 
     const proxyLogic = [{
-      context: ["/playlist.m3u", "/getplaylist.m3u", "/getaceplaylist.m3u", "/getsopplaylist.m3u", "/getlocalplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
+      context: ["/playlist.m3u", "/getplaylist.m3u", "/getaceplaylist.m3u", "/getsopplaylist.m3u", "/getlocalplaylist.m3u", "/getytdlplaylist.m3u", "/srt2vtt/subtitle.vtt", "/404", "/actions", "/subUpload"],
       target: "http://localhost:" + port
     }, {
-      context: ["/api/", "/web/", "/meta/", "/hls/", "/ace/", "/content/", "/sop/", "/local/"],
+      context: ["/api/", "/web/", "/meta/", "/hls/", "/ace/", "/content/", "/sop/", "/local/", "/ytdl/"],
       target: "http://localhost:" + peerflixProxy
     }]
 

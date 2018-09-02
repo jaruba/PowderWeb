@@ -83,7 +83,8 @@
     "workerjs": "*",
     "xml-js": "^1.6.3",
     "yup": "^0.22.0",
-    "walk": "^2.3.14"
+    "walk": "^2.3.14",
+    "youtube-dl": "https://github.com/jaruba/node-youtube-dl/tarball/master"
   },
   "devDependencies": {
     "cross-env": "^5.0.0",

@@ -17,7 +17,8 @@ export default class Modals extends PureComponent {
     this.state = {
       torrent: false,
       file: false,
-      isLocal: false
+      isLocal: false,
+      isYtdl: false,
     }
   }
 
@@ -73,7 +74,7 @@ export default class Modals extends PureComponent {
               <div
                 key={'playlistItem'+ij}
                 className={'playlistItem'+(file.id == this.state.file.id ? ' playlistItemSelected' : '')}
-                onClick={player.modal.playFile.bind(this, torrent, file, this.state.isLocal)}>
+                onClick={player.modal.playFile.bind(this, torrent, file, this.state.isLocal, this.state.isYtdl)}>
                   {player.filename2title(file.name)}
               </div>
             )

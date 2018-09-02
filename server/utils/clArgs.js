@@ -3,6 +3,7 @@ const url = require('url')
 const settings = require('electron-settings')
 const streams = require('../streams')
 const acestream = require('../acestream')
+const youtube = require('../ytdl')
 const sop = require('../sopcast')
 const { app, shell } = require('electron')
 const helpers = require('../utils/misc')
@@ -202,69 +203,103 @@ const runTorrent = (torrentQuery, reqToken, noAction, opts) => {
 
   } else {
 
-    let torrentId
+    helpers.urlType(torrentQuery, (urlType) => {
+      if (urlType.isTorrent) {
 
-    streams.new(torrentQuery,
+        let torrentId
 
-        torrentObj => {
-          torrentId = torrentObj.utime
-        },
+        streams.new(torrentQuery,
 
-        (engine, organizedFiles) => {
+            torrentObj => {
+              torrentId = torrentObj.utime
+            },
 
-          if (noAction) return
+            (engine, organizedFiles) => {
 
-          if (opts) return
+              if (noAction) return
 
-          // ready
+              if (opts) return
 
-          // we only need the next code when it's ran from a magnet link / torrent file association
+              // ready
 
-            if (settings.get('extTorrentClient')) {
+              // we only need the next code when it's ran from a magnet link / torrent file association
 
-              // check if there is any streamable content
+                if (settings.get('extTorrentClient')) {
 
-              if (organizedFiles) {
-                if (!organizedFiles.streamable) {
+                  // check if there is any streamable content
 
-                  // cancel torrent and start with external torrent client
+                  if (organizedFiles) {
+                    if (!organizedFiles.streamable) {
 
-                  streams.cancel(torrentId, () => {
-                    helpers.openApp(settings.get('extTorrentClient'), settings.get('torrentCmdArgs'), torrentQuery)
-                  }, true)
+                      // cancel torrent and start with external torrent client
 
+                      streams.cancel(torrentId, () => {
+                        helpers.openApp(settings.get('extTorrentClient'), settings.get('torrentCmdArgs'), torrentQuery)
+                      }, true)
+
+                    }
+                  }
+
+                } else {
+                  // ... download internally
                 }
+
+
+            },
+
+            (engine, organizedFiles) => {
+
+              if (noAction) return
+
+              // listening
+
+              // we only need the next code when it's ran from a magnet link / torrent file association
+
+              runPlaylist(torrentId, organizedFiles, engine.infoHash, reqToken, opts)
+
+            },
+
+            (err) => {
+
+              if (err && err.message) {
+                throw err
+              } else {
+                const newErr = new Error('An unknown error occured')
+                throw newErr
               }
 
-            } else {
-              // ... download internally
-            }
+            })
+      } else if (urlType.isYoutubeDl) {
+        youtube.add(torrentQuery, (ytdl) => {
+          let newM3U = "#EXTM3U";
 
+          const reqUrl = 'http://127.0.0.1:3000'
 
-        },
-
-        (engine, organizedFiles) => {
-
-          if (noAction) return
-
-          // listening
-
-          // we only need the next code when it's ran from a magnet link / torrent file association
-
-          runPlaylist(torrentId, organizedFiles, engine.infoHash, reqToken, opts)
-
-        },
-
-        (err) => {
-
-          if (err && err.message) {
-            throw err
-          } else {
-            const newErr = new Error('An unknown error occured')
-            throw newErr
+          if (ytdl) {
+            const uri = reqUrl + '/ytdl/' + ytdl.pid + '/0&token=' + reqToken
+            newM3U += os.EOL+"#EXTINF:0,"+ytdl.name+os.EOL+uri
           }
 
+          const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+
+          fs.writeFile(filePath, newM3U, (err) => {
+              if (err) {
+                  return console.log(err);
+              }
+              if (settings.get('extPlayer')) {
+                helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), filePath)
+              } else {
+                shell.openItem(filePath)
+              }
+          })
+        }, (errMsg) => {
+          console.log(errMsg)
         })
+      }
+    }, (errMsg) => {
+      console.log(errMsg)
+    })
+
   }
 }
 

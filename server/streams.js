@@ -331,6 +331,8 @@ const actions = {
 
     closeAll: closeAll,
 
+    isRedirectToMagnet,
+
     speedUp: (torrentId) => {
 
         _.each(streams, (el, ij) => {

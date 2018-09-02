@@ -112,28 +112,49 @@ const playTorrent = async () => {
 
     } else {
 
-      const runningTorrent = await api.get({ method: 'embedStart', id: getParameterByName('hash') || getParameterByName('opener'), json: true })
+      const urlType = await api.get({ method: 'urlType', pid: getParameterByName('hash') || getParameterByName('opener'), json: true })
 
-      const parsed = await api.get({ method: 'torrentData', id: runningTorrent.infoHash || getParameterByName('hash'), json: true })
+      if (urlType) {
+        if (urlType.isTorrent) {
 
-      if (parsed) {
+          const runningTorrent = await api.get({ method: 'embedStart', id: getParameterByName('hash') || getParameterByName('opener'), json: true })
 
-        player.modal.open(parsed, parsed.files[0])
+          const parsed = await api.get({ method: 'torrentData', id: runningTorrent.infoHash || getParameterByName('hash'), json: true })
 
-      } else {
+          if (parsed) {
 
-        fail()
+            player.modal.open(parsed, parsed.files[0])
 
-      }
+          } else {
 
-    }
+            fail()
 
-  } else {
+          }
 
-    fail()
+        } else if (urlType.isYoutubeDl) {
 
+          modals.open('embedLoading')
+
+          const ytdlObj = await api.get({ method: 'ytdlAdd', pid: getParameterByName('hash') || getParameterByName('opener'), json: true })
+
+          if (ytdlObj && ytdlObj.extracted) {
+            modals.close()
+            player.modal.open(ytdlObj, { id: 0, name: ytdlObj.name, streamable: true }, 0, true, null, null, null, true)
+          } else {
+            events.emit('embedLoadingMsg', 'Could not load Youtube-DL link')
+          }
+        } else {
+          events.emit('embedLoadingMsg', 'Invalid Link')
+        }
+
+    } else {
+          events.emit('embedLoadingMsg', 'Invalid Link')
+        }
   }
 
+  } else {
+    fail()
+  }
 }
 
 export default class Modals extends PureComponent {
