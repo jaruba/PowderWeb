@@ -13,6 +13,7 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 
 - Use your PC as a Streaming Server for all your Devices either for your Entire Home, or for when you're On the Go
 - Streaming Torrents, Acestream, SopCast to your Smart TV's Browser (no other devices or direct conectivity needed), or your Phone's Browser, or any device that has a browser!
+- Stream Local Media to Any Device
 - Associate Magnet / Acestream / SopCast Links or Torrent Files to Powder Web and configure it to start playback automatically with your favorite video player (or even the web player)
 - Finding Subtitles Easily for Videos in Torrents (subtitles are fetched automatically for the Web Player, there is also a button to manually get and download subtitles if you prefer using a different player)
 - Watch with Friends from a Distance, you can Sync Playback with one or more Friends (supports creating accounts for the web view, if multiple people log in on the same account, you can sync playback with what others are watching by using the history feature)
@@ -23,6 +24,10 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 
 ## Features:
 
+- Supports Streaming Torrents (both video and audio files)
+- Supports Acestream Live Streams
+- Supports SopCast Live Streams
+- Supports Streaming Local Files (can add individual files or entire folders)
 - Streaming to your Preferred Video Player (by generating M3U playlists)
 - Streaming to your Browser (works on all Devices and all Browsers)
 - Find Subtitles for every Video File in Torrents (either automatically in the Web Player, or by using the "Find Subtitles" button in the torrent file settings to find / download subtitles)
@@ -34,9 +39,7 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 - Supports SSL (users can activate Self Signed Certificates)
 - Supports Secondary Torrent Client (you can set a secondary torrent client that will be used if the torrent does not include any video files)
 - Advanced Torrent and Web Server Settings
-- Managing Multiple Torrents
-- Supports Acestream Live Streams
-- Supports SopCast Live Streams
+- Managing Multiple Torrents, Live Streams, Local Media
 
 
 ## Install:
