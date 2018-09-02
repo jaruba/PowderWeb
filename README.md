@@ -12,10 +12,9 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 ## Possible use cases include:
 
 - Use your PC as a Streaming Server for all your Devices either for your Entire Home, or for when you're On the Go
-- Streaming Torrents, Acestream, SopCast to your Smart TV's Browser (no other devices or direct conectivity needed), or your Phone's Browser, or any device that has a browser!
-- Stream Local Media to Any Device
+- Streaming Torrents, Acestream, SopCast or Local Media to your Smart TV's Browser (no other devices or direct conectivity needed), or your Phone's Browser, or any device that has a browser!
 - Associate Magnet / Acestream / SopCast Links or Torrent Files to Powder Web and configure it to start playback automatically with your favorite video player (or even the web player)
-- Finding Subtitles Easily for Videos in Torrents (subtitles are fetched automatically for the Web Player, there is also a button to manually get and download subtitles if you prefer using a different player)
+- Finding Subtitles Easily for Videos in Torrents and Local Video Files (subtitles are fetched automatically for the Web Player, there is also a button to manually get and download subtitles if you prefer using a different player)
 - Watch with Friends from a Distance, you can Sync Playback with one or more Friends (supports creating accounts for the web view, if multiple people log in on the same account, you can sync playback with what others are watching by using the history feature)
 - Allowing Websites to Embed Torrent Streaming (for security reasons users need to allow websites to embed torrents through Powder Web individually, either allowing one session or always allowing that specific website)
 - Replace your Favorite Torrent Sites with one Search that searches them all (supports [Jackett](https://github.com/Jackett/Jackett), 'nuf said)
