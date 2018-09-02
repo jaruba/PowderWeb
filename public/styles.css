@@ -878,6 +878,22 @@ header.headerToolbar {
   margin-top: 57px;
 }
 
+.noInternet {
+  color: white;
+  font-size: 14px;
+  line-height: 38px;
+  opacity: 0.8;
+  margin-left: 0;
+  padding: 3px 13px;
+  background-color: rgba(0,0,0,0.9);
+  position: absolute;
+  left: 50%;
+  top: 70px;
+  -webkit-transform: translateX(-50%) translatey(-50%);
+  -moz-transform: translateX(-50%) translatey(-50%);
+  transform: translateX(-50%) translatey(-50%);
+}
+
 body.isElectron .openInBrowserButton {
   display: inline-block !important;
 }

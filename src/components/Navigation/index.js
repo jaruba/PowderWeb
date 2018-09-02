@@ -159,7 +159,7 @@ function Navigation ({ logout, online, props }) {
             <paper-icon-button style={{color: '#cacaca', cursor: 'pointer', width: '40px', height: '40px', verticalAlign: 'top', display: window.torrentDataPage ? 'inline-block': 'none'}} onClick={goToDashboard.bind(this, props)} icon="icons:arrow-back" title="Back to Main Menu" />
             <NavTitle />
         </div>
-        <span style={{marginLeft: '10px', color: 'white', fontSize: '14px', lineHeight: '38px', opacity: '0.8'}}>{!online ? ' - Internet Connection Lost' : ''}</span>
+        <span className="noInternet" style={{display: !online ? 'block' : 'none'}}>Internet Connection Lost</span>
       </div>
     </Wrapper>
   )
