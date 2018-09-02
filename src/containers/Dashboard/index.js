@@ -123,6 +123,8 @@ export default class Counter extends PureComponent {
   playLocalFile = async (localHash) => {
     const playButtonAction = JSON.parse(localStorage.getItem('playButtonAction'))
 
+    api.get({ method: 'locUpdateTime', pid: localHash })
+
     const loc = await api.get({ method: 'getLoc', pid: localHash, json: true })
 
     if (loc) {
@@ -271,6 +273,8 @@ export default class Counter extends PureComponent {
     let backColor = '#3e3e3e'
 
     _.forEach(this.state.torrents, (el, ij) => {
+
+      if (ij == 'undefined' || typeof el !== 'object') return
 
       if (!el) return
 

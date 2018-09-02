@@ -96,6 +96,8 @@ const acebook = require('./utils/acebook')
 
 const sopbook = require('./utils/sopbook')
 
+const youtube = require('./ytdl')
+
 const qrCode = require('./utils/qrcode')
 
 const sop = require('./sopcast')
@@ -1213,7 +1215,13 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (method == 'getallextra') {
-    respond(Object.assign({}, acebook.getAll() || {}, sopbook.getAll() || {}, local.getAll()))
+    respond(Object.assign({}, acebook.getAll() || {}, sopbook.getAll() || {}, local.getAll() || {}, youtube.getAll() || {}))
+    return
+  }
+
+  if (method == 'locUpdateTime' && urlParsed.query && urlParsed.query.pid) {
+    local.updateTime(urlParsed.query.pid)
+    respond({})
     return
   }
 
@@ -1596,6 +1604,35 @@ const mainServer = http.createServer(function(req, resp) {
           respond({})
         }
       })
+      return
+    }
+
+    if (method == 'localFileLoc' && urlParsed.query.pid) {
+      const loc = local.get(urlParsed.query.pid)
+      if (loc) {
+        if (loc.location) {
+          shell.showItemInFolder(loc.location)
+        } else if (loc.files && loc.files.length) {
+          const fl = loc.files[urlParsed.query.flId || 0]
+          if (fl && fl.location) {
+            shell.showItemInFolder(fl.location)
+          } else {
+            page500('Unknown Error Occurred')
+         }
+        } else {
+         page500('Unknown Error Occurred')
+        }
+      } else {
+        page500('Unknown Error Occurred')
+      }
+      return
+    }
+
+    if (method == 'localDirLoc' && urlParsed.query.pid) {
+      const loc = local.get(urlParsed.query.pid)
+      if (loc && loc.location) {
+        shell.openItem(loc.location)
+      }
       return
     }
 

@@ -74,6 +74,7 @@ export default class Modals extends PureComponent {
   streamFiles() {
     const loc = this.state.local
     if (loc) {
+      api.get({ method: 'locUpdateTime', pid: loc.pid })
       window.open(api.parseUrl({ type: 'getlocalplaylist.m3u', pid: loc.pid }), "_blank")
     }
     this.close()
@@ -90,10 +91,22 @@ export default class Modals extends PureComponent {
 
   runPlaylist = async () => {
 
+    api.get({ method: 'locUpdateTime', pid: this.state.local.pid })
+
     api.get({ method: 'runLocalPlaylist', pid: this.state.local.pid })
 
     this.close()
 
+  }
+
+  openFolder = () => {
+    api.get({ method: 'localDirLoc', pid: this.state.local.pid })
+    this.close()
+  }
+
+  openFileLoc = () => {
+    api.get({ method: 'localFileLoc', pid: this.state.local.pid })
+    this.close()
   }
 
   streamWebPlayer = async () => {
@@ -101,6 +114,8 @@ export default class Modals extends PureComponent {
     const loc = this.state.local
 
     if (loc) {
+
+      api.get({ method: 'locUpdateTime', pid: loc.pid })
 
       let flLoc
 
@@ -165,6 +180,22 @@ export default class Modals extends PureComponent {
                   onClick={this.renameChannel.bind(this)}
                   className='playerButtons' >
               Rename
+              </paper-button>
+
+              <paper-button
+                  raised
+                  onClick={this.openFolder.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', display: window.isMaster && this.state.local && this.state.local.isDirectory ? 'block' : 'none', fontSize: '16px'}}
+                  className='playerButtons' >
+              Open Folder
+              </paper-button>
+
+              <paper-button
+                  raised
+                  onClick={this.openFileLoc.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', display: window.isMaster && this.state.local && this.state.local.isFile ? 'block' : 'none', fontSize: '16px'}}
+                  className='playerButtons' >
+              Show File in Folder
               </paper-button>
 
               <paper-button
