@@ -5,14 +5,15 @@
 // Import parts of electron to use
 const { app, BrowserWindow, Menu, Tray, clipboard } = require('electron');
 
-// var shouldQuit = app.makeSingleInstance(function(commandLine, workingDirectory) {
-//   server.passArgs(commandLine)
-// })
+var shouldQuit = app.makeSingleInstance(function(commandLine, workingDirectory) {
+  server.passArgs(commandLine)
+})
 
-// if (shouldQuit) {
-//   app.quit()
-//   return
-// }
+if (shouldQuit) {
+  app.quit()
+  return
+}
+
 const path = require('path');
 const url = require('url');
 const process = require('process');
@@ -207,7 +208,7 @@ app.on('ready', () => {
     createServer();
   }
 
-if (process.platform == 'darwin') {
+if (process.platform == 'darwin' || process.platform == 'win32') {
   tray = new Tray(path.join(__dirname, 'packaging', 'osx_tray.png'))
 } else {
   tray = new Tray(path.join(__dirname, 'packaging', 'icons', 'powder-square.png'))
