@@ -5,14 +5,14 @@
 // Import parts of electron to use
 const { app, BrowserWindow, Menu, Tray, clipboard } = require('electron');
 
-var shouldQuit = app.makeSingleInstance(function(commandLine, workingDirectory) {
-  server.passArgs(commandLine)
-})
+// var shouldQuit = app.makeSingleInstance(function(commandLine, workingDirectory) {
+//   server.passArgs(commandLine)
+// })
 
-if (shouldQuit) {
-  app.quit()
-  return
-}
+// if (shouldQuit) {
+//   app.quit()
+//   return
+// }
 const path = require('path');
 const url = require('url');
 const process = require('process');
@@ -104,15 +104,19 @@ const quit = () => {
 
   const tick = () => {
     ticks--
-    if (!ticks)
-      process.exit()
+    if (!ticks) {
+      app.quit()
+    }
   }
 
   sop.unhackSopPlayer(() => {
     sop.kill(tick, tick)
   })
+
   streams.closeAll(tick)
+
   acestream.binary.kill(tick, tick)
+
 }
 
 function createWindow() {
@@ -145,8 +149,8 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     // Open the DevTools automatically if developing
 
-    if (process.platform == 'linux')
-      mainWindow.show()
+//    if (process.platform == 'linux')
+//      mainWindow.show()
 
     if (dev) {
       mainWindow.webContents.openDevTools()
@@ -154,11 +158,12 @@ function createWindow() {
   });
 
   mainWindow.on('close', (e) => {
+    console.log('window-close')
 
-    if (process.platform == 'linux') {
-      quit()
-      return
-    }
+//    if (process.platform == 'linux') {
+//      quit()
+//      return
+//    }
 
     e.preventDefault()
     mainWindow.hide()
@@ -202,7 +207,11 @@ app.on('ready', () => {
     createServer();
   }
 
+if (process.platform == 'darwin') {
   tray = new Tray(path.join(__dirname, 'packaging', 'osx_tray.png'))
+} else {
+  tray = new Tray(path.join(__dirname, 'packaging', 'icons', 'powder-square.png'))
+}
   const showApp = () => {
     if (!mainWindow.isVisible()) {
       mainWindow.show()
@@ -248,11 +257,11 @@ app.on('ready', () => {
   }
 
   const relaunch = () => {
-    mainWindow.destroy()
-    streams.closeAll(() => {
+//    mainWindow.destroy()
+//    streams.closeAll(() => {
       app.relaunch()
-      app.exit()
-    })
+      quit()
+//    })
   }
 
   events.on('appQuit', quit)
@@ -323,14 +332,16 @@ app.on('ready', () => {
   })
 });
 
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-  // On macOS it is common for applications and their menu bar
-  // to stay active until the user quits explicitly with Cmd + Q
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
+//Quit when all windows are closed.
+// app.on('window-all-closed', () => {
+//  // On macOS it is common for applications and their menu bar
+//  // to stay active until the user quits explicitly with Cmd + Q
+//  if (process.platform !== 'darwin') {
+//    app.quit();
+//  }
+// });
+
+app.on('window-all-closed', app.quit);
 
 app.on('activate', () => {
   // On macOS it's common to re-create a window in the app when the
@@ -339,3 +350,10 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+app.on('before-quit', () => {
+    if (!mainWindow) return
+    mainWindow.removeAllListeners('close');
+    mainWindow.destroy();
+});
+
