@@ -545,7 +545,7 @@ const ace = {
 			cb()
 
 		const checkFolder = (i) => {
-			if (!portLocs[i]) {
+			if (!portLocs || !portLocs[i]) {
 				cb()
 				return
 			}
