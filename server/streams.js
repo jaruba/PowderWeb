@@ -270,8 +270,8 @@ let checkConcurrency = () => {
             if (!killStreams) return true
             if (streams[ij] && streams[ij].engine) {
                 let engine = streams[ij].engine
-                var olderThenAnHour = (Date.now() - ij > 3600000)
-                if (olderThenAnHour && engine && engine.swarm && engine.swarm.wires && engine.swarm.wires.length <= 1) {
+                var olderThenFourHours = (Date.now() - ij > 14400000)
+                if (olderThenFourHours && engine && engine.swarm && engine.swarm.wires && engine.swarm.wires.length <= 1) {
                     cancelTorrent(ij, () => {}, null, true)
                     killStreams--
                 }

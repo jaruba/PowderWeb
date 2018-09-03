@@ -239,7 +239,7 @@ export default class Modals extends PureComponent {
   }
   generalConcurrentDownloads = () => {
 
-    const label = 'Maximum number of torrents active at the same time. Torrents are paused to maintain concurrency after they have been active for at least 1 hour.'
+    const label = 'Maximum number of torrents active at the same time. Torrents are automatically paused to maintain concurrency after they have been active for at least 4 hours.'
 
     this.getValue(label, this.state.maxConcurrency, (newValue, cb) => {
       this.saveValue('maxConcurrency', newValue, cb)
