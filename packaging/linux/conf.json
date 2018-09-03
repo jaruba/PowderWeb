@@ -1,0 +1,19 @@
+{
+  "name": "PowderWeb",
+  "bin": "PowderWeb",
+  "icon": "./packaging/icons/powder-square.png",
+  "categories": [
+    "Network"
+  ],
+  "mimeType": [
+    "application/x-bittorrent",
+    "x-scheme-handler/magnet",
+    "x-scheme-handler/sop",
+    "x-scheme-handler/acestream",
+    "x-scheme-handler/http",
+    "x-scheme-handler/https"
+  ],
+  "depends": [
+    "libappindicator1"
+  ]
+}

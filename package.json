@@ -22,7 +22,8 @@
     "prepackage": "run-s clean:packages",
     "build-back": "electron-packager ./ --out=./packages --icon=./packaging/icons/powder --ignore=\"tools|docs|webpackConfig|lock|public/\"",
     "package-all": "electron-packager ./ --out=./packages --icon=./packaging/icons/powder --platform=all --ignore=\"tools|docs|webpackConfig|lock|public/\"",
-    "package-32bit": "electron-packager ./ --out=./packages --icon=./packaging/icons/powder --arch=ia32 --ignore=\"tools|docs|webpackConfig|lock|public/\""
+    "package-32bit": "electron-packager ./ --out=./packages --icon=./packaging/icons/powder --arch=ia32 --ignore=\"tools|docs|webpackConfig|lock|public/\"",
+    "deb64": "electron-installer-debian --src packages/PowderWeb-linux-x64/ --dest installers/ --arch amd64 --config packaging/linux/conf.json"
   },
   "dependencies": {
     "async": "^1.5.0",
@@ -87,10 +88,13 @@
     "youtube-dl": "https://github.com/jaruba/node-youtube-dl/tarball/master"
   },
   "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-preset-env": "^1.7.0",
     "cross-env": "^5.0.0",
     "dotenv": "^4.0.0",
     "electron": "^1.6.7",
     "electron-devtools-installer": "^2.2.0",
+    "electron-installer-debian": "^0.8.1",
     "electron-packager": "^12.1.0",
     "eslint-config-react-tools": "^1.0.6",
     "eslint-plugin-class-property": "^1.0.6",
@@ -98,9 +102,7 @@
     "eslint-plugin-jsx-a11y": "5.1",
     "eslint-plugin-react": "^7.3.0",
     "npm-run-all": "^4.1.3",
-    "nwb": "^0.19.1",
-    "babel-core": "^6.26.3",
-    "babel-preset-env": "^1.7.0"
+    "nwb": "^0.19.1"
   },
   "repository": {
     "type": "git",

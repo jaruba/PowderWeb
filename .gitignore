@@ -1,5 +1,6 @@
 .DS_Store
 packages
+installers
 bin
 node_modules
 public/bower_components
