@@ -211,7 +211,7 @@ app.on('ready', () => {
 if (process.platform == 'darwin' || process.platform == 'win32') {
   tray = new Tray(path.join(__dirname, 'packaging', 'osx_tray.png'))
 } else {
-  tray = new Tray(path.join(__dirname, 'packaging', 'icons', 'powder-square.png'))
+  tray = new Tray(path.join(__dirname, 'packaging', 'icons', 'powder-square-border.png'))
 }
   const showApp = () => {
     if (!mainWindow.isVisible()) {
