@@ -31,9 +31,8 @@
     "bluebird": "^3.1.5",
     "decompress-zip": "https://github.com/jaruba/decompress-zip/tarball/master",
     "duti-prebuilt": "https://github.com/jaruba/duti-prebuilt/tarball/master",
-    "window-prebuilt": "https://github.com/jaruba/window-prebuilt/tarball/master",
     "easy-ffmpeg": "https://github.com/jaruba/easy-ffmpeg/tarball/master",
-    "electron-settings": "^3.1.4",
+    "electron-settings": "https://github.com/jaruba/electron-settings/tarball/master",
     "formidable": "^1.2.1",
     "frisbee": "^1.6.0",
     "get-port": "^3.2.0",
@@ -80,12 +79,14 @@
     "torrent-worker": "https://github.com/jaruba/torrent-worker/tarball/master",
     "unique-string": "^1.0.0",
     "videojs-settings-menu": "0.0.2",
+    "walk": "^2.3.14",
+    "window-prebuilt": "https://github.com/jaruba/window-prebuilt/tarball/master",
     "winreg": "^1.2.4",
     "workerjs": "*",
+    "write-file-atomic": "^2.3.0",
     "xml-js": "^1.6.3",
-    "yup": "^0.22.0",
-    "walk": "^2.3.14",
-    "youtube-dl": "https://github.com/jaruba/node-youtube-dl/tarball/master"
+    "youtube-dl": "https://github.com/jaruba/node-youtube-dl/tarball/master",
+    "yup": "^0.22.0"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",
