@@ -333,7 +333,7 @@ module.exports = {
         if (args.length) {
             console.log(args);
             args.forEach( el => {
-                if (el.includes('PowderWeb') || el == '.' || el.includes('/electron/dist/electron')) {
+                if (el.includes('PowderWeb') || el == '.' || el.includes('/electron/dist/electron') || el.includes('electron\\dist\\electron')) {
                   return
                 }
                 if (el.startsWith('--')) {
