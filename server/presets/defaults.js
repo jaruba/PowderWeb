@@ -40,6 +40,7 @@ const map = {
     sopbook: {},
     locbook: {},
     ytdlbook: {},
+    fastresumebook: {},
     uploaded: {},
     maxConcurrency: 2,
     users: {},

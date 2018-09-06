@@ -6,6 +6,7 @@ const parser = require('./utils/parser')
 const helpers = require('./utils/misc')
 let addresses = require('./utils/addressbook')
 let uploadedBook = require('./utils/uploadedbook')
+let fastresumebook = require('./utils/fastresumebook')
 let streams = {}
 let shouldDestroy = {}
 let canceled = {}
@@ -19,6 +20,7 @@ const parseTorrent = require('parse-torrent')
 const organizer = require('./utils/file_organizer')
 const isTorrentString = require('./utils/isTorrentString')
 const rimraf = require('rimraf')
+const checksum = require('checksum')
 
 const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
 const tempDir = path.join(os.tmpDir(), 'PowderWeb', 'torrent-stream')
@@ -173,25 +175,28 @@ let updateInterval = setInterval(() => {
 
 const completelyRemove = (iHash, engine, cb) => {
 
-    addresses.remove(engine.infoHash)
-    uploadedBook.remove(engine.infoHash)
+    iHash = iHash || engine.infoHash
 
-    const appDataTorrentFilePath = path.join(openerDir, engine.infoHash + '.torrent')
+    addresses.remove(iHash)
+    uploadedBook.remove(iHash)
+
+    const appDataTorrentFilePath = path.join(openerDir, iHash + '.torrent')
 
     if (fs.existsSync(appDataTorrentFilePath)) {
         fs.unlink(appDataTorrentFilePath, () => {})
     }
 
-    const appDataMagnetLink = path.join(openerDir, engine.infoHash + '.magnet')
+    const appDataMagnetLink = path.join(openerDir, iHash + '.magnet')
 
     if (fs.existsSync(appDataMagnetLink)) {
         fs.unlink(appDataMagnetLink, () => {})
     }
 
-    const appDataFastResume = path.join(fastResumeDir, engine.infoHash + '.fastresume')
+    const appDataFastResume = path.join(fastResumeDir, iHash + '.fastresume')
 
     if (fs.existsSync(appDataFastResume)) {
         fs.unlink(appDataFastResume, () => {})
+        fastresumebook.remove(engine.infoHash)
     }
 
     if (engine)
@@ -216,7 +221,19 @@ const cancelTorrent = (utime, cb, force, noDelete) => {
 
             uploadedBook.add(engine.infoHash, lastUploaded)
 
-            engine.softKill(cb)
+            const iHash = engine.infoHash
+            const appDataFastResume = path.join(fastResumeDir, iHash + '.fastresume')
+
+            engine.softKill(() => {
+                if (fs.existsSync(appDataFastResume)) {
+                    checksum.file(appDataFastResume, function (err, sum) {
+                       if (!err && sum) {
+                           fastresumebook.add({ pid: iHash, sum })
+                       }
+                    })
+                }
+                cb()
+            })
 
         }
 
@@ -453,80 +470,121 @@ const actions = {
                     errCb(new Error('Unknown error occured'))
             }
 
-            createTorrent(torrent).then((result) => {
+            const startTorrent = () => {
+                createTorrent(torrent).then((result) => {
 
-                let worker = result.worker
-                let engine = result.engine
+                    let worker = result.worker
+                    let engine = result.engine
 
-                streams[utime].worker = worker
+                    streams[utime].worker = worker
 
-                let filesOrganized = false
-                let delayListening = false
+                    let filesOrganized = false
+                    let delayListening = false
 
-                engine.on('listening', () => {
+                    engine.on('listening', () => {
 
-                    // save torrent file for this torrent
-                    const torrentFilePath = path.join(tempDir, torrentData.infoHash + '.torrent')
-                    const appDataTorrentFilePath = path.join(openerDir, torrentData.infoHash + '.torrent')
+                        // save torrent file for this torrent
+                        const torrentFilePath = path.join(tempDir, torrentData.infoHash + '.torrent')
+                        const appDataTorrentFilePath = path.join(openerDir, torrentData.infoHash + '.torrent')
 
-                    if (fs.existsSync(torrentFilePath) && !fs.existsSync(appDataTorrentFilePath)) {
-                        fs.createReadStream(torrentFilePath).pipe(fs.createWriteStream(appDataTorrentFilePath))
-                    }
-
-                    isCanceled(utime, () => {
-                        streams[utime].amListening = true
-                        streams[utime].engine.streamPort = engine.server.address().port
-                        if (!filesOrganized) {
-                            delayListening = true
-                        } else {
-                            listeningCb && listeningCb(engine, streams[utime].organizedFiles)
+                        if (fs.existsSync(torrentFilePath) && !fs.existsSync(appDataTorrentFilePath)) {
+                            fs.createReadStream(torrentFilePath).pipe(fs.createWriteStream(appDataTorrentFilePath))
                         }
-                    }, () => {
-                        remover()
-                    })
-                })
 
-                engine.on('ready', () => {
-                    isCanceled(utime, () => {
-                        delete canceled[utime]
-                        let newAddress = torrentObj(utime, torrent, engine)
-                        const address = addresses.get(newAddress.infoHash)
-                        if (address) {
-                            if (address.pulsing) {
-                                newAddress.pulsing = address.pulsing
-                                actions.setPulse(utime, address.pulsing)
+                        isCanceled(utime, () => {
+                            streams[utime].amListening = true
+                            streams[utime].engine.streamPort = engine.server.address().port
+                            if (!filesOrganized) {
+                                delayListening = true
+                            } else {
+                                listeningCb && listeningCb(engine, streams[utime].organizedFiles)
                             }
-                            if (address.forced) {
-                                newAddress.forced = address.forced
-                                actions.forceDownload(utime, address.forced)
-                            }
-                        } else {
-                            if (settings.get('speedLimit')) {
-                                newAddress.pulsing = settings.get('speedLimit')
-                                actions.setPulse(utime, newAddress.pulsing)
-                            }
-                            if (settings.get('forceDownload')) {
-                                newAddress.forced = settings.get('forceDownload')
-                                actions.forceDownload(utime, newAddress.forced)
-                            }
-                        }
-                        addresses.update(newAddress)
-                        streams[utime].engine = engine
-                        organizer(engine).then(files => {
-                            filesOrganized = true
-                            streams[utime].organizedFiles = files
-                            readyCb && readyCb(engine, files)
-                            if (delayListening) {
-                                listeningCb && listeningCb(engine, files)
-                            }
-                        }).catch(fail)
-                    }, () => {
-                        worker.peerSocket.emit('engineDestroy')
-                        remover()
+                        }, () => {
+                            remover()
+                        })
                     })
-                })
-            }).catch(fail)
 
+                    engine.on('ready', () => {
+                        isCanceled(utime, () => {
+                            delete canceled[utime]
+                            let newAddress = torrentObj(utime, torrent, engine)
+                            const address = addresses.get(newAddress.infoHash)
+                            if (address) {
+                                if (address.pulsing) {
+                                    newAddress.pulsing = address.pulsing
+                                    actions.setPulse(utime, address.pulsing)
+                                }
+                                if (address.forced) {
+                                    newAddress.forced = address.forced
+                                    actions.forceDownload(utime, address.forced)
+                                }
+                            } else {
+                                if (settings.get('speedLimit')) {
+                                    newAddress.pulsing = settings.get('speedLimit')
+                                    actions.setPulse(utime, newAddress.pulsing)
+                                }
+                                if (settings.get('forceDownload')) {
+                                    newAddress.forced = settings.get('forceDownload')
+                                    actions.forceDownload(utime, newAddress.forced)
+                                }
+                            }
+                            addresses.update(newAddress)
+                            streams[utime].engine = engine
+                            organizer(engine).then(files => {
+                                filesOrganized = true
+                                streams[utime].organizedFiles = files
+                                readyCb && readyCb(engine, files)
+                                if (delayListening) {
+                                    listeningCb && listeningCb(engine, files)
+                                }
+                            }).catch(fail)
+                        }, () => {
+                            worker.peerSocket.emit('engineDestroy')
+                            remover()
+                        })
+                    })
+                }).catch(fail)
+            }
+
+            if (torrentData && torrentData.infoHash) {
+
+                const iHash = torrentData.infoHash
+                const appDataFastResume = path.join(fastResumeDir, iHash + '.fastresume')
+
+                const removeFastResume = () => {
+                    fs.unlink(appDataFastResume, () => {
+                        startTorrent()
+                    })
+                }
+
+                if (fs.existsSync(appDataFastResume)) {
+                    checksum.file(appDataFastResume, function (err, sum) {
+                       if (!err && sum) {
+                           const fastBook = fastresumebook.get(iHash)
+
+                           if (fastBook && fastBook.sum) {
+                            if (fastBook.sum == sum) {
+                                // checksum of fast resume file correct, continue
+                                startTorrent()
+                            } else {
+                                // checksum incorrect, remove
+                                removeFastResume()
+                            }
+                           } else {
+                               // checksum incorrect, remove
+                               removeFastResume()
+                           }
+                       } else {
+                           // cannot get checksum of file, presume incorrect, remove
+                           removeFastResume()
+                       }
+                    })
+                } else {
+                    startTorrent()
+                }
+            } else {
+                startTorrent()
+            }
         })
 
     },
