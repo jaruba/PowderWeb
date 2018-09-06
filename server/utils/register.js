@@ -22,7 +22,7 @@ register._writeDesktopFile = cb => {
             cb(defaultLoc)
         } else {
             var powderPath = process.execPath.substr(0,process.execPath.lastIndexOf("/")+1);
-            fs.writeFile(dataPath + '/powderweb.desktop', '[Desktop Entry]\n'+
+            fs.writeFile(dataPath + '/PowderWeb.desktop', '[Desktop Entry]\n'+
                 'Version=1.0\n'+
                 'Name=PowderWeb\n'+
                 'Comment=Powder Web is a torrent streaming client with a Web UI\n'+
@@ -34,7 +34,7 @@ register._writeDesktopFile = cb => {
                 'MimeType=application/x-bittorrent;x-scheme-handler/magnet;x-scheme-handler/sop;x-scheme-handler/acestream;x-scheme-handler/http;x-scheme-handler/https;\n'+
                 '', (err) => {
                     if (err) cb(null, err)
-                    else cb(dataPath)
+                    else cb(dataPath + '/PowderWeb.desktop')
                 })
         }
     })
