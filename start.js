@@ -35,7 +35,7 @@ var gotPorts = function() {
 		if (data) {
 			var sData = String(data).replace(/(\r\n\t|\n|\r\t)/gm,'')
 			console.log(sData)
-			if (sData.startsWith('Compiled successfully')) {
+			if (sData.indexOf('http') > -1 && (sData.startsWith('Compiled successfully') || sData.startsWith('The app is running at'))) {
 				serverLink = sData.substr(sData.indexOf('http'))
 				checkOpen()
 			}
