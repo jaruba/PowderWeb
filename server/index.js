@@ -15,6 +15,10 @@ const rimraf = require('rimraf')
 
 const supported = require('./utils/isSupported')
 
+const updater = require('./utils/updater')
+
+setTimeout(updater.checkUpdates)
+
 const rangeParser = require('range-parser')
 
 const pump = require('pump')
