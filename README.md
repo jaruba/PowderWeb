@@ -67,7 +67,7 @@ npm run build
 
 ## Embedding in Websites
 
-Can be started with either Magnet Links, Acestream Links, SopCast Links or Torrent File HTTP(S) Link.
+Can be started with either Magnet Links, Acestream / SopCast / Youtube-dl Links or Torrent File HTTP(S) Link.
 
 Add Script to `<head>`:
 
