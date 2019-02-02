@@ -349,6 +349,10 @@ export default class Counter extends PureComponent {
 
     let backColor = '#3e3e3e'
 
+    function printFileProgress(fileProgress) {
+      return { __html: isNaN(fileProgress) ? '-' : (fileProgress + '<span>%</span>') }
+    }
+
     _.forEach(this.state.torrents, (el, ij) => {
 
       if (ij == 'undefined' || typeof el !== 'object') return
@@ -374,7 +378,7 @@ export default class Counter extends PureComponent {
                 <div className="torrentFile" onClick={this.openYtdlFileMenu.bind(this, el)}>
                     <div className="torrentFileProgressHold">
                         <progress-bubble value={fileProgress} max="100" stroke-width="5">
-                            <strong>{fileProgress}<span>%</span></strong>
+                            <strong>-</strong>
                         </progress-bubble>
                     </div>
                     <div className="torrentFileDetails">
@@ -406,7 +410,7 @@ export default class Counter extends PureComponent {
                 <div className="torrentFile" onClick={this.openLocalFileMenu.bind(this, el)}>
                     <div className="torrentFileProgressHold">
                         <progress-bubble value={fileProgress} max="100" stroke-width="5">
-                            <strong>{fileProgress}<span>%</span></strong>
+                            <strong>-</strong>
                         </progress-bubble>
                     </div>
                     <div className="torrentFileDetails">
@@ -440,7 +444,7 @@ export default class Counter extends PureComponent {
                   <div className="torrentFile" onClick={this.openSopFileMenu.bind(this, el)}>
                       <div className="torrentFileProgressHold">
                           <progress-bubble value={fileProgress} max="100" stroke-width="5">
-                              <strong>{fileProgress}<span>%</span></strong>
+                              <strong>-</strong>
                           </progress-bubble>
                       </div>
                       <div className="torrentFileDetails">
@@ -464,7 +468,7 @@ export default class Counter extends PureComponent {
                   <div className="torrentFile" onClick={this.openAceFileMenu.bind(this, el)}>
                       <div className="torrentFileProgressHold">
                           <progress-bubble value={fileProgress} max="100" stroke-width="5">
-                              <strong>{fileProgress}<span>%</span></strong>
+                              <strong>-</strong>
                           </progress-bubble>
                       </div>
                       <div className="torrentFileDetails">
@@ -496,7 +500,7 @@ export default class Counter extends PureComponent {
                 <div className="torrentFile" onClick={this.openTorrent.bind(this, el)}>
                     <div className="torrentFileProgressHold">
                         <progress-bubble value={fileProgress} max="100" stroke-width="5">
-                            <strong>{fileProgress}<span>%</span></strong>
+                            <strong dangerouslySetInnerHTML={printFileProgress(fileProgress)} />
                         </progress-bubble>
                     </div>
                     <div className="torrentFileDetails">
