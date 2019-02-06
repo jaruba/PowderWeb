@@ -1598,6 +1598,12 @@ const mainServer = http.createServer(function(req, resp) {
     return
   }
 
+  if (method == 'donateLink') {
+    shell.openExternal('https://powder.media/donate')
+    respond({})
+    return
+  }
+
   if (method == 'sopGuideLink') {
     shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Sopcast')
     respond({})
