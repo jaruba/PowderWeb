@@ -144,20 +144,6 @@ function createWindow() {
   // and load the index.html of the app.
   let indexPath;
 
-  mainWindow.loadURL( 'http' + (server.isSSL ? 's': '') + '://127.0.0.1:' + server.port() + '/auth?token=' + server.masterKey );
-
-  // Don't show until we are ready and loaded
-  mainWindow.once('ready-to-show', () => {
-    // Open the DevTools automatically if developing
-
-//    if (process.platform == 'linux')
-//      mainWindow.show()
-
-    if (dev) {
-      mainWindow.webContents.openDevTools()
-    }
-  });
-
   mainWindow.on('close', (e) => {
     console.log('window-close')
 
@@ -215,10 +201,14 @@ if (process.platform == 'darwin' || process.platform == 'win32') {
 }
   const showApp = () => {
     if (!mainWindow.isVisible()) {
+      mainWindow.loadURL( 'http' + (server.isSSL ? 's': '') + '://127.0.0.1:' + server.port() + '/auth?token=' + server.masterKey );
       mainWindow.show()
       mainWindow.focus()
       if (app.dock && !app.dock.isVisible())
         app.dock.show()
+      if (dev) {
+        mainWindow.webContents.openDevTools()
+      }
     } else {
       mainWindow.focus()
     }

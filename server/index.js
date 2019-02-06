@@ -1646,6 +1646,7 @@ const mainServer = http.createServer(function(req, resp) {
     }
 
     if (method == 'closeWindow') {
+      mainWindow.loadURL( 'about:blank' );
       mainWindow.close()
       respond({})
       return
