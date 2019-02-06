@@ -65,6 +65,19 @@ npm run build
 ```
 
 
+## Creating Installers
+
+**OSX**
+```
+npm i -g make-dmg
+make-dmg ./packages/PowderWeb-darwin-x64/PowderWeb.app
+```
+
+**Linux**
+``
+npm run deb64
+``
+
 ## Embedding in Websites
 
 Can be started with either Magnet Links, Acestream / SopCast / Youtube-dl Links or Torrent File HTTP(S) Link.
