@@ -88,7 +88,8 @@
     "write-file-atomic": "^2.3.0",
     "xml-js": "^1.6.3",
     "youtube-dl": "https://github.com/jaruba/node-youtube-dl/tarball/master",
-    "yup": "^0.22.0"
+    "yup": "^0.22.0",
+    "jsonfile": "https://github.com/jaruba/node-jsonfile/tarball/master"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",

@@ -1,5 +1,5 @@
 
-const settings = require('electron-settings')
+const config = require('./config')
 const parser = require('./parser')
 const sorter = require('./sort')
 const supported = require('./isSupported')
@@ -54,7 +54,7 @@ module.exports = (engine) => {
         
         var anyStreamable = false
 
-        const downloadAll = settings.get('downloadAll')
+        const downloadAll = config.get('downloadAll')
 
         files.forEach(function(el) {
             var file = el;
@@ -78,7 +78,7 @@ module.exports = (engine) => {
                     name: file.name,
                     streamable: true,
 //                    infoHash: infoHash,
-//                    path: settings.has('downloadFolder') ? path.join(settings.get('downloadFolder'), file.path) : path.join(temp, 'Powder-Player', infoHash, file.path)
+//                    path: config.has('downloadFolder') ? path.join(config.get('downloadFolder'), file.path) : path.join(temp, 'Powder-Player', infoHash, file.path)
                 });
                 directorys.push(fileParams.dir);
             }
@@ -97,7 +97,7 @@ module.exports = (engine) => {
                     name: file.name,
                     streamable: false,
 //                    infoHash: infoHash,
-//                    path: settings.has('downloadFolder') ? path.join(settings.get('downloadFolder'), file.path) : path.join(temp, 'Powder-Player', infoHash, file.path)
+//                    path: config.has('downloadFolder') ? path.join(config.get('downloadFolder'), file.path) : path.join(temp, 'Powder-Player', infoHash, file.path)
                 })
 
                 directorys.push(fileParams.dir);

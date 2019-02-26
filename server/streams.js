@@ -1,7 +1,7 @@
 
 const { app } = require('electron')
 const createTorrent = require('./utils/torrent')
-const settings = require('electron-settings')
+const config = require('./utils/config')
 const parser = require('./utils/parser')
 const helpers = require('./utils/misc')
 let addresses = require('./utils/addressbook')
@@ -210,12 +210,12 @@ const cancelTorrent = (utime, cb, force, noDelete) => {
 
     engineExists(utime, (engine, ij) => {
 
-//        if (!noDelete && (force || settings.get('removeLogic') == 1)) {
-        if (settings.get('removeLogic') == 1 || (!noDelete && force)) {
+//        if (!noDelete && (force || config.get('removeLogic') == 1)) {
+        if (config.get('removeLogic') == 1 || (!noDelete && force)) {
 
             completelyRemove(engine.infoHash, engine, cb)
 
-        } else if (noDelete || settings.get('removeLogic') == 2) {
+        } else if (noDelete || config.get('removeLogic') == 2) {
 
             const lastUploaded = uploadedBook.get(engine.infoHash) + (engine.swarm && engine.swarm.uploaded ? engine.swarm.uploaded : 0)
 
@@ -277,7 +277,7 @@ var torrentObj = (utime, torrent, engine) => {
 
 let checkConcurrency = () => {
 
-    const maxConcurrency = settings.get('maxConcurrency')
+    const maxConcurrency = config.get('maxConcurrency')
 
     const streamsSize = _.size(streams)
 
@@ -300,7 +300,7 @@ let checkConcurrency = () => {
 
 const initConcurrency = () => {
 
-    const maxConcurrency = settings.get('maxConcurrency')
+    const maxConcurrency = config.get('maxConcurrency')
 
     if (!maxConcurrency || maxConcurrency < 0) return
 
@@ -519,12 +519,12 @@ const actions = {
                                     actions.forceDownload(utime, address.forced)
                                 }
                             } else {
-                                if (settings.get('speedLimit')) {
-                                    newAddress.pulsing = settings.get('speedLimit')
+                                if (config.get('speedLimit')) {
+                                    newAddress.pulsing = config.get('speedLimit')
                                     actions.setPulse(utime, newAddress.pulsing)
                                 }
-                                if (settings.get('forceDownload')) {
-                                    newAddress.forced = settings.get('forceDownload')
+                                if (config.get('forceDownload')) {
+                                    newAddress.forced = config.get('forceDownload')
                                     actions.forceDownload(utime, newAddress.forced)
                                 }
                             }
@@ -604,7 +604,7 @@ const actions = {
         if (foundStreamer) {
             cancelTorrent(streamerId, cb, force, noDelete)
         } else {
-            if (settings.get('removeLogic') == 1 || (!noDelete && force)) {
+            if (config.get('removeLogic') == 1 || (!noDelete && force)) {
                 completelyRemove(streamerId, null, cb)
             } else {
                 // do nothing
@@ -764,7 +764,7 @@ const actions = {
 
     createPlaylist(utime, files, token, fileId, cb, requestHost) {
 
-        const useFilename = settings.get('useFilenameStream')
+        const useFilename = config.get('useFilenameStream')
 
         const engine = streams[utime].engine
         const enginePort = engine.streamPort || engine.server.port || engine.server.address().port

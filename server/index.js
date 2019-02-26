@@ -59,6 +59,7 @@ const url = require('url')
 const streams = require('./streams')
 const childProcess = require('child_process')
 const settings = require('electron-settings')
+const config = require('./utils/config')
 const getPort = require('get-port')
 const _ = require('lodash')
 const os = require('os')
@@ -168,7 +169,7 @@ const btoa = (str) => {
   return buffer.toString('base64');
 }
 
-let serverPort = settings.get('webServerPort') || 3000
+let serverPort = config.get('webServerPort') || 3000
 
 const getReqUrl = (req) => {
   let topUrl = ''
@@ -225,7 +226,7 @@ const mainServer = http.createServer(function(req, resp) {
 
   let method = false
 
-  const embedToken = settings.get('embedToken')
+  const embedToken = config.get('embedToken')
 
   if (urlParsed.query && urlParsed.query.method) {
     method = urlParsed.query.method
@@ -239,12 +240,12 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (method == 'allowRegister') {
-    respond({ value: (_.size(settings.get('users')) < settings.get('maxUsers')) })
+    respond({ value: (_.size(config.get('users')) < config.get('maxUsers')) })
     return
   }
 
   if (method == 'signup' && urlParsed.query.value) {
-    if (settings.get('maxUsers') && _.size(settings.get('users')) >= settings.get('maxUsers')) {
+    if (config.get('maxUsers') && _.size(config.get('users')) >= config.get('maxUsers')) {
       respond({ error: 'Maximum number of users reached' })
       return
     }
@@ -253,7 +254,7 @@ const mainServer = http.createServer(function(req, resp) {
       newUser = JSON.parse(urlParsed.query.value)
     } catch (e) {}
 
-    let users = settings.get('users')
+    let users = config.get('users')
 
     if (newUser.email && newUser.password) {
       if (!users[newUser.email]) {
@@ -277,7 +278,7 @@ const mainServer = http.createServer(function(req, resp) {
       tryUser = JSON.parse(urlParsed.query.value)
     } catch (e) {}
 
-    let users = settings.get('users')
+    let users = config.get('users')
 
     if (tryUser.email && tryUser.password) {
       if (users[tryUser.email]) {
@@ -324,7 +325,7 @@ const mainServer = http.createServer(function(req, resp) {
       if (el == 'true') el = true
       else if (el == 'false') el = false
       else if (!isNaN(el)) el = parseInt(el)
-      settings.set(ij, el)
+      config.set(ij, el)
     })
     respond({})
     return
@@ -379,13 +380,10 @@ const mainServer = http.createServer(function(req, resp) {
 
   if (method == 'setting' && urlParsed.query.for) {
     if (urlParsed.query.for == 'getAll') {
-      const sets = settings.getAll()
-      delete sets.addressbook
-      delete sets.history
-      delete sets.users
+      const sets = config.getAll()
       respond(sets)
     } else {
-      respond({ value: settings.get(urlParsed.query.for) })
+      respond({ value: config.get(urlParsed.query.for) })
     }
     return
   }
@@ -399,13 +397,13 @@ const mainServer = http.createServer(function(req, resp) {
 
         // create playlist of streams
 
-        if (settings.get('extPlayer')) {
+        if (config.get('extPlayer')) {
 
           // open with selected external player
 
           const playlist = reqUrl + '/playlist.m3u?id=' + torrentId + '&token=' + reqToken
 
-          helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), playlist)
+          helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), playlist)
         } else {
 
           // open with default player
@@ -432,13 +430,13 @@ const mainServer = http.createServer(function(req, resp) {
 
       // create playlist of streams
 
-      if (settings.get('extPlayer')) {
+      if (config.get('extPlayer')) {
 
         // open with selected external player
 
         const playlist = reqUrl + '/getsopplaylist.m3u?pid=' + pid + '&token=' + reqToken
 
-        helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), playlist)
+        helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), playlist)
 
       } else {
 
@@ -507,8 +505,8 @@ const mainServer = http.createServer(function(req, resp) {
           if (err) {
               return console.log(err);
           }
-          if (settings.get('extPlayer')) {
-            helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), filePath)
+          if (config.get('extPlayer')) {
+            helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), filePath)
           } else {
             shell.openItem(filePath)
           }
@@ -537,8 +535,8 @@ const mainServer = http.createServer(function(req, resp) {
           if (err) {
               return console.log(err);
           }
-          if (settings.get('extPlayer')) {
-            helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), filePath)
+          if (config.get('extPlayer')) {
+            helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), filePath)
           } else {
             shell.openItem(filePath)
           }
@@ -553,13 +551,13 @@ const mainServer = http.createServer(function(req, resp) {
 
       // create playlist of streams
 
-      if (settings.get('extPlayer')) {
+      if (config.get('extPlayer')) {
 
         // open with selected external player
 
         const playlist = reqUrl + '/getaceplaylist.m3u?pid=' + pid + '&token=' + reqToken
 
-        helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), playlist)
+        helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), playlist)
       } else {
 
         // open with default player
@@ -897,7 +895,7 @@ const mainServer = http.createServer(function(req, resp) {
     let torrentId
 
     if (isMaster) {
-      const shouldNotify = settings.get('torrentNotifs')
+      const shouldNotify = config.get('torrentNotifs')
 
       if (shouldNotify) {
         notifier.notify({
@@ -925,7 +923,7 @@ const mainServer = http.createServer(function(req, resp) {
 
                   engine.on('complete', () => {
                     if (isMaster) {
-                      const shouldNotify = settings.get('torrentNotifs')
+                      const shouldNotify = config.get('torrentNotifs')
 
                       if (shouldNotify) {
                         notifier.notify({
@@ -950,7 +948,7 @@ const mainServer = http.createServer(function(req, resp) {
                     // execute user set commands at end of download
                     // (yes, not only in isMaster case)
 
-                    const userCommands = settings.get('userCommands')
+                    const userCommands = config.get('userCommands')
 
                     if (userCommands) {
 
@@ -1613,7 +1611,7 @@ const mainServer = http.createServer(function(req, resp) {
   if (isMaster) {
 
     if (method == 'openInBrowser') {
-      const isSSL = settings.get('webServerSSL') || false
+      const isSSL = config.get('webServerSSL') || false
       opn('http' + (isSSL ? 's': '') + '://localhost:' + serverPort + '/auth?token=' + masterKey)
       respond({})
       return
@@ -1762,8 +1760,8 @@ const mainServer = http.createServer(function(req, resp) {
     }
 
     if (method == 'openDefaultFolder') {
-      if (settings.get('downloadFolder'))
-        shell.openItem(settings.get('downloadFolder'))
+      if (config.get('downloadFolder'))
+        shell.openItem(config.get('downloadFolder'))
       else
         shell.openItem(path.join(app.getPath('temp'), 'PowderWeb'))
       respond({})
@@ -1930,7 +1928,7 @@ var srv = http.createServer(function (req, res) {
     uri = uri.replace(reqToken+'/','')
   }
 
-  const embedToken = settings.get('embedToken')
+  const embedToken = config.get('embedToken')
 
   if (!req.url.startsWith('/ace/r/') && !req.url.startsWith('/content/') && !reqToken && !tokens[reqToken] && embedToken != reqToken) {
     res.writeHead(500, { "Content-Type": "text/plain" })
@@ -2560,7 +2558,7 @@ console.log('converted time is: '+convertSecToTime(start))
 
     }
 
-    const useSSL = settings.get('webServerSSL') || false
+    const useSSL = config.get('webServerSSL') || false
 
     let mainSrv
 
@@ -2599,9 +2597,9 @@ let mainWindow
 module.exports = {
   masterKey,
   argsKey,
-  isSSL: settings.get('webServerSSL') || false,
+  isSSL: config.get('webServerSSL') || false,
   port: () => { return serverPort },
-  embedKey: settings.get('embedToken') || '',
+  embedKey: config.get('embedToken') || '',
   setMainWindow: mWindow => { mainWindow = mWindow },
   init: function(frontPort, backPort) {
     port = frontPort

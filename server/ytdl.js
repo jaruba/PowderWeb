@@ -1,18 +1,18 @@
 
 const ytdl = require('youtube-dl')
-const settings = require('electron-settings')
+const config = require('./utils/config')
 const ytdlBook = require('./utils/ytdlbook')
 
 
 const extract = (url, cb, errCb) => {
     const ytdlArgs = ['-g']
 
-    const ytdlQuality = settings.get('ytdlQuality')
+    const ytdlQuality = config.get('ytdlQuality')
 
     if (ytdlQuality < 4) {
         const qualities = [360, 480, 720, 1080]
         ytdlArgs.push('-f')
-        ytdlArgs.push('[height <=? ' + qualities[settings.get('ytdlQuality')] + ']')
+        ytdlArgs.push('[height <=? ' + qualities[config.get('ytdlQuality')] + ']')
     }
     
     const vd = ytdl(url, ytdlArgs)

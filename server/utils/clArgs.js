@@ -1,6 +1,6 @@
 const path = require('path')
 const url = require('url')
-const settings = require('electron-settings')
+const config = require('./config')
 const streams = require('../streams')
 const acestream = require('../acestream')
 const youtube = require('../ytdl')
@@ -22,18 +22,18 @@ const runPlaylist = (torrentId, organizedFiles, infoHash, reqToken, opts) => {
       const serverUrl = 'http' + (server.isSSL ? 's': '') + '://localhost:' + server.port()
       // create playlist of streams
 
-      if (settings.get('useWebPlayerAssoc') || (opts && opts.runWebPlayer)) {
+      if (config.get('useWebPlayerAssoc') || (opts && opts.runWebPlayer)) {
         const webPlayerUrl = serverUrl + '/embed?opener=' + infoHash + '&token=' + reqToken
         shell.openExternal(webPlayerUrl)
       } else {
 
-        if (settings.get('extPlayer')) {
+        if (config.get('extPlayer')) {
 
           // open with selected external player
 
           const playlist = serverUrl + '/playlist.m3u?id=' + torrentId + '&token=' + reqToken
 
-          helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), playlist)
+          helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), playlist)
 
         } else {
 
@@ -64,13 +64,13 @@ const runAcePlaylist = (pid, reqToken) => {
 
     // create playlist of streams
 
-    if (settings.get('extPlayer')) {
+    if (config.get('extPlayer')) {
 
       // open with selected external player
 
       const playlist = reqUrl + '/getaceplaylist.m3u?pid=' + pid + '&token=' + reqToken
 
-      helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), playlist)
+      helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), playlist)
 
     } else {
 
@@ -145,13 +145,13 @@ const runSopPlaylist = (pid, reqToken) => {
 
     // create playlist of streams
 
-    if (settings.get('extPlayer')) {
+    if (config.get('extPlayer')) {
 
       // open with selected external player
 
       const playlist = reqUrl + '/getsopplaylist.m3u?pid=' + pid + '&token=' + reqToken
 
-      helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), playlist)
+      helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), playlist)
 
     } else {
 
@@ -224,7 +224,7 @@ const runTorrent = (torrentQuery, reqToken, noAction, opts) => {
 
               // we only need the next code when it's ran from a magnet link / torrent file association
 
-                if (settings.get('extTorrentClient')) {
+                if (config.get('extTorrentClient')) {
 
                   // check if there is any streamable content
 
@@ -234,7 +234,7 @@ const runTorrent = (torrentQuery, reqToken, noAction, opts) => {
                       // cancel torrent and start with external torrent client
 
                       streams.cancel(torrentId, () => {
-                        helpers.openApp(settings.get('extTorrentClient'), settings.get('torrentCmdArgs'), torrentQuery)
+                        helpers.openApp(config.get('extTorrentClient'), config.get('torrentCmdArgs'), torrentQuery)
                       }, true)
 
                     }
@@ -286,8 +286,8 @@ const runTorrent = (torrentQuery, reqToken, noAction, opts) => {
               if (err) {
                   return console.log(err);
               }
-              if (settings.get('extPlayer')) {
-                helpers.openApp(settings.get('extPlayer'), settings.get('playerCmdArgs'), filePath)
+              if (config.get('extPlayer')) {
+                helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), filePath)
               } else {
                 shell.openItem(filePath)
               }

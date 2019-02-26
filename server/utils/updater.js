@@ -1,8 +1,8 @@
 const notifier = require('node-notifier')
 const needle = require('needle')
 const { app, shell, dialog } = require('electron')
-const settings = require('electron-settings')
-let updateCheck = settings.get('updateCheck')
+const config = require('./config')
+let updateCheck = config.get('updateCheck')
 
 const version = '0.8.0'
 
@@ -19,7 +19,7 @@ module.exports = {
                     if (!err && res.body && res.body.length < 100 && res.body.includes && res.body.includes('|')) {
                         const vers = (Buffer.isBuffer(res.body) ? res.body.toString() : res.body).split('|')
                         if (vers[0] == version) {
-                            settings.set('updateCheck', Math.floor(Date.now() / 1000))
+                            config.set('updateCheck', Math.floor(Date.now() / 1000))
                         } else {
 
                             notifier.notify({
@@ -29,7 +29,7 @@ module.exports = {
                                 wait: true
                             }, (err, response) => {
                                 if (!err) {
-                                    settings.set('updateCheck', Math.floor(Date.now() / 1000))
+                                    config.set('updateCheck', Math.floor(Date.now() / 1000))
                                     if (response == 'activate')
                                         shell.openExternal(vers[1])
                                 }
