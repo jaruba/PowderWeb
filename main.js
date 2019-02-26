@@ -101,6 +101,11 @@ const quit = () => {
 //  if (mainWindow)
 //    mainWindow.destroy()
 
+  if (mainWindow.isVisible())
+    mainWindow.hide()
+
+  tray.destroy()
+
   var ticks = 3
 
   const tick = () => {
