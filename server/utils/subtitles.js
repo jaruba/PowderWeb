@@ -1,4 +1,4 @@
-//const worker = require('subtitles-thread')
+const worker = require('subtitles-thread')
 const parser = require('./parser')
 const config = require('./config')
 
@@ -28,12 +28,7 @@ subtitles.fetchSubs = (newObjective, useQuery) => {
     
     if (subFinder) subFinder.kill('SIGINT');
     
-//    if (process.env['devMode']) {
-//        subFinder = worker();
-        subFinder = require('child_process').spawn(require('path').join(__dirname, '../..', 'bin', 'subtitles-thread', 'subtitles-thread'), { stdio: ['inherit', 'inherit', 'inherit', 'ipc'] })
-//    } else {
-//        subFinder = new worker('../workers/subtitles/find.js', true);
-//    }
+    subFinder = worker();
 
     subFinder.on('message', msg => {
         if (msg) {

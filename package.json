@@ -85,6 +85,7 @@
     "winreg": "^1.2.4",
     "workerjs": "*",
     "torrent-thread": "https://github.com/jaruba/torrent-thread/tarball/master",
+    "subtitles-thread": "https://github.com/jaruba/subtitles-thread/tarball/master",
     "write-file-atomic": "^2.3.0",
     "xml-js": "^1.6.3",
     "youtube-dl": "https://github.com/jaruba/node-youtube-dl/tarball/master",
