@@ -6,7 +6,7 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 
 [Guide](https://github.com/jaruba/PowderWeb/wiki/Guide)
 
-[Chat](https://gitter.im/jaruba/PowderWeb)
+[Chat](https://discord.gg/BdxRvxy)
 
 
 ## Possible use cases include:
