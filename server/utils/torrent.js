@@ -3,7 +3,7 @@ const { app } = require('electron')
 const path = require('path')
 const temp = path.join(app.getPath('temp'), 'PowderWeb')
 const torrentWorker = require('torrent-worker')
-const settings = require('electron-settings')
+const config = require('./config')
 const hat = require('hat')
 const getPort = require('get-port')
 const readTorrent = require('read-torrent')
@@ -25,18 +25,18 @@ module.exports = (torrent) => {
             let opts = {}
 
             opts.tracker = true
-            opts.withResume = !!settings.get('verifyFiles')
+            opts.withResume = !!config.get('verifyFiles')
             opts.buffer = (1.5 * 1024 * 1024).toString()
             opts.tmp = temp
-            opts.port = settings.has('peerPort') && settings.get('peerPort') != '6881' ? settings.get('peerPort') : port
-            opts.connections = settings.get('maxPeers')
+            opts.port = config.has('peerPort') && config.get('peerPort') != '6881' ? config.get('peerPort') : port
+            opts.connections = config.get('maxPeers')
             opts.torFile = typeof torrent === 'string' && !torrent.startsWith('magnet:') && torrent.match(/(?:\.torrent)(\?([^.]+)|$)/gi) ? torrent : null
-            opts.id = '-' + settings.get('peerID') + '-' + hat(48)
+            opts.id = '-' + config.get('peerID') + '-' + hat(48)
             opts.resumeDataFolder = fastResumeDir
-            opts.fastresume = !!settings.get('fastResume')
+            opts.fastresume = !!config.get('fastResume')
 
-            if (settings.has('torrentTrackers') && settings.get('torrentTrackers')) {
-                opts.trackers = settings.get('torrentTrackers').split(';')
+            if (config.has('torrentTrackers') && config.get('torrentTrackers')) {
+                opts.trackers = config.get('torrentTrackers').split(';')
                 if (opts.trackers && opts.trackers.length) {
                     opts.trackers = opts.trackers.map(function(el) { return el.trim() });
                 } else {
@@ -44,8 +44,8 @@ module.exports = (torrent) => {
                 }
             }
 
-            if (settings.has('downloadFolder'))
-                opts.path = settings.get('downloadFolder');
+            if (config.has('downloadFolder'))
+                opts.path = config.get('downloadFolder');
 
             let worker = new torrentWorker(),
                 engine = worker.process(torrentInfo, opts);

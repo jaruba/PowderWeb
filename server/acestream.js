@@ -163,7 +163,7 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 
 				if (tData.startsWith("START")) {
 					const startLink = tData.split(" ")[1]
-					if (ready || (!ready && startLink.includes('/hls/'))) {
+					if (ready || (!ready && (startLink.includes('/hls/') || startLink.includes('/content/')))) {
 						ready = true
 //						const streamLink = tData.split(" ")[1]
 						const streamLink = (requestHost || ('http://127.0.0.1:' + peerflixProxy)) + '/ace/' + streams[torrentHash].pid + '/0?token=' + reqToken

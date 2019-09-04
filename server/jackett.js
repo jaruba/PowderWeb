@@ -3,7 +3,7 @@ const xmlJs = require('xml-js')
 const _ = require('lodash')
 const orderBy = _.orderBy
 
-const settings = require('electron-settings')
+const config = require('./utils/config')
 
 let ticker = {}
 
@@ -33,7 +33,7 @@ var apiIndexers = []
 const getIndexers = (cb) => {
 	request({
 		method: 'GET',
-		url: settings.get('jackettHost') + 'api/v2.0/indexers/all/results/torznab/api?apikey='+settings.get('jackettKey')+'&t=indexers&configured=true',
+		url: config.get('jackettHost') + 'api/v2.0/indexers/all/results/torznab/api?apikey='+config.get('jackettKey')+'&t=indexers&configured=true',
 		timeout: 10000
 	}, function(error, response, indexers) {
 		if (!error && indexers) {
@@ -53,7 +53,7 @@ const getIndexers = (cb) => {
 module.exports = {
 
 	haveJackett: () => {
-		return !!(settings.get('jackettKey') && settings.get('jackettHost'))
+		return !!(config.get('jackettKey') && config.get('jackettHost'))
 	},
 
 	search: (query, item, cb, end) => {
@@ -67,7 +67,7 @@ module.exports = {
 					if (indexer && indexer.attributes && indexer.attributes.id) {
 						request({
 							method: 'GET',
-							url: settings.get('jackettHost')+'api/v2.0/indexers/'+indexer.attributes.id+'/results/torznab/api?apikey='+settings.get('jackettKey')+'&t=search&cat='+cat+'&q='+encodeURI(query),
+							url: config.get('jackettHost')+'api/v2.0/indexers/'+indexer.attributes.id+'/results/torznab/api?apikey='+config.get('jackettKey')+'&t=search&cat='+cat+'&q='+encodeURI(query),
 							json: true,
 							timeout: 10000
 						}, function(error, response, xmlTors) {

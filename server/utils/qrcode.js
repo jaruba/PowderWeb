@@ -1,11 +1,11 @@
 const ip = require('my-local-ip')
-const settings = require('electron-settings')
+const config = require('./config')
 const QRCode = require('qrcode')
 const needle = require('needle')
 
 module.exports = (qrType, qrKey, serverPort, cb, errCb) => {
 
-	const useSSL = settings.get('webServerSSL') || false
+	const useSSL = config.get('webServerSSL') || false
 
 	let urlTemp = 'http' + (useSSL ? 's' : '') + '://%ip%:' + serverPort + '/auth?token=' + qrKey
 

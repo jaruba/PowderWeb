@@ -52,6 +52,7 @@ export default class Modals extends PureComponent {
           } else if (this.state.shouldDo == 'playlist') {
             if (checkResp.directLink) {
               console.log('Direct Link: ' + checkResp.directLink)
+              modals.close()
               window.open(api.parseUrl({ type: 'getaceplaylist.m3u', pid }), "_blank")
               return
             }
