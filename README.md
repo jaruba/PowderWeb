@@ -104,7 +104,7 @@ Start Web Player on a `<div>`:
 </script>
 ```
 
-[Embed Demo](http://powder.media/embed-test.html)
+[Embed Demo](https://bit.ly/2kuLTXR)
 
 **Note**: Embedding will not work on websites that use SSL unless [users follow this guide](https://github.com/jaruba/PowderWeb/wiki/Guide#enabling-ssl) to enable SSL in Powder Web too.
 
