@@ -1943,7 +1943,10 @@ var srv = http.createServer(function (req, res) {
   }
 
   const getParams = (uri) => {
-    const parts = uri.replace('/web/', '').replace('/api/', '').replace('/meta/', '').replace('/ace/', '').replace('/hls/', '').replace('/sop/', '').replace('/ytdl/', '').replace('/local/', '').split('/')
+    const methods = ['web', 'api', 'meta', 'ace', 'hls', 'sop', 'ytdl', 'local']
+    let cleanUri = uri
+    methods.forEach(method => { cleanUri = cleanUri.replace('/' + method + '/', '') })
+    const parts = cleanUri.split('/')
     let returnObj = {}
     returnObj.infohash = parts[0]
     returnObj.fileId = parts[1]
