@@ -97,6 +97,8 @@ export default class Modals extends PureComponent {
 
           player.modal.open(loc, flLoc, parseFloat(histObj.time), true, null, null, true)
 
+        } else {
+          modals.open('message', { message: 'The file related to this item has been deleted and can no longer be accessed.' })
         }
 
       } else if (histObj.isYtdl) {
@@ -126,7 +128,7 @@ export default class Modals extends PureComponent {
             }
 
           } else {
-            modals.open('message', { message: 'Could not load Youtube-DL link' })
+            modals.open('message', { message: 'The website link related to this item has been deleted and can no longer be accessed.' })
           }
 
 
