@@ -2,6 +2,7 @@ const { app } = require('electron')
 const _ = require('lodash')
 const mkdirp = require('mkdirp')
 const path = require('path')
+const backup = require('../utils/backup').get()
 
 const userDataFolders = [
     'torrentFiles'
@@ -15,6 +16,7 @@ userDataFolders.forEach(folder => {
 
 const settings = require('electron-settings')
 
+// defaults
 const map = {
     addressbook: {},
     acebook: {},
@@ -30,15 +32,28 @@ const map = {
 
 module.exports = {
     set: () => {
-        _.forEach(map, (el, ij) => {
+
+        const defaults = Object.assign({}, map)
+
+        // overwrite defaults if backup available
+        if (backup)
+            _.forEach(defaults, (el, ij) => {
+                if (backup.hasOwnProperty(ij))
+                    defaults[ij] = backup[ij]
+            })
+
+        _.forEach(defaults, (el, ij) => {
             if (!settings.has(ij))
                 settings.set(ij, el)
         })
+
         return true
     },
     reset: () => {
+
         _.forEach(map, (el, ij) => {
             settings.set(ij, el)
         })
+
     }
 }
