@@ -613,7 +613,34 @@ const actions = {
 
     },
 
-    getPortFor(infohash) {
+    startThen(infohash, cb) {
+
+        loading[infohash] = true
+
+        actions.new(infohash,
+
+            torrentObj => { },
+
+            (engine, organizedFiles) => { },
+
+            (engine, organizedFiles) => {
+
+                delete loading[infohash]
+
+                cb(true, engine, organizedFiles)
+
+            },
+
+            (err) => {
+
+                delete loading[infohash]
+
+                cb(false)
+
+            }, true)
+    },
+
+    getPortFor(infohash, forceStart, cb) {
         let streamerId
         const foundStreamer = _.some(streams, (el, ij) => {
             if (el.engine && el.engine.infoHash == infohash) {
@@ -622,9 +649,20 @@ const actions = {
             }
         })
         if (foundStreamer) {
-            return streams[streamerId].engine.streamPort
+            cb(streams[streamerId].engine.streamPort)
+        } else if (!forceStart) {
+            cb(0)
         } else {
-            return 0
+
+            actions.startThen(infohash, running => {
+                if (!running) {
+                    cb(0)
+                    return
+                }
+
+                actions.getPortFor(infohash, false, cb)
+            })
+
         }
     },
 
@@ -834,34 +872,14 @@ const actions = {
                 path: defaultFiles ? engine.path : false
             }, defaultFiles ? engine.torrent.pieces.bank : null)
         } else if (!loading[infohash]) {
-            loading[infohash] = true
-
-            actions.new(infohash,
-
-                torrentObj => {
-
-                },
-
-                (engine, organizedFiles) => {
-
-                },
-
-                (engine, organizedFiles) => {
-
-                    delete loading[infohash]
-
-                    actions.torrentData(infohash, cb, defaultFiles)
-
-                },
-
-                (err) => {
-
-                    delete loading[infohash]
-
+            startThen(infohash, running => {
+                if (!running) {
                     cb(false)
+                    return
+                }
 
-                }, true)
-
+                actions.torrentData(infohash, cb, defaultFiles)
+            })
         } else
             cb(false)
     },

@@ -1979,369 +1979,287 @@ var srv = http.createServer(function (req, res) {
 
   let peerflixUrl
 
-  const enginePort = streams.getPortFor(params.infohash)
+  streams.getPortFor(params.infohash, true, enginePort => {
 
-  const useIp = (process.platform == 'linux')
+    const useIp = (process.platform == 'linux')
 
-  if (uri.startsWith('/ytdl/')) {
+    if (uri.startsWith('/ytdl/')) {
 
-    if (params.infohash.startsWith('http')) {
+      if (params.infohash.startsWith('http')) {
 
-      const ytdlObj = youtube.get(params.infohash)
+        const ytdlObj = youtube.get(params.infohash)
 
-      if (ytdlObj && ytdlObj.extracted) {
+        if (ytdlObj && ytdlObj.extracted) {
 
-        const urlParsed = require('url').parse(ytdlObj.extracted)
+          const urlParsed = require('url').parse(ytdlObj.extracted)
 
-        var configProxy = { target: ytdlObj.extracted }
+          var configProxy = { target: ytdlObj.extracted }
 
-        configProxy.headers = {
-            host: urlParsed.host,
-            pathname: urlParsed.pathname,
-            referer: ytdlObj.originalURL,
-            agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/610.0.3239.132 Safari/537.36'
-        }
-
-        if (urlParsed.protocol == 'https:')
-            configProxy.agent = require('https').globalAgent
-
-        req.headers['host'] = configProxy.headers.host
-
-        req.headers['referer'] = ytdlObj.originalURL
-        req.headers['user-agent'] = configProxy.headers.agent
-
-        res.setHeader('Access-Control-Allow-Origin', '*')
-
-        req.url = ytdlObj.extracted
-
-        proxy.web(req, res, configProxy);
-
-      }
-    } else {
-      res.writeHead(500, { "Content-Type": "text/plain" })
-      res.write("Invalid Resource\n")
-      res.end()
-    }
-
-    return
-
-  } else if (uri.startsWith('/local/')) {
-
-    const loc = local.get(params.infohash)
-
-    const serveFile = (fileLoc) => {
-      if (req.method === 'OPTIONS' && req.headers['access-control-request-headers']) {
-        res.setHeader('Access-Control-Allow-Origin', req.headers.origin)
-        res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
-        res.setHeader(
-            'Access-Control-Allow-Headers',
-            req.headers['access-control-request-headers'])
-        res.setHeader('Access-Control-Max-Age', '1728000')
-
-        res.end()
-        return
-      }
-
-      if (req.headers.origin) res.setHeader('Access-Control-Allow-Origin', req.headers.origin)
-
-      var range = req.headers.range
-      var fileLength = fs.lstatSync(fileLoc).size
-      range = range && rangeParser(fileLength, range)[0]
-
-      res.setHeader('Accept-Ranges', 'bytes')
-
-      const parts = fileLoc.split('.')
-
-      const ext = parts[parts.length-1]
-
-      res.setHeader('Content-Type', supported.contentType(ext))
-
-      if (!range) {
-        res.setHeader('Content-Length', fileLength)
-        if (req.method === 'HEAD') return res.end()
-
-        pump(fs.createReadStream(fileLoc), res)
-
-        return
-      }
-
-      res.statusCode = 206
-      res.setHeader('Content-Length', range.end - range.start + 1)
-      res.setHeader('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + fileLength)
-
-      if (req.method === 'HEAD') return res.end()
-      
-      pump(fs.createReadStream(fileLoc, range), res)
-    }
-
-    if (loc) {
-
-      if (loc.location && !loc.isDirectory && fs.existsSync(loc.location)) {
-        serveFile(loc.location)
-        return
-      } else if (loc.files && loc.files.length) {
-        loc.files.some((fl, idx) => {
-          if (idx == params.fileId) {
-            if (fl.location && fs.existsSync(fl.location)) {
-              serveFile(fl.location)
-            } else {
-              res.writeHead(500, { "Content-Type": "text/plain" })
-              res.write("Invalid Resource\n")
-              res.end()
-            }
-            return true
+          configProxy.headers = {
+              host: urlParsed.host,
+              pathname: urlParsed.pathname,
+              referer: ytdlObj.originalURL,
+              agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/610.0.3239.132 Safari/537.36'
           }
-        })
-        return
+
+          if (urlParsed.protocol == 'https:')
+              configProxy.agent = require('https').globalAgent
+
+          req.headers['host'] = configProxy.headers.host
+
+          req.headers['referer'] = ytdlObj.originalURL
+          req.headers['user-agent'] = configProxy.headers.agent
+
+          res.setHeader('Access-Control-Allow-Origin', '*')
+
+          req.url = ytdlObj.extracted
+
+          proxy.web(req, res, configProxy);
+
+        }
+      } else {
+        res.writeHead(500, { "Content-Type": "text/plain" })
+        res.write("Invalid Resource\n")
+        res.end()
       }
-      res.writeHead(500, { "Content-Type": "text/plain" })
-      res.write("Invalid Resource\n")
-      res.end()
-    } else {
-      res.writeHead(500, { "Content-Type": "text/plain" })
-      res.write("Invalid Resource ID\n")
-      res.end()
-    }
-    return
-  }
 
-  if (params.isYtdl || (uri.startsWith('/meta') && params.infohash.startsWith('http'))) {
-    peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+peerflixProxy+'/ytdl/'+params.infohash+'/'+params.fileId+'?token='+reqToken
-  } else if (params.isLocal || (uri.startsWith('/meta') && (!isNaN(params.infohash) || params.infohash.startsWith('http')))) {
-    peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+peerflixProxy+'/local/'+params.infohash+'/'+params.fileId+'?token='+reqToken
-  } else if (enginePort)
-    peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+enginePort+'/'+params.fileId
+      return
 
-    console.log('peerflix url: '+ peerflixUrl)
+    } else if (uri.startsWith('/local/')) {
 
-  if (uri.startsWith('/web/')) {
-    // ffmpeg proxy
+      const loc = local.get(params.infohash)
 
-    let videoParams
-    let sizeParams
+      const serveFile = (fileLoc) => {
+        if (req.method === 'OPTIONS' && req.headers['access-control-request-headers']) {
+          res.setHeader('Access-Control-Allow-Origin', req.headers.origin)
+          res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS')
+          res.setHeader(
+              'Access-Control-Allow-Headers',
+              req.headers['access-control-request-headers'])
+          res.setHeader('Access-Control-Max-Age', '1728000')
 
-    if (params.isAudio) {
-
-      videoParams = audioPresets[params.videoContainer]
-
-    } else {
-
-      videoParams = videoPresets[params.videoContainer]
-      sizeParams = videoPresets.quality[params.videoQuality]
-
-    }
-
-    res.setHeader('content-type', videoParams.contentType)
-
-    let start = false;
-
-    if (urlParsed.query) {
-      if (typeof urlParsed.query.start != 'undefined' && urlParsed.query.start != null) {
-        start = parseFloat(urlParsed.query.start);
-      }
-      if (urlParsed.query.quality) {
-        
-      }
-    }
-
-    let outputOpts = []
-
-    let resized = false
-
-    if (!params.isAudio) {
-      resized = params.needsVideo > -1 && (params.videoQuality == params.maxHeight+'p' || sizeParams.resolution == params.maxWidth+'x?') ? false : true
-    }
-
-    if (!params.videoContainer)
-      params.videoContainer = urlParsed.pathname.split('.').pop()
-
-//    if (params.needsVideo > -1 && !resized)
-    if (!params.isAudio) {
-      outputOpts.unshift('-map 0:v:'+(params.needsVideo > -1 ? params.needsVideo : 0))
-    }
-
-    outputOpts.unshift('-map ' + (params.audioDelay ? '1' : '0') + ':a:'+(params.forAudio > -1 ? params.forAudio : params.needsAudio > -1 ? params.needsAudio : 0))
-
-    const chromeProfile = (params.useMatroska > -1 && params.videoContainer == 'mp4')
-
-    if (!params.isAudio) {
-      outputOpts = outputOpts.concat(videoParams[(chromeProfile ? 'chrome' : 'output') + 'Options'])
-
-      if (!params.audioDelay && (params.copyts > -1 || chromeProfile)) {
-        outputOpts.push('-copyts')
-      }
-    }
-
-
-    let shouldAudio = false
-
-    if (params.forceTranscode > -1 || params.forAudio > -1 || params.needsAudio == -1) {
-      shouldAudio = true
-    }
-
-    if (params.isAudio) {
-
-      const whichAudio = shouldAudio ? (params.audio ? params.audio : videoParams.codecs.audio) : 'copy'
-
-      if (['mp4', 'mp3', 'oga'].indexOf(params.videoContainer) > -1) {
-
-        var command = ffmpeg(peerflixUrl)
-
-        if(start) {
-          command.seekInput(convertSecToTime(start))
+          res.end()
+          return
         }
 
-        command.format(params.videoContainer == 'oga' ? 'ogg' : params.videoContainer)
+        if (req.headers.origin) res.setHeader('Access-Control-Allow-Origin', req.headers.origin)
 
-        command
-        .addOptions('-acodec ' + whichAudio)
-        .addOptions('-ac 2')
-        .outputOptions(outputOpts)
-        .on('error', function(err) {
-          console.log('an error happened: ' + err.message);
-        })
+        var range = req.headers.range
+        var fileLength = fs.lstatSync(fileLoc).size
+        range = range && rangeParser(fileLength, range)[0]
 
+        res.setHeader('Accept-Ranges', 'bytes')
 
-        command.pipe(res, { end: true });
+        const parts = fileLoc.split('.')
+
+        const ext = parts[parts.length-1]
+
+        res.setHeader('Content-Type', supported.contentType(ext))
+
+        if (!range) {
+          res.setHeader('Content-Length', fileLength)
+          if (req.method === 'HEAD') return res.end()
+
+          pump(fs.createReadStream(fileLoc), res)
+
+          return
+        }
+
+        res.statusCode = 206
+        res.setHeader('Content-Length', range.end - range.start + 1)
+        res.setHeader('Content-Range', 'bytes ' + range.start + '-' + range.end + '/' + fileLength)
+
+        if (req.method === 'HEAD') return res.end()
+        
+        pump(fs.createReadStream(fileLoc, range), res)
+      }
+
+      if (loc) {
+
+        if (loc.location && !loc.isDirectory && fs.existsSync(loc.location)) {
+          serveFile(loc.location)
+          return
+        } else if (loc.files && loc.files.length) {
+          loc.files.some((fl, idx) => {
+            if (idx == params.fileId) {
+              if (fl.location && fs.existsSync(fl.location)) {
+                serveFile(fl.location)
+              } else {
+                res.writeHead(500, { "Content-Type": "text/plain" })
+                res.write("Invalid Resource\n")
+                res.end()
+              }
+              return true
+            }
+          })
+          return
+        }
+        res.writeHead(500, { "Content-Type": "text/plain" })
+        res.write("Invalid Resource\n")
+        res.end()
+      } else {
+        res.writeHead(500, { "Content-Type": "text/plain" })
+        res.write("Invalid Resource ID\n")
+        res.end()
+      }
+      return
+    }
+
+    if (params.isYtdl || (uri.startsWith('/meta') && params.infohash.startsWith('http'))) {
+      peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+peerflixProxy+'/ytdl/'+params.infohash+'/'+params.fileId+'?token='+reqToken
+    } else if (params.isLocal || (uri.startsWith('/meta') && (!isNaN(params.infohash) || params.infohash.startsWith('http')))) {
+      peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+peerflixProxy+'/local/'+params.infohash+'/'+params.fileId+'?token='+reqToken
+    } else if (enginePort)
+      peerflixUrl = 'http://' + (useIp ? '127.0.0.1' : 'localhost') + ':'+enginePort+'/'+params.fileId
+
+      console.log('peerflix url: '+ peerflixUrl)
+
+    if (uri.startsWith('/web/')) {
+      // ffmpeg proxy
+
+      let videoParams
+      let sizeParams
+
+      if (params.isAudio) {
+
+        videoParams = audioPresets[params.videoContainer]
 
       } else {
-        page404()
+
+        videoParams = videoPresets[params.videoContainer]
+        sizeParams = videoPresets.quality[params.videoQuality]
+
       }
-      return
-    }
 
-    let shouldVideo = false
+      res.setHeader('content-type', videoParams.contentType)
 
-    if (params.forceTranscode > -1) {
-      // if forced transcoding
-      shouldVideo = true
-    } else if (params.needsVideo == -1) {
-      // if needs transcoding
-      shouldVideo = true
-    } else if (resized) {
-      // it's resized, needs transcoding
-      shouldVideo = true
-    } else if (shouldAudio) {
-      // if it doesn't need audio encoding either
-      shouldVideo = true
-    }
+      let start = false;
 
-    if (params.videoContainer == 'ts') {
-
-      req.url += '&shouldVideo=' + (shouldVideo ? '1' : '-1') + '&shouldAudio=' + (shouldAudio ? '1' : '-1')
-
-      hlsVod.segment(ffmpegPath, peerflixUrl, req, res, urlParsed.query.targetWidth)
-
-      // transcode hls to hdd
-
-//      req.url = 'http://localhost:4040/hls/' + req.url.split('/').pop()
-
-//      proxy.web(req, res, { target: req.url });
-
-      return
-
-    } else if (params.videoContainer == 'm3u8') {
-
-      req.url = req.url + '&ab=' + sizeParams.bitrate.audio + '&vb=' + sizeParams.bitrate.video + '&resized=' + resized + '&audio=' + params.audio + '&video=' + params.video + '&targetWidth=' + parseInt(sizeParams.resolution) + '&audioDelay=' + params.audioDelay
-
-      hlsVod.playlist(ffprobePath, peerflixUrl, req, res, params.infohash, parseInt(sizeParams.resolution), urlParsed.query.start || 0)
-
-      // transcode hls to hdd
-
-      // req.url = 'http://localhost:4040/hls/'+enginePort+'-'+params.fileId+(start ? '-' + encodeURIComponent(start) : '')+'/'+parseInt(sizeParams.resolution)+'.m3u8' + urlParsed.search + '&ab=' + sizeParams.bitrate.audio + '&vb=' + sizeParams.bitrate.video + '&resized=' + resized + '&audio=' + params.audio + '&video=' + params.video
-
-      // proxy.web(req, res, { target: req.url });
-
-      return
-
-    } else {
-
-      const whichVideo = shouldVideo ? (params.video ? params.video : videoParams.codecs.video) : 'copy'
-      const whichAudio = shouldAudio ? (params.audio ? params.audio : videoParams.codecs.audio) : 'copy'
-
-      if (params.videoContainer == 'webm') {
-
-        var command = ffmpeg(peerflixUrl)
-
-        if (params.audioDelay) {
-          if (start)
-            command.addOptions(['-ss '+convertSecToTime(start)])
-          command.addOptions(['-itsoffset '+params.audioDelay, '-i '+peerflixUrl])
+      if (urlParsed.query) {
+        if (typeof urlParsed.query.start != 'undefined' && urlParsed.query.start != null) {
+          start = parseFloat(urlParsed.query.start);
         }
-
-        if(start) {
-          command.seekInput(convertSecToTime(start))
+        if (urlParsed.query.quality) {
+          
         }
+      }
 
-        command.format('webm')
+      let outputOpts = []
 
-        if (resized) {
-          command.addOptions(['-filter:v scale=w='+sizeParams.resolution.split('x')[0]+':h=trunc(ow/a/2)*2'])
-//          command.size(sizeParams.resolution)
+      let resized = false
+
+      if (!params.isAudio) {
+        resized = params.needsVideo > -1 && (params.videoQuality == params.maxHeight+'p' || sizeParams.resolution == params.maxWidth+'x?') ? false : true
+      }
+
+      if (!params.videoContainer)
+        params.videoContainer = urlParsed.pathname.split('.').pop()
+
+  //    if (params.needsVideo > -1 && !resized)
+      if (!params.isAudio) {
+        outputOpts.unshift('-map 0:v:'+(params.needsVideo > -1 ? params.needsVideo : 0))
+      }
+
+      outputOpts.unshift('-map ' + (params.audioDelay ? '1' : '0') + ':a:'+(params.forAudio > -1 ? params.forAudio : params.needsAudio > -1 ? params.needsAudio : 0))
+
+      const chromeProfile = (params.useMatroska > -1 && params.videoContainer == 'mp4')
+
+      if (!params.isAudio) {
+        outputOpts = outputOpts.concat(videoParams[(chromeProfile ? 'chrome' : 'output') + 'Options'])
+
+        if (!params.audioDelay && (params.copyts > -1 || chromeProfile)) {
+          outputOpts.push('-copyts')
         }
+      }
 
-        command
-        .addOptions('-vcodec ' + whichVideo)
-        .addOptions('-b:v ' + ('' + sizeParams.bitrate.video).replace(/k?$/, 'k'))
-        .addOptions('-acodec ' + whichAudio)
-        .addOptions('-b:a ' + ('' + sizeParams.bitrate.audio).replace(/k?$/, 'k'))
-        .addOptions('-ac 2')
-        // .videoCodec(whichVideo)
-        // .videoBitrate(sizeParams.bitrate.video)
-        // .audioCodec(whichAudio)
-        // .audioBitrate(sizeParams.bitrate.audio)
-        // .audioChannels(2)
-//        .on('end', function() {
-//          console.log('file has been converted succesfully');
-//        })
-        // .on('start', function(cmdLine) {
-        //   console.log("START START START START")
-        //   console.log(cmdLine)
-        // })
-        .outputOptions(outputOpts)
-        .on('error', function(err) {
-          console.log('an error happened: ' + err.message);
-        })
 
-      } else if (params.videoContainer == 'mp4') {
+      let shouldAudio = false
 
-        var command = ffmpeg(peerflixUrl)
+      if (params.forceTranscode > -1 || params.forAudio > -1 || params.needsAudio == -1) {
+        shouldAudio = true
+      }
 
-        if (params.audioDelay) {
-          if (start)
-            command.addOptions(['-ss '+convertSecToTime(start)])
-          command.addOptions(['-itsoffset '+params.audioDelay, '-i '+peerflixUrl])
-        }
+      if (params.isAudio) {
 
-console.log('start is: '+start)
-console.log('converted time is: '+convertSecToTime(start))
-        if(start)
-          command.seekInput(convertSecToTime(start) || 0)
+        const whichAudio = shouldAudio ? (params.audio ? params.audio : videoParams.codecs.audio) : 'copy'
 
-//      command.format('mp4')
-        if (resized) {
-//           command.size(sizeParams.resolution)
-          command.addOptions(['-filter:v scale=w='+sizeParams.resolution.split('x')[0]+':h=trunc(ow/a/2)*2'])
-        }
+        if (['mp4', 'mp3', 'oga'].indexOf(params.videoContainer) > -1) {
 
-        command
-        .addOptions('-vcodec ' + whichVideo)
-        .addOptions('-acodec ' + whichAudio)
-//        .addOptions('-acodec libvo_aacenc')
-        .addOptions('-ac 2')
-        .on('start', function(cmdLine) {
-           console.log("START START START START")
-           console.log(cmdLine)
-        })
-  //        .on('end', function() {
-  //          console.log('file has been converted succesfully');
-  //        })
+          var command = ffmpeg(peerflixUrl)
+
+          if(start) {
+            command.seekInput(convertSecToTime(start))
+          }
+
+          command.format(params.videoContainer == 'oga' ? 'ogg' : params.videoContainer)
+
+          command
+          .addOptions('-acodec ' + whichAudio)
+          .addOptions('-ac 2')
           .outputOptions(outputOpts)
           .on('error', function(err) {
             console.log('an error happened: ' + err.message);
           })
 
-        } else if (params.videoContainer == 'ogv') {
+
+          command.pipe(res, { end: true });
+
+        } else {
+          page404()
+        }
+        return
+      }
+
+      let shouldVideo = false
+
+      if (params.forceTranscode > -1) {
+        // if forced transcoding
+        shouldVideo = true
+      } else if (params.needsVideo == -1) {
+        // if needs transcoding
+        shouldVideo = true
+      } else if (resized) {
+        // it's resized, needs transcoding
+        shouldVideo = true
+      } else if (shouldAudio) {
+        // if it doesn't need audio encoding either
+        shouldVideo = true
+      }
+
+      if (params.videoContainer == 'ts') {
+
+        req.url += '&shouldVideo=' + (shouldVideo ? '1' : '-1') + '&shouldAudio=' + (shouldAudio ? '1' : '-1')
+
+        hlsVod.segment(ffmpegPath, peerflixUrl, req, res, urlParsed.query.targetWidth)
+
+        // transcode hls to hdd
+
+  //      req.url = 'http://localhost:4040/hls/' + req.url.split('/').pop()
+
+  //      proxy.web(req, res, { target: req.url });
+
+        return
+
+      } else if (params.videoContainer == 'm3u8') {
+
+        req.url = req.url + '&ab=' + sizeParams.bitrate.audio + '&vb=' + sizeParams.bitrate.video + '&resized=' + resized + '&audio=' + params.audio + '&video=' + params.video + '&targetWidth=' + parseInt(sizeParams.resolution) + '&audioDelay=' + params.audioDelay
+
+        hlsVod.playlist(ffprobePath, peerflixUrl, req, res, params.infohash, parseInt(sizeParams.resolution), urlParsed.query.start || 0)
+
+        // transcode hls to hdd
+
+        // req.url = 'http://localhost:4040/hls/'+enginePort+'-'+params.fileId+(start ? '-' + encodeURIComponent(start) : '')+'/'+parseInt(sizeParams.resolution)+'.m3u8' + urlParsed.search + '&ab=' + sizeParams.bitrate.audio + '&vb=' + sizeParams.bitrate.video + '&resized=' + resized + '&audio=' + params.audio + '&video=' + params.video
+
+        // proxy.web(req, res, { target: req.url });
+
+        return
+
+      } else {
+
+        const whichVideo = shouldVideo ? (params.video ? params.video : videoParams.codecs.video) : 'copy'
+        const whichAudio = shouldAudio ? (params.audio ? params.audio : videoParams.codecs.audio) : 'copy'
+
+        if (params.videoContainer == 'webm') {
 
           var command = ffmpeg(peerflixUrl)
 
@@ -2351,10 +2269,11 @@ console.log('converted time is: '+convertSecToTime(start))
             command.addOptions(['-itsoffset '+params.audioDelay, '-i '+peerflixUrl])
           }
 
-          if(start)
+          if(start) {
             command.seekInput(convertSecToTime(start))
+          }
 
-          command.format('ogg')
+          command.format('webm')
 
           if (resized) {
             command.addOptions(['-filter:v scale=w='+sizeParams.resolution.split('x')[0]+':h=trunc(ow/a/2)*2'])
@@ -2363,85 +2282,167 @@ console.log('converted time is: '+convertSecToTime(start))
 
           command
           .addOptions('-vcodec ' + whichVideo)
+          .addOptions('-b:v ' + ('' + sizeParams.bitrate.video).replace(/k?$/, 'k'))
           .addOptions('-acodec ' + whichAudio)
+          .addOptions('-b:a ' + ('' + sizeParams.bitrate.audio).replace(/k?$/, 'k'))
           .addOptions('-ac 2')
+          // .videoCodec(whichVideo)
+          // .videoBitrate(sizeParams.bitrate.video)
+          // .audioCodec(whichAudio)
+          // .audioBitrate(sizeParams.bitrate.audio)
+          // .audioChannels(2)
   //        .on('end', function() {
   //          console.log('file has been converted succesfully');
   //        })
+          // .on('start', function(cmdLine) {
+          //   console.log("START START START START")
+          //   console.log(cmdLine)
+          // })
           .outputOptions(outputOpts)
           .on('error', function(err) {
             console.log('an error happened: ' + err.message);
           })
 
+        } else if (params.videoContainer == 'mp4') {
+
+          var command = ffmpeg(peerflixUrl)
+
+          if (params.audioDelay) {
+            if (start)
+              command.addOptions(['-ss '+convertSecToTime(start)])
+            command.addOptions(['-itsoffset '+params.audioDelay, '-i '+peerflixUrl])
+          }
+
+  console.log('start is: '+start)
+  console.log('converted time is: '+convertSecToTime(start))
+          if(start)
+            command.seekInput(convertSecToTime(start) || 0)
+
+  //      command.format('mp4')
+          if (resized) {
+  //           command.size(sizeParams.resolution)
+            command.addOptions(['-filter:v scale=w='+sizeParams.resolution.split('x')[0]+':h=trunc(ow/a/2)*2'])
+          }
+
+          command
+          .addOptions('-vcodec ' + whichVideo)
+          .addOptions('-acodec ' + whichAudio)
+  //        .addOptions('-acodec libvo_aacenc')
+          .addOptions('-ac 2')
+          .on('start', function(cmdLine) {
+             console.log("START START START START")
+             console.log(cmdLine)
+          })
+    //        .on('end', function() {
+    //          console.log('file has been converted succesfully');
+    //        })
+            .outputOptions(outputOpts)
+            .on('error', function(err) {
+              console.log('an error happened: ' + err.message);
+            })
+
+          } else if (params.videoContainer == 'ogv') {
+
+            var command = ffmpeg(peerflixUrl)
+
+            if (params.audioDelay) {
+              if (start)
+                command.addOptions(['-ss '+convertSecToTime(start)])
+              command.addOptions(['-itsoffset '+params.audioDelay, '-i '+peerflixUrl])
+            }
+
+            if(start)
+              command.seekInput(convertSecToTime(start))
+
+            command.format('ogg')
+
+            if (resized) {
+              command.addOptions(['-filter:v scale=w='+sizeParams.resolution.split('x')[0]+':h=trunc(ow/a/2)*2'])
+    //          command.size(sizeParams.resolution)
+            }
+
+            command
+            .addOptions('-vcodec ' + whichVideo)
+            .addOptions('-acodec ' + whichAudio)
+            .addOptions('-ac 2')
+    //        .on('end', function() {
+    //          console.log('file has been converted succesfully');
+    //        })
+            .outputOptions(outputOpts)
+            .on('error', function(err) {
+              console.log('an error happened: ' + err.message);
+            })
+
+          }
         }
-      }
 
-      if (command)
-        command.pipe(res, { end: true });
-      else
-        res.end()
-
-    } else if (uri.startsWith('/meta')) {
-      var command = ffmpeg(peerflixUrl)
-      .ffprobe(0, function(err, data) {
-        if (!err && data) {
-          res.writeHead(200, {});
-          res.write(JSON.stringify(data))
+        if (command)
+          command.pipe(res, { end: true });
+        else
           res.end()
+
+      } else if (uri.startsWith('/meta')) {
+        var command = ffmpeg(peerflixUrl)
+        .ffprobe(0, function(err, data) {
+          if (!err && data) {
+            res.writeHead(200, {});
+            res.write(JSON.stringify(data))
+            res.end()
+          } else {
+            res.writeHead(500, { "Content-Type": "text/plain" })
+            res.write((err && err.message ? err.message : "Cannot fetch video metadata") + "\n")
+            res.end()
+          }
+        })
+      } else if (uri.startsWith('/ace/') || uri.startsWith('/content/')) {
+
+        if (req.url.startsWith('/ace/r/') || req.url.startsWith('/content/')) {
+          req.url = 'http://127.0.0.1:6878' + req.url
+          proxy.web(req, res, { target: req.url });
         } else {
-          res.writeHead(500, { "Content-Type": "text/plain" })
-          res.write((err && err.message ? err.message : "Cannot fetch video metadata") + "\n")
-          res.end()
-        }
-      })
-    } else if (uri.startsWith('/ace/') || uri.startsWith('/content/')) {
 
-      if (req.url.startsWith('/ace/r/') || req.url.startsWith('/content/')) {
-        req.url = 'http://127.0.0.1:6878' + req.url
+  //      console.log('ace request')
+
+          req.url = acestream.streamLink(params.infohash)
+
+  //      console.log('redirect to: ' + req.url)
+
+          proxy.web(req, res, { target: req.url });
+        }
+
+      } else if (uri.startsWith('/sop/')) {
+
+        req.url = sop.streamLink(params.infohash)
+
+  //      console.log('redirect to: ' + req.url)
+
         proxy.web(req, res, { target: req.url });
+
+      } else if (uri.startsWith('/hls/')) {
+
+        const aceHlsPort = hlsLink.port(params.infohash)
+
+        if (!aceHlsPort) {
+          res.writeHead(404, { "Content-Type": "text/plain" })
+          res.write("404 Not Found\n")
+          res.end()
+          return
+        }
+
+        req.url = 'http://127.0.0.1:' + aceHlsPort + '/' + params.fileId
+
+        proxy.web(req, res, { target: req.url });
+
       } else {
 
-//      console.log('ace request')
+        // peerflix proxy
 
-        req.url = acestream.streamLink(params.infohash)
-
-//      console.log('redirect to: ' + req.url)
+        req.url = peerflixUrl || (getReqUrl(req) + '/404')
 
         proxy.web(req, res, { target: req.url });
+
       }
-
-    } else if (uri.startsWith('/sop/')) {
-
-      req.url = sop.streamLink(params.infohash)
-
-//      console.log('redirect to: ' + req.url)
-
-      proxy.web(req, res, { target: req.url });
-
-    } else if (uri.startsWith('/hls/')) {
-
-      const aceHlsPort = hlsLink.port(params.infohash)
-
-      if (!aceHlsPort) {
-        res.writeHead(404, { "Content-Type": "text/plain" })
-        res.write("404 Not Found\n")
-        res.end()
-        return
-      }
-
-      req.url = 'http://127.0.0.1:' + aceHlsPort + '/' + params.fileId
-
-      proxy.web(req, res, { target: req.url });
-
-    } else {
-
-      // peerflix proxy
-
-      req.url = peerflixUrl || (getReqUrl(req) + '/404')
-
-      proxy.web(req, res, { target: req.url });
-
-    }
+    })
   })
 
   srv.listen(peerflixProxy)
