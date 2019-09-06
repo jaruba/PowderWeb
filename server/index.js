@@ -1397,9 +1397,14 @@ const mainServer = http.createServer(function(req, resp) {
 
     const tokenId = tokens[reqToken]
 
-    if (historyObj[tokenId] && historyObj[tokenId].length)
-      respond(historyObj[tokenId])
-    else
+    if (historyObj[tokenId] && historyObj[tokenId].length) {
+       respond(historyObj[tokenId].map(el => {
+        for (let key in el)
+          if (['undefined', 'false'].includes(el[key]))
+            el[key] = false
+        return el
+      }))
+    } else
       page500('No History Items')
 
     return
