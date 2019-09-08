@@ -2,6 +2,7 @@
 const needle = require('needle')
 const fs = require('fs')
 const path = require('path')
+const _ = require('lodash')
 
 const rimraf = require('rimraf')
 
@@ -13,6 +14,9 @@ const atob = require('./utils/atob')
 const downloader = require('./utils/downloadPackage')
 
 const hlsLink = require('./utils/live-trans')
+
+// general timeout of 2 mins
+const mins2 = 2 * 60 * 1000
 
 let acestreamUsed = false
 
@@ -35,6 +39,9 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 
 	acestreamUsed = true
 
+	if (playlistCb)
+		playlistCb = _.once(playlistCb)
+
 	// for linux compatibility
 	if (requestHost)
 		requestHost = requestHost.replace('/localhost:', '/127.0.0.1:')
@@ -45,7 +52,7 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 
 			// does not need transcoding
 
-			let newM3U = "#EXTM3U";
+			let newM3U = "#EXTM3U"
 
 			const altHost = 'http://127.0.0.1:' + peerflixProxy
 
@@ -81,6 +88,7 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 		}
 		return
 	}
+
 	retries[torrentHash] = 3
 	streams[torrentHash] = {
 		utime: Date.now(),
@@ -94,7 +102,7 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 
 		const productKey = atob('bjUxTHZRb1RsSnpOR2FGeHNlUkstdXZudlgtc0Q0Vm01QXh3bWM0VWNvRC1qcnV4bUtzdUphSDBlVmdF')
 
-		const net = require('net');
+		const net = require('net')
 
 		const sha1 = require('sha1')
 
@@ -108,13 +116,36 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 			})
 
 			const messageCb = function(msg) {
-//				console.log(msg)
 				streams[torrentHash].status = msg
+				if (playlistCb && msg.toLowerCase().includes('error:')) {
+					// just end the playlist request in case of errors
+					stopTimeOut()
+					closeAce(msg)
+				}
 			}
 
 			let ready = false
 			let lastPrebuf = -1
 			let lastBuf = -1
+
+			let closeAce = msg => {
+				if (playlistCb)
+					playlistCb(false, msg || 'Unknown Error')
+				ace.close(torrentHash, () => {})
+			}
+
+			closeAce = _.once(closeAce)
+
+			let timedOutTimer = setTimeout(() => {
+				closeAce('Timed out')
+			}, mins2)
+
+			function stopTimeOut() {
+				if (timedOutTimer) {
+					clearTimeout(timedOutTimer)
+					timedOutTimer = false
+				}
+			}
 
 // for debuging:
 
@@ -129,6 +160,7 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 
 				if (line.startsWith("EVENT livepos")) {
 					ready = true
+					stopTimeOut()
 
 					const lastTime = parseInt(line.split(" ")[2].split("=")[1])
 					const firstTime = parseInt(line.split(" ")[3].split("=")[1])
@@ -165,6 +197,7 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 					const startLink = tData.split(" ")[1]
 					if (ready || (!ready && (startLink.includes('/hls/') || startLink.includes('/content/')))) {
 						ready = true
+						stopTimeOut()
 //						const streamLink = tData.split(" ")[1]
 						const streamLink = (requestHost || ('http://127.0.0.1:' + peerflixProxy)) + '/ace/' + streams[torrentHash].pid + '/0?token=' + reqToken
 						streams[torrentHash].directLink = streamLink
@@ -590,58 +623,15 @@ const ace = {
 
 	},
 	binary: {
-		run: (cb) => {
+		run: (cb, totalTime) => {
 
-			// const tryHack = () => {
-			// 	triedHack = true
-			// 	const wineLoc = path.join(downloadLoc, 'acestream/Contents/MacOS/startwine')
-			// 	fs.readFile(wineLoc, (err, data) => {
-			// 	  if (err || !data) {
-			// 	  	cb(false, code)
-			// 	  } else {
-			// 	  	const wineLines = data.toString().split('\n')
+			cb = _.once(cb)
 
-			// 	  	wineLines.splice(2, 0, '#')
-
-			// 	  	fs.writeFile(wineLoc, wineLines.join('\n'), (err) => {
-			// 			if (err) {
-			// 				cb(false, code)
-			// 			} else {
-			// 				const plistLoc = path.join(downloadLoc, 'acestream/Contents/Info.plist')
-			// 				fs.readFile(plistLoc, (err, data) => {
-			// 				  if (err || !data) {
-			// 				  	cb(false, code)
-			// 				  } else {
-			// 				  	const lines = data.toString().split('\n')
-			// 				  	const randomNumber = Math.floor(Math.random() * 100)
-			// 				  	lines.forEach((line, ij) => {
-			// 				  		if (line.includes('com.aceengine.powderweb_dep')) {
-			// 				  			lines[ij] = '    <string>com.aceengine.powderweb_dep'+randomNumber+'</string>'
-			// 				  		} else if (line.includes('aceenginepowderweb')) {
-			// 				  			lines[ij] = '    <string>aceenginepowderweb'+randomNumber+'</string>'
-			// 				  		}
-			// 				  	})
-
-			// 				  	fs.writeFile(plistLoc, lines.join('\n'), (err) => {
-			// 						if (err) {
-			// 							cb(false, code)
-			// 						} else {
-			// 							triedHack = true
-			// 							ace.binary.run(cb)
-			// 						}
-			// 					})
-			// 				  }
-			// 				})
-			// 			}
-			// 		})
-			// 	  }
-			// 	})
-			// }
-
-			// if (!triedHack) {
-			// 	tryHack()
-			// 	return
-			// }
+			if (totalTime > mins2) {
+				// timed out
+				cb(false)
+				return
+			}
 
 			const afterKill = () => {
 				let binaryLoc
@@ -679,6 +669,8 @@ const ace = {
 
 				let noError = true
 
+				let findAcePortTimer
+
 				if (process.platform != 'linux') {
 					const startRunTime = Date.now()
 					const findAcePort = () => {
@@ -688,7 +680,7 @@ const ace = {
 									if (Date.now() - startRunTime > 180000) {
 										cb(false) // 3 min timeout
 									} else {
-										setTimeout(findAcePort, 2000)
+										findAcePortTimer = setTimeout(findAcePort, 2000)
 									}
 								} else {
 									cb(true)
@@ -696,7 +688,7 @@ const ace = {
 							})
 						}
 					}
-					setTimeout(findAcePort, 3000)
+					findAcePortTimer = setTimeout(findAcePort, 3000)
 				}
 
 
@@ -713,6 +705,9 @@ const ace = {
 
 					console.warn("[ace close]", code, signal)
 
+					if (findAcePortTimer)
+						clearTimeout(findAcePortTimer)
+
 					aceProcess = null
 
 					if (process.platform == 'linux') {
@@ -720,7 +715,7 @@ const ace = {
 						linuxPort = false
 					} else if (process.platform === "darwin" && code === 0 && Date.now() - startTime < 15000) {
 						console.warn("[ace restart]")
-						ace.binary.run(cb)
+						ace.binary.run(cb, (totalTime || 0) + startTime)
 					} else if (process.platform != 'linux') {
 						if (process.platform === "darwin" && code === 2 && !triedHack) {
 							triedHack = true
@@ -757,7 +752,7 @@ const ace = {
 													cb(false, code)
 												} else {
 													triedHack = true
-													ace.binary.run(cb)
+													ace.binary.run(cb, (totalTime || 0) + startTime)
 												}
 											})
 										  }
