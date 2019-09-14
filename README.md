@@ -44,6 +44,9 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 
 ## Install:
 
+This project was built with Node `v8.12.0` and NPM `v6.4.1`
+
+
 ```
 npm install
 cd public
