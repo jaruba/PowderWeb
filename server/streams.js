@@ -605,9 +605,10 @@ const actions = {
             cancelTorrent(streamerId, cb, force, noDelete)
         } else {
             if (config.get('removeLogic') == 1 || (!noDelete && force)) {
-                completelyRemove(streamerId, null, cb)
+                completelyRemove(infohash, null, cb)
             } else {
                 // do nothing
+                cb()
             }
         }
 
