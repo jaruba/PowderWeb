@@ -196,7 +196,7 @@ const completelyRemove = (iHash, engine, cb) => {
 
     if (fs.existsSync(appDataFastResume)) {
         fs.unlink(appDataFastResume, () => {})
-        fastresumebook.remove(engine.infoHash)
+        fastresumebook.remove(iHash)
     }
 
     if (engine)
