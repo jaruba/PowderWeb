@@ -8,6 +8,8 @@ Modern Bittorrent Client with Web UI and Torrent Streaming Capabilities. Also Su
 
 [Chat](https://discord.gg/BdxRvxy)
 
+Powder Web's development relies solely on donations, so if you enjoy this application, please consider [becoming a patron](https://www.patreon.com/powder_tech) or [donating](https://powder.media/donate) to ensure it's continued survival.
+
 
 ## Possible use cases include:
 
