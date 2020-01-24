@@ -4,7 +4,7 @@ const { app, shell, dialog } = require('electron')
 const config = require('./config')
 let updateCheck = config.get('updateCheck')
 
-const version = '0.8.0'
+const version = '0.8.5'
 
 module.exports = {
     checkUpdates: () => {
