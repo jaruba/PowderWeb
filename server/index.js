@@ -240,12 +240,12 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (method == 'allowRegister') {
-    respond({ value: (_.size(config.get('users')) < config.get('maxUsers')) })
+    respond({ value: (_.size(settings.get('users')) < config.get('maxUsers')) })
     return
   }
 
   if (method == 'signup' && urlParsed.query.value) {
-    if (config.get('maxUsers') && _.size(config.get('users')) >= config.get('maxUsers')) {
+    if (config.get('maxUsers') && _.size(settings.get('users')) >= config.get('maxUsers')) {
       respond({ error: 'Maximum number of users reached' })
       return
     }
@@ -254,7 +254,7 @@ const mainServer = http.createServer(function(req, resp) {
       newUser = JSON.parse(urlParsed.query.value)
     } catch (e) {}
 
-    let users = config.get('users')
+    let users = settings.get('users')
 
     if (newUser.email && newUser.password) {
       if (!users[newUser.email]) {
@@ -278,7 +278,7 @@ const mainServer = http.createServer(function(req, resp) {
       tryUser = JSON.parse(urlParsed.query.value)
     } catch (e) {}
 
-    let users = config.get('users')
+    let users = settings.get('users')
 
     if (tryUser.email && tryUser.password) {
       if (users[tryUser.email]) {
@@ -2327,7 +2327,7 @@ var srv = http.createServer(function (req, res) {
             command.seekInput(convertSecToTime(start) || 0)
 
   //      command.format('mp4')
-          if (resized) {
+          if (resized && ((sizeParams || {}).resolution || '').length) {
   //           command.size(sizeParams.resolution)
             command.addOptions(['-filter:v scale=w='+sizeParams.resolution.split('x')[0]+':h=trunc(ow/a/2)*2'])
           }
