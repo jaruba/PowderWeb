@@ -16,7 +16,7 @@ function Footer () {
   return (
     <Wrapper className="nodragwindow footerContent">
       <div><a className="donateButton" href="#" onClick={window.donateLink.bind()}>Donate</a></div>
-      <div>Powder Web v0.8.0</div>
+      <div>Powder Web v0.8.5</div>
     </Wrapper>
   )
 }
