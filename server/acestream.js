@@ -367,16 +367,18 @@ const connect = async (torrentHash, serverPort, peerflixProxy, reqToken, playlis
 
 let aceVersion
 
-const { app } = require('electron')
-const os = require('os')
-const TMP = os.tmpDir()
+const app = require('./utils/electronShim')
+
+const TMP = app.getPath('temp')
 
 const child = require('child_process')
 
 const exec = child.exec
 const spawn = child.spawn
 
-const downloadLoc = path.join(app.getPath('appData'), 'PowderWeb')
+const rootDir = app.getPath('appData')
+
+const downloadLoc = app.getPath('userData')
 
 const ace = {
 	rename: (pid, name) => {
@@ -401,7 +403,7 @@ const ace = {
 						let cacheLoc
 
 						if (process.platform == 'darwin') {
-							cacheLoc = path.join(app.getPath("appData"), "PowderWeb", "acestream", "Contents/Resources/wineprefix/drive_c/_acestream_cache_")
+							cacheLoc = path.join(downloadLoc, "acestream", "Contents/Resources/wineprefix/drive_c/_acestream_cache_")
 						} else if (process.platform = 'win32') {
 							cacheLoc = path.join((downloadLoc.split('\\')[0] || 'C:'), '_acestream_cache_')
 						}
@@ -462,7 +464,7 @@ const ace = {
 		let cacheLoc
 
 		if (process.platform == 'darwin') {
-			cacheLoc = path.join(app.getPath("appData"), "PowderWeb", "acestream", "Contents/Resources/wineprefix/drive_c/_acestream_cache_")
+			cacheLoc = path.join(downloadLoc, "acestream", "Contents/Resources/wineprefix/drive_c/_acestream_cache_")
 		} else if (process.platform = 'win32') {
 			cacheLoc = path.join((downloadLoc.split('\\')[0] || 'C:'), '_acestream_cache_')
 		}
@@ -522,9 +524,9 @@ const ace = {
 			const isDirectory = source => fs.lstatSync(source).isDirectory()
 			const getDirectories = source => fs.readdirSync(source)
 
-			getDirectories(app.getPath('appData')).forEach((dirNm) => {
+			getDirectories(rootDir).forEach((dirNm) => {
 				if (dirNm.startsWith('com.aceengine.powder'))
-					portLocs.push(path.join(app.getPath('appData'), dirNm, locOnDrive))
+					portLocs.push(path.join(rootDir, dirNm, locOnDrive))
 			})
 		} else if (process.platform == 'win32') {
 			portLocs = [path.join(downloadLoc, 'acestream\\engine\\acestream.port')]
@@ -566,9 +568,9 @@ const ace = {
 			const isDirectory = source => fs.lstatSync(source).isDirectory()
 			const getDirectories = source => fs.readdirSync(source)
 
-			getDirectories(app.getPath('appData')).forEach((dirNm) => {
+			getDirectories(rootDir).forEach((dirNm) => {
 				if (dirNm.startsWith('com.aceengine.powder'))
-					portLocs.push(path.join(app.getPath('appData'), dirNm, locOnDrive))
+					portLocs.push(path.join(rootDir, dirNm, locOnDrive))
 			})
 		} else if (process.platform == 'win32') {
 			portLocs = [path.join(downloadLoc, 'acestream\\engine\\acestream.port')]

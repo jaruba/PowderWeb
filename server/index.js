@@ -1,9 +1,11 @@
 
-const { app, shell, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const ffmpeg = require('easy-ffmpeg')
-var dir = path.join(app.getPath('appData'), 'PowderWeb');
+
+const app = require('./utils/electronShim')
+
+var dir = app.getPath('userData');
 
 const openerDir = path.join(dir, 'openers')
 
@@ -58,12 +60,12 @@ const https = require('https')
 const url = require('url')
 const streams = require('./streams')
 const childProcess = require('child_process')
-const settings = require('electron-settings')
+const settings = app.settings()
 const config = require('./utils/config')
 const getPort = require('get-port')
 const _ = require('lodash')
 const os = require('os')
-const TMP = os.tmpDir()
+const TMP = app.getPath('temp')
 const platform = os.platform()
 const addresses = require('./utils/addressbook')
 const uniqueString = require('unique-string')
@@ -85,7 +87,7 @@ const hlsLink = require('./utils/live-trans')
 
 const srt2vtt = require('srt-to-vtt')
 
-const opn = require('opn')
+const opn = require('open')
 
 const helpers = require('./utils/misc')
 
@@ -118,6 +120,8 @@ let tokens = {
   [argsKey]: true
 }
 
+const haveElectron = require('./utils/haveElectron')
+
 const passArgs = function(e, args) {
   clArgs.process(Array.isArray(args) ? args : [args], argsKey);
 }
@@ -125,12 +129,17 @@ const passArgs = function(e, args) {
 if (process.platform !== 'darwin') {
   passArgs(null, process.argv)
 } else {
-  // these events are OSX only:
-  app.on('open-file', passArgs);
-  app.on('open-url', passArgs);
+  if (haveElectron()) {
+    // these events are OSX only:
+    const appUtil = require('electron').app
+    appUtil.on('open-file', passArgs);
+    appUtil.on('open-url', passArgs);
+  } else {
+    // should think of alternative for headless
+  }
 }
 
-if (process.env.NODE_ENV === 'development') {
+if (process.env.NODE_ENV === 'development' || !haveElectron()) {
   console.log('master key: '+ masterKey)
 }
 
@@ -409,12 +418,12 @@ const mainServer = http.createServer(function(req, resp) {
           // open with default player
 
           streams.createPlaylist(torrentId, organizedFiles, reqToken, false, playlist => {
-            const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+            const filePath = path.join(dir, 'playlist'+(Date.now())+'.m3u')
             fs.writeFile(filePath, playlist, function(err) {
                 if (err) {
                     return console.log(err);
                 }
-                shell.openItem(filePath)
+                app.openItem(filePath)
             })
           }, reqUrl)
         }
@@ -451,12 +460,12 @@ const mainServer = http.createServer(function(req, resp) {
         const tryConnect = () => {
           sop.connect(urlParsed.query.pid, peerflixProxy, reqToken, (playlist) => {
             // playlist cb
-            const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+            const filePath = path.join(dir, 'playlist'+(Date.now())+'.m3u')
             fs.writeFile(filePath, playlist, (err) => {
                 if (err) {
                     return console.log(err);
                 }
-                shell.openItem(filePath)
+                app.openItem(filePath)
             })
           }, reqUrl)
         }
@@ -499,7 +508,7 @@ const mainServer = http.createServer(function(req, resp) {
         }
       }
 
-      const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+      const filePath = path.join(dir, 'playlist'+(Date.now())+'.m3u')
 
       fs.writeFile(filePath, newM3U, (err) => {
           if (err) {
@@ -508,7 +517,7 @@ const mainServer = http.createServer(function(req, resp) {
           if (config.get('extPlayer')) {
             helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), filePath)
           } else {
-            shell.openItem(filePath)
+            app.openItem(filePath)
           }
       })
     }
@@ -529,7 +538,7 @@ const mainServer = http.createServer(function(req, resp) {
         newM3U += os.EOL+"#EXTINF:0,"+ytdl.name+os.EOL+uri
       }
 
-      const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+      const filePath = path.join(dir, 'playlist'+(Date.now())+'.m3u')
 
       fs.writeFile(filePath, newM3U, (err) => {
           if (err) {
@@ -538,7 +547,7 @@ const mainServer = http.createServer(function(req, resp) {
           if (config.get('extPlayer')) {
             helpers.openApp(config.get('extPlayer'), config.get('playerCmdArgs'), filePath)
           } else {
-            shell.openItem(filePath)
+            app.openItem(filePath)
           }
       })
     }
@@ -573,12 +582,12 @@ const mainServer = http.createServer(function(req, resp) {
                   } else {
                       acestream.connect(pid, servPort, peerflixProxy, reqToken, (playlist) => {
                         // playlist cb
-                        const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+                        const filePath = path.join(dir, 'playlist'+(Date.now())+'.m3u')
                         fs.writeFile(filePath, playlist, function(err) {
                             if (err) {
                                 return console.log(err);
                             }
-                            shell.openItem(filePath)
+                            app.openItem(filePath)
                         })
                       }, reqUrl)
                   }
@@ -938,7 +947,7 @@ const mainServer = http.createServer(function(req, resp) {
                         notifier.on('click', (notifierObject, options) => {
                           streams.getPath(engine.infoHash, (folderPath) => {
                             if (folderPath) {
-                              shell.openItem(folderPath)
+                              app.openItem(folderPath)
                             }
                           })
                         })
@@ -1264,12 +1273,12 @@ const mainServer = http.createServer(function(req, resp) {
 
               streams.createPlaylist(torrentId, organizedFiles, reqToken, urlParsed.query.fileID || false, playlist => {
                 if (isMaster && urlParsed.query.openNow) {
-                  const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+                  const filePath = path.join(dir, 'playlist'+(Date.now())+'.m3u')
                   fs.writeFile(filePath, playlist, function(err) {
                       if (err) {
                           return console.log(err);
                       }
-                      shell.openItem(filePath)
+                      app.openItem(filePath)
                   })
                   if (doneResp) return
                   respond({})
@@ -1596,19 +1605,19 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (method == 'jackettLink') {
-    shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Jackett')
+    app.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Jackett')
     respond({})
     return
   }
 
   if (method == 'donateLink') {
-    shell.openExternal('https://powder.media/donate')
+    app.openExternal('https://powder.media/donate')
     respond({})
     return
   }
 
   if (method == 'sopGuideLink') {
-    shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Sopcast')
+    app.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Sopcast')
     respond({})
     return
   }
@@ -1633,7 +1642,7 @@ const mainServer = http.createServer(function(req, resp) {
     }
 
     if (method == 'addLocal') {
-      const loc = dialog.showOpenDialog({filters: { name: 'media', extensions: supported.ext.allMedia.map(el => { return el.replace('.','') })}, properties: ['openFile', 'openDirectory', 'createDirectory']})
+      const loc = app.showOpenDialog({filters: { name: 'media', extensions: supported.ext.allMedia.map(el => { return el.replace('.','') })}, properties: ['openFile', 'openDirectory', 'createDirectory']})
       if (!loc || !loc.length) {
         respond({})
       } else {
@@ -1659,19 +1668,19 @@ const mainServer = http.createServer(function(req, resp) {
       // this is for subtitles, because we can't download files in electron
       // so we download the subtitle programmatically and open the temp download folder
       helpers.downloadFile(atob(urlParsed.query.file), (filePath, dirPath) => {
-        shell.showItemInFolder(filePath)
+        app.showItemInFolder(filePath)
         respond({})
       })
       return
     }
 
     if (method == 'selectFile') {
-      respond({ value: dialog.showOpenDialog({properties: ['openFile']}) })
+      respond({ value: app.showOpenDialog({properties: ['openFile']}) })
       return
     }
 
     if (method == 'selectFolder') {
-      respond({ value: dialog.showOpenDialog({properties: ['openDirectory', 'createDirectory']}) })
+      respond({ value: app.showOpenDialog({properties: ['openDirectory', 'createDirectory']}) })
       return
     }
 
@@ -1704,7 +1713,7 @@ const mainServer = http.createServer(function(req, resp) {
         if (!filePath) {
           page500('Path to file could not be found')
         } else {
-          shell.openItem(filePath)
+          app.openItem(filePath)
           respond({})
         }
       })
@@ -1716,7 +1725,7 @@ const mainServer = http.createServer(function(req, resp) {
         if (!filePath) {
           page500('Path to file could not be found')
         } else {
-          shell.showItemInFolder(filePath)
+          app.showItemInFolder(filePath)
           respond({})
         }
       })
@@ -1727,11 +1736,11 @@ const mainServer = http.createServer(function(req, resp) {
       const loc = local.get(urlParsed.query.pid)
       if (loc) {
         if (loc.location) {
-          shell.showItemInFolder(loc.location)
+          app.showItemInFolder(loc.location)
         } else if (loc.files && loc.files.length) {
           const fl = loc.files[urlParsed.query.flId || 0]
           if (fl && fl.location) {
-            shell.showItemInFolder(fl.location)
+            app.showItemInFolder(fl.location)
           } else {
             page500('Unknown Error Occurred')
          }
@@ -1747,7 +1756,7 @@ const mainServer = http.createServer(function(req, resp) {
     if (method == 'localDirLoc' && urlParsed.query.pid) {
       const loc = local.get(urlParsed.query.pid)
       if (loc && loc.location) {
-        shell.openItem(loc.location)
+        app.openItem(loc.location)
       }
       return
     }
@@ -1757,7 +1766,7 @@ const mainServer = http.createServer(function(req, resp) {
         if (!folderPath) {
           page500('Path to folder could not be found')
         } else {
-          shell.openItem(folderPath)
+          app.openItem(folderPath)
           respond({})
         }
       })
@@ -1766,9 +1775,9 @@ const mainServer = http.createServer(function(req, resp) {
 
     if (method == 'openDefaultFolder') {
       if (config.get('downloadFolder'))
-        shell.openItem(config.get('downloadFolder'))
+        app.openItem(config.get('downloadFolder'))
       else
-        shell.openItem(path.join(app.getPath('temp'), 'PowderWeb'))
+        app.openItem(path.join(TMP, 'PowderWeb'))
       respond({})
       return
     }
@@ -1886,7 +1895,13 @@ const mainServer = http.createServer(function(req, resp) {
 
   return page404()
 
-}).listen(port, () => { })
+}).listen(port, () => {
+  if (!haveElectron()) {
+    // headless mode, open browser
+    const isSSL = config.get('webServerSSL') || false
+    app.openExternal('http' + (isSSL ? 's': '') + '://localhost:' + serverPort + '/auth?token=' + masterKey)
+  }
+})
 
 mainServer.on('connection', function (socket) {
     socket.setTimeout(Number.MAX_SAFE_INTEGER)
@@ -2466,7 +2481,7 @@ var srv = http.createServer(function (req, res) {
 
   srv.on('listening',function() { })
 
-  if (process.env.NODE_ENV !== 'development') {
+  if (process.env.NODE_ENV !== 'development' || !haveElectron()) {
     // create web server
 
     var webProxy = require('http-proxy').createProxyServer({

@@ -6,7 +6,7 @@ var getPort = require('get-port')
 
 var child = require('child_process')
 
-var opn = require('opn')
+var opn = require('open')
 
 var masterKey
 var serverLink
@@ -15,6 +15,8 @@ var checkOpen = function() {
 	if (serverLink && masterKey)
 		opn(serverLink + 'auth?token=' + masterKey)
 }
+
+var haveElectron = require('./server/utils/haveElectron')
 
 var gotPorts = function() {
 	
@@ -50,7 +52,7 @@ var gotPorts = function() {
 		console.log('web server exit')
 	})
 
-	var backProc = child.spawn('npm' + (isWin ? '.cmd' : ''), ['run', 'start-back'],
+	var backProc = child.spawn('npm' + (isWin ? '.cmd' : ''), ['run', 'start-back' + (!haveElectron() ? '-headless' : '')],
 		{
 			cwd: process.cwd(),
 			env: newEnv

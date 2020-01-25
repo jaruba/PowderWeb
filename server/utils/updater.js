@@ -1,6 +1,6 @@
 const notifier = require('node-notifier')
 const needle = require('needle')
-const { app, shell, dialog } = require('electron')
+const app = require('./electronShim')
 const config = require('./config')
 let updateCheck = config.get('updateCheck')
 
@@ -30,8 +30,9 @@ module.exports = {
                             }, (err, response) => {
                                 if (!err) {
                                     config.set('updateCheck', Math.floor(Date.now() / 1000))
-                                    if (response == 'activate')
-                                        shell.openExternal(vers[1])
+                                    if (response == 'activate') {
+                                        app.openExternal(ver[1])
+                                    }
                                 }
                             })
 

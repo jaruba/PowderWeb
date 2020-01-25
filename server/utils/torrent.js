@@ -1,13 +1,14 @@
 
-const { app } = require('electron')
 const path = require('path')
+const app = require('./electronShim')
+const configDir = app.getPath('userData')
 const temp = path.join(app.getPath('temp'), 'PowderWeb')
 const torrentWorker = require('torrent-worker')
 const config = require('./config')
 const hat = require('hat')
 const getPort = require('get-port')
 const readTorrent = require('read-torrent')
-const fastResumeDir = path.join(app.getPath('appData'), 'PowderWeb', 'fastresume')
+const fastResumeDir = path.join(configDir, 'fastresume')
 
 module.exports = (torrent) => {
 

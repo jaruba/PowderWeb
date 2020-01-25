@@ -1,5 +1,5 @@
 
-const { app } = require('electron')
+const app = require('./utils/electronShim')
 const createTorrent = require('./utils/torrent')
 const config = require('./utils/config')
 const parser = require('./utils/parser')
@@ -22,9 +22,11 @@ const isTorrentString = require('./utils/isTorrentString')
 const rimraf = require('rimraf')
 const checksum = require('checksum')
 
-const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
-const tempDir = path.join(os.tmpDir(), 'PowderWeb', 'torrent-stream')
-const fastResumeDir = path.join(app.getPath('appData'), 'PowderWeb', 'fastresume')
+const userData = app.getPath('userData')
+
+const openerDir = path.join(userData, 'openers')
+const tempDir = path.join(app.getPath('temp'), 'torrent-stream')
+const fastResumeDir = path.join(userData, 'fastresume')
 
 let loading = {}
 

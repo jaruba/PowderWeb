@@ -3,9 +3,11 @@ const config = require('./config')
 const parser = require('./parser')
 const sorter = require('./sort')
 const supported = require('./isSupported')
-const { app } = require('electron')
 const path = require('path')
-const temp = path.join(app.getPath('temp'), 'Powder-Player')
+
+const app = require('./electronShim')
+
+const temp = path.join(app.getPath('temp'), 'PowderWeb')
 
 module.exports = (engine) => {
     return new Promise((resolve) => {

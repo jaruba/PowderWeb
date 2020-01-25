@@ -1,9 +1,9 @@
 
 const fs = require('fs')
 const path = require('path')
-const { app } = require('electron')
-const os = require('os')
-const TMP = os.tmpDir()
+const app = require('./utils/electronShim')
+
+const TMP = app.getPath('temp')
 
 const child = require('child_process')
 
@@ -14,7 +14,7 @@ const getPort = require('get-port')
 
 const downloader = require('./utils/downloadPackage')
 
-const downloadLoc = path.join(app.getPath('appData'), 'PowderWeb')
+const downloadLoc = app.getPath('userData')
 
 const net = require('net')
 

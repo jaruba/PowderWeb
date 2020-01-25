@@ -4,9 +4,8 @@ const simpleGet = require('simple-get')
 const decopressZip = require('decompress-zip')
 const fs = require('fs')
 const path = require('path')
-const { app } = require('electron')
-
-const downloadLoc = path.join(app.getPath('appData'), 'PowderWeb')
+const app = require('./electronShim')
+const downloadLoc = app.getPath('userData')
 
 const downloader = {
 

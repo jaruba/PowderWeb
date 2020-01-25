@@ -1,5 +1,5 @@
 const _ = require('lodash')
-const settings = require('electron-settings')
+const settings = require('./electronShim').settings()
 
 let addresses = settings.get('sopbook')
 

@@ -1,9 +1,9 @@
 
+const app = require('./electronShim')
+
 const fs = require('fs'),
       path = require('path'),
-      { app } = require('electron')
-
-const appData = path.join(app.getPath('appData'), 'PowderWeb')
+      appData = app.getPath('userData')
 
 const paths = {
     settings: path.join(appData, 'Settings'),

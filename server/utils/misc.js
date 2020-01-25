@@ -1,5 +1,6 @@
+const app = require('./electronShim')
+const TMP = app.getPath('temp')
 const os = require('os')
-const TMP = os.tmpDir()
 const platform = os.platform()
 const childProcess = require('child_process')
 

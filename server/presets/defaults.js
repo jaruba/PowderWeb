@@ -1,4 +1,5 @@
-const { app } = require('electron')
+const app = require('../utils/electronShim')
+const userData = app.getPath('userData')
 const _ = require('lodash')
 const mkdirp = require('mkdirp')
 const path = require('path')
@@ -11,10 +12,10 @@ const userDataFolders = [
 const fs = require('fs')
 
 userDataFolders.forEach(folder => {
-    mkdirp(path.join(app.getPath('userData'), folder), () => {})
+    mkdirp(path.join(userData, folder), () => {})
 })
 
-const settings = require('electron-settings')
+const settings = app.settings()
 
 // defaults
 const map = {

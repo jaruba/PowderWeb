@@ -5,10 +5,11 @@ const streams = require('../streams')
 const acestream = require('../acestream')
 const youtube = require('../ytdl')
 const sop = require('../sopcast')
-const { app, shell } = require('electron')
-const helpers = require('../utils/misc')
-const events = require('../utils/events')
-const isTorrentString = require('../utils/isTorrentString')
+const app = require('./electronShim')
+const userData = app.getPath('userData')
+const helpers = require('./misc')
+const events = require('./events')
+const isTorrentString = require('./isTorrentString')
 const fs = require('fs')
 
 const runPlaylist = (torrentId, organizedFiles, infoHash, reqToken, opts) => {
@@ -24,7 +25,7 @@ const runPlaylist = (torrentId, organizedFiles, infoHash, reqToken, opts) => {
 
       if (config.get('useWebPlayerAssoc') || (opts && opts.runWebPlayer)) {
         const webPlayerUrl = serverUrl + '/embed?opener=' + infoHash + '&token=' + reqToken
-        shell.openExternal(webPlayerUrl)
+        app.openExternal(webPlayerUrl)
       } else {
 
         if (config.get('extPlayer')) {
@@ -40,13 +41,13 @@ const runPlaylist = (torrentId, organizedFiles, infoHash, reqToken, opts) => {
           // open with default player
 
           streams.createPlaylist(torrentId, organizedFiles, reqToken, false, playlist => {
-            const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+            const filePath = path.join(userData, 'playlist'+(Date.now())+'.m3u')
 
             fs.writeFile(filePath, playlist, function(err) {
                 if (err) {
                     return console.log(err);
                 }
-                shell.openItem(filePath)
+                app.openItem(filePath)
             })
           }, serverUrl)
         }
@@ -87,7 +88,7 @@ const runAcePlaylist = (pid, reqToken) => {
                 } else {
                     acestream.connect(pid, servPort, peerflixProxy, reqToken, (playlist) => {
                       // playlist cb
-                      const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+                      const filePath = path.join(userData, 'playlist'+(Date.now())+'.m3u')
                       fs.writeFile(filePath, playlist, function(err) {
                           if (err) {
                               return console.log(err);
@@ -160,7 +161,7 @@ const runSopPlaylist = (pid, reqToken) => {
       const tryConnect = () => {
         sop.connect(urlParsed.query.pid, peerflixProxy, reqToken, (playlist) => {
           // playlist cb
-          const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+          const filePath = path.join(userData, 'playlist'+(Date.now())+'.m3u')
           fs.writeFile(filePath, playlist, (err) => {
               if (err) {
                   return console.log(err);
@@ -280,7 +281,7 @@ const runTorrent = (torrentQuery, reqToken, noAction, opts) => {
             newM3U += os.EOL+"#EXTINF:0,"+ytdl.name+os.EOL+uri
           }
 
-          const filePath = path.join(app.getPath('appData'), 'PowderWeb', 'playlist'+(Date.now())+'.m3u')
+          const filePath = path.join(userData, 'playlist'+(Date.now())+'.m3u')
 
           fs.writeFile(filePath, newM3U, (err) => {
               if (err) {

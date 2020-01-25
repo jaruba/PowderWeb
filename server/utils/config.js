@@ -3,9 +3,13 @@ const jsonfile = require('jsonfile')
 const uniqueString = require('unique-string')
 const path = require('path')
 
-const { app } = require('electron')
+const app = require('./electronShim')
 
-const configPath = path.join(app.getPath('appData'), 'PowderWeb', 'config.json')
+const userData = app.getPath('userData')
+
+const configPath = path.join(userData, 'config.json')
+
+const haveElectron = require('./haveElectron')
 
 let map = {
 //    torrentContent: false,
@@ -25,7 +29,7 @@ let map = {
     forceDownload: false,
     peerID: 'PW0700',
     maxConcurrency: 2,
-    maxUsers: 0,
+    maxUsers: haveElectron() ? 0 : 1, // start from 1 user in headless mode
     webServerPort: 3000,
     webServerSSL: false,
     downloadFolder: '',

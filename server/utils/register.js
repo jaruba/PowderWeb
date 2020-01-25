@@ -1,12 +1,9 @@
 const child = require('child_process');
 const fs = require('fs');
-const {
-    shell,
-    app
-}
-= require('electron');
-const dataPath = app.getPath('userData');
+const haveElectron = require('./haveElectron');
 const regFileW32 = require('./regFileWin');
+const app = require('./electronShim');
+const dataPath = app.getPath('userData')
 const path = require('path');
 const duti = require('duti-prebuilt');
 
