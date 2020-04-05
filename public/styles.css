@@ -1135,7 +1135,7 @@ a.donateButton:hover {
 @media screen and (-webkit-min-device-pixel-ratio:0)
   and (min-resolution:.001dpcm) {
     .torrentFileProgressHold progress-bubble strong{
-      top: -47px;
+/*      top: -47px; */
     } 
 }
 
