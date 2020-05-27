@@ -1034,8 +1034,6 @@ export default class Modals extends PureComponent {
 
               </div>
 
-              <div style={{clear: 'both', height: '15px'}} />
-
               <paper-button
                   raised
                   onClick={this.generalSubtitleLimit.bind(this)}
