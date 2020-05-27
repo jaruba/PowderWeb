@@ -89,7 +89,9 @@
     "xml-js": "^1.6.3",
     "youtube-dl": "https://github.com/jaruba/node-youtube-dl/tarball/master",
     "yup": "^0.22.0",
-    "jsonfile": "https://github.com/jaruba/node-jsonfile/tarball/master"
+    "jsonfile": "https://github.com/jaruba/node-jsonfile/tarball/master",
+    "name-to-imdb": "https://github.com/Ivshti/name-to-imdb/tarball/master",
+    "video-name-parser": "^1.4.6"
   },
   "devDependencies": {
     "babel-core": "^6.26.3",

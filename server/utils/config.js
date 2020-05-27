@@ -52,6 +52,8 @@ let map = {
 
     userCommands: '',
 
+    subsOnlyHash: false,
+
 }
 
 jsonfile.readFile(configPath, (err, obj) => {

@@ -556,6 +556,15 @@ export default class Modals extends PureComponent {
     })
   }
 
+  generalSubsOnlyHash = () => {
+    const newValue = this.state.subsOnlyHash ? false : true
+    this.saveValue('subsOnlyHash', newValue, () => {
+      this.setState({
+        subsOnlyHash: newValue
+      })
+    })
+  }
+
   generalPlayerHotkeys = () => {
     window.open('https://github.com/jaruba/PowderWeb/wiki/Web-Player-Hotkeys', "_blank")
   }
@@ -929,6 +938,46 @@ export default class Modals extends PureComponent {
               See Player Hotkeys
               </paper-button>
               
+              <div style={{clear: 'both', height: '15px'}} />
+
+              <div className="setting-header" style={{marginTop: '10px'}}>
+                  Subtitles
+              </div>
+
+              <paper-button
+                  raised
+                  onClick={this.generalForceVideoVisibility.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                  className='playerButtons' >
+              Search Subtitles By:
+              </paper-button>
+              
+              <paper-button
+                  raised
+                  id="forcedButton"
+                  onClick={this.generalSubsOnlyHash.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '120px', maxWidth: '120px', display: 'inline-block', textAlign: 'center'}}
+                  className='playerButtons' >
+              { this.state.subsOnlyHash ? 'Video Hash' : 'All Data' }
+              </paper-button>
+
+              <paper-button
+                  raised
+                  id="forcedButton"
+                  onClick={this.showInfo.bind(this, 'subsOnlyHash')}
+                  style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                  className='playerButtons' >
+              { '?' }
+              </paper-button>
+
+              <div className="settingsInfo subsOnlyHashInfo">
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <i>Searching for subtitles by "All Data" will lead to more subtitle results in general, subtitles will always be ordered by accuracy for the video. Searching by "Video Hash" only will lead to less results, especially for newer videos, but it may yield better results for niche category videos (such as anime, for example).</i>
+
+              </div>
+
               <div style={{clear: 'both', height: '15px'}} />
 
               <div className="setting-header" style={{marginTop: '10px'}}>
