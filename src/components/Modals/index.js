@@ -21,6 +21,7 @@ import TorrentOptsDialog from './components/torrentOptsDialog'
 import FileOptsDialog from './components/fileOptsDialog'
 import SettingsDialog from './components/settingsDialog'
 import InputDialog from './components/inputDialog'
+import OptionsDialog from './components/optionsDialog'
 import HistoryListDialog from './components/historyListDialog'
 import SubtitleListDialog from './components/subtitleListDialog'
 import MessageDialog from './components/messageDialog'
@@ -123,6 +124,9 @@ export default class Modals extends PureComponent {
               break;
           case 'input':
               return <InputDialog query={this.state.query} />;
+              break;
+          case 'options':
+              return <OptionsDialog query={this.state.query} />;
               break;
           case 'historyList':
               return <HistoryListDialog query={this.state.query} />;

@@ -54,6 +54,8 @@ let map = {
 
     subsOnlyHash: false,
 
+    subLangs: 'all'
+
 }
 
 jsonfile.readFile(configPath, (err, obj) => {

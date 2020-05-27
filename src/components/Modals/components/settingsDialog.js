@@ -10,6 +10,7 @@ import api from 'utils/api'
 import events from 'utils/events'
 import player from 'utils/player'
 import modals from 'utils/modals'
+import langs from 'utils/languages'
 
 let internetIp
 
@@ -185,6 +186,33 @@ export default class Modals extends PureComponent {
 
   }
 
+
+  getValueOptions = (label, oldValue, options, cb) => {
+
+    const oldScroll = document.querySelector('#settingsDialog').scrollTop
+
+    const receiveValue = (value) => {
+      cb(value, () => {
+        modals.open('settings', { oldScroll })
+        events.off('optionsDialogValue', receiveValue)
+        events.off('optionsDialogClose', closing)
+      })
+    }
+
+    const closing = () => {
+      modals.open('settings', { oldScroll })
+      events.off('optionsDialogValue', receiveValue)
+      events.off('optionsDialogClose', closing)
+    }
+
+    events.on('optionsDialogValue', receiveValue)
+
+    events.on('optionsDialogClose', closing)
+
+    modals.open('options', { label, default: oldValue, options: options, oldScroll })
+
+  }
+
   saveValue = async (valueName, value, cb) => {
     await api.get({ method: 'settings', [valueName]: value })
     cb && cb()
@@ -321,6 +349,13 @@ export default class Modals extends PureComponent {
   }
   generalDeleteAllTorrents = () => {
     api.get({ method: 'deleteAllPaused' })
+  }
+  generalSubtitleLanguages = () => {
+    const label = 'Select subtitle languages to look for, if none are selected all languages will be returned.'
+
+    this.getValueOptions(label, (this.state.subLangs || ''), langs.languages, (newValue, cb) => {
+      this.saveValue('subLangs', newValue, cb)
+    })
   }
   generalSetJackettHost = () => {
     const label = 'The Jackett Host Server, by default this is "http://localhost:9117/". Needs Jackett installed separately and configured.'
@@ -969,6 +1004,18 @@ export default class Modals extends PureComponent {
                   className='playerButtons' >
               { '?' }
               </paper-button>
+
+              <div style={{clear: 'both', height: '15px'}} />
+
+              <paper-button
+                  raised
+                  onClick={this.generalSubtitleLanguages.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', display: 'block', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                  className='playerButtons' >
+              Subtitle Languages
+              </paper-button>
+
+              <div style={{clear: 'both', height: '15px'}} />
 
               <div className="settingsInfo subsOnlyHashInfo">
 
