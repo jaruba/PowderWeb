@@ -33,7 +33,6 @@ let map = {
 
     ytdlQuality: 2,
 
-    subLimits: ['best', 'all', 3, 4 ,5],
     subLimit: 0,
 
     jackettHost: 'http://localhost:9117/',

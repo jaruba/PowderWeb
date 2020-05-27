@@ -21,15 +21,10 @@ subtitles.fetchSubs = (newObjective, useQuery) => {
         }
     }
 
-//    if (!objective.limit)
-//        objective.limit = config.get('subLimits')[config.get('subLimit')]
-
-    objective.limit = 'all'
+    objective.limit = !config.get('subLimit') ? 'all' : config.get('subLimit')
 
     objective.sublanguageid = config.get('subLangs') || 'all'
 
-//    console.log(objective)
-    
     if (subFinder) subFinder.kill('SIGINT');
     
     subFinder = worker();

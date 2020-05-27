@@ -357,6 +357,15 @@ export default class Modals extends PureComponent {
       this.saveValue('subLangs', newValue, cb)
     })
   }
+  generalSubtitleLimit = () => {
+
+    const label = 'Maximum number of subtitles to show per language. The subtitles are ordered by accuracy for the video. Setting this to "0" (zero) will show all subtitle results.'
+
+    this.getValue(label, this.state.subLimit, (newValue, cb) => {
+      this.saveValue('subLimit', newValue, cb)
+    })
+
+  }
   generalSetJackettHost = () => {
     const label = 'The Jackett Host Server, by default this is "http://localhost:9117/". Needs Jackett installed separately and configured.'
 
@@ -1024,6 +1033,24 @@ export default class Modals extends PureComponent {
                 <i>Searching for subtitles by "All Data" will lead to more subtitle results in general, subtitles will always be ordered by accuracy for the video. Searching by "Video Hash" only will lead to less results, especially for newer videos, but it may yield better results for niche category videos (such as anime, for example).</i>
 
               </div>
+
+              <div style={{clear: 'both', height: '15px'}} />
+
+              <paper-button
+                  raised
+                  onClick={this.generalSubtitleLimit.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', verticalAlign: 'middle', display: 'inline-block', marginRight: '15px'}}
+                  className='playerButtons' >
+              Subtitles Limit:
+              </paper-button>
+
+              <paper-button
+                  raised
+                  onClick={this.generalSubtitleLimit.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', verticalAlign: 'middle', minWidth: '50px', display: 'inline-block', textAlign: 'center'}}
+                  className='playerButtons' >
+              {!this.state.subLimit ? 'None' : (this.state.subLimit + '')}
+              </paper-button>
 
               <div style={{clear: 'both', height: '15px'}} />
 
