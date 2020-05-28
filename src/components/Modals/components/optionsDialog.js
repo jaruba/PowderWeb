@@ -26,19 +26,6 @@ export default class Modals extends PureComponent {
 
     document.getElementById("optionsDialog").addEventListener('iron-overlay-canceled', this.closingOptionsDialog)
 
-    let selectedOpts = []
-
-    if (this.state.default && this.state.default != 'all') {
-      selectedOpts = this.state.default.split(',')
-    }
-
-
-    _.forEach(this.state.options, (el, ij) => {
-
-        this.refs[ij].checked = !!selectedOpts.includes(ij)
-
-    })
-
   }
 
   componentWillUnmount = () => {
@@ -79,11 +66,24 @@ export default class Modals extends PureComponent {
   }
 
   optionsList() {
+
+    let selectedOpts = []
+
+    if (this.state.default && this.state.default != 'all') {
+      selectedOpts = this.state.default.split(',')
+    }
+
     let opts = []
+
     _.forEach(this.state.options, (el, ij) => {
 
+        const isChecked = !!selectedOpts.includes(ij)
+
         const newOpt = (
-          <paper-checkbox ref={ij}>{el}</paper-checkbox>
+          <label class="control control--checkbox">{el}
+            <input ref={ij} defaultChecked={isChecked} type="checkbox"/>
+            <div class="control__indicator"></div>
+          </label>
         )
 
         opts.push(newOpt)
