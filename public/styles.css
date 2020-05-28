@@ -1132,10 +1132,18 @@ a.donateButton:hover {
   }
 }
 
+/* this was for older chrome versions, no longer needed */
 @media screen and (-webkit-min-device-pixel-ratio:0)
   and (min-resolution:.001dpcm) {
     .torrentFileProgressHold progress-bubble strong{
 /*      top: -47px; */
+    } 
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0)
+  and (min-resolution:.001dpcm) {
+    .isElectron .torrentFileProgressHold progress-bubble strong{
+      top: -47px;
     } 
 }
 
