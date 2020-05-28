@@ -19,8 +19,8 @@ const ip = require('my-local-ip')
 const parseTorrent = require('parse-torrent')
 const organizer = require('./utils/file_organizer')
 const isTorrentString = require('./utils/isTorrentString')
-const rimraf = require('rimraf')
 const checksum = require('checksum')
+const async = require('async')
 
 const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
 const tempDir = path.join(os.tmpDir(), 'PowderWeb', 'torrent-stream')
@@ -173,6 +173,21 @@ let updateInterval = setInterval(() => {
 
 }, 1000)
 
+const removeList = {}
+
+// remove torrents one by one to ensure data is deleted properly
+const removeQueue = async.queue((task, cb) => {
+    if (task.iHash && removeList[task.iHash] && removeList[task.iHash].engine) {
+        removeList[task.iHash].engine.kill(() => {
+            if (removeList[task.iHash].cb)
+                removeList[task.iHash].cb()
+            delete removeList[task.iHash]
+            cb()
+        })
+    } else
+        cb()
+}, 1)
+
 const completelyRemove = (iHash, engine, cb) => {
 
     iHash = iHash || engine.infoHash
@@ -199,9 +214,10 @@ const completelyRemove = (iHash, engine, cb) => {
         fastresumebook.remove(iHash)
     }
 
-    if (engine)
-        engine.kill(cb)
-    else
+    if (engine) {
+        removelist[iHash] = { engine, cb }
+        removeQueue.push({ iHash })
+    } else
         cb()
 
 }
