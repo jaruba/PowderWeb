@@ -1050,6 +1050,23 @@ export default class Modals extends PureComponent {
               {!this.state.subLimit ? 'None' : (this.state.subLimit + '')}
               </paper-button>
 
+              <paper-button
+                  raised
+                  id="forcedButton"
+                  onClick={this.showInfo.bind(this, 'subLimit')}
+                  style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                  className='playerButtons' >
+              { '?' }
+              </paper-button>
+
+              <div className="settingsInfo subLimitInfo">
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <i>The number of maximum subtitles to get per language.</i>
+
+              </div>
+
               <div style={{clear: 'both', height: '15px'}} />
 
               <div className="setting-header" style={{marginTop: '10px'}}>
