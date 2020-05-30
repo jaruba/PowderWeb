@@ -117,6 +117,8 @@ span.whiteLink:hover {
   border-radius: 0px !important;
   margin-left: 0px !important;
   margin-right: 0px !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .dashboardFile {
