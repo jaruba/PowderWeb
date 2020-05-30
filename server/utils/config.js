@@ -9,7 +9,7 @@ const configPath = path.join(app.getPath('appData'), 'PowderWeb', 'config.json')
 
 let map = {
 //    torrentContent: false,
-    peerPort: 6881,
+    peerPort: 6884,
     maxPeers: 200,
 //    bufferSize: 7000,
     removeLogic: 0,
@@ -81,6 +81,11 @@ function loadUserConfig(err, obj) {
 
         if (changed)
             jsonfile.atomicWriteFileSync(configPath, obj)
+
+        // there are issues with port 6881 (in particular) on OSX
+        // as 6881 was previously the default port we will change it
+        if (obj['peerPort'] == 6881)
+            obj['peerPort'] = 6884
 
         return obj
     }
