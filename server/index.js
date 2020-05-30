@@ -344,7 +344,11 @@ const mainServer = http.createServer(function(req, resp) {
       'torrentTrackers',
       'userCommands',
       'jackettHost',
-      'jackettKey'
+      'jackettKey',
+      'subsOnlyHash',
+      'subLangs',
+      'subLimit',
+      'downloadSubs',
     ]
     _.forEach(urlParsed.query, (el, ij) => {
       if (ij == 'token' || ij == 'method') return
