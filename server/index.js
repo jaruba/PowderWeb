@@ -319,8 +319,36 @@ const mainServer = http.createServer(function(req, resp) {
     return page500('Invalid access token')
 
   if (method == 'settings') {
+    const masterOnly = [
+      'useWebPlayerAssoc',
+      'extPlayer',
+      'playerCmdArgs',
+      'extTorrentClient',
+      'torrentCmdArgs',
+      'downloadFolder',
+      'maxConcurrency',
+      'downloadAll',
+      'forceDownload',
+      'speedLimit',
+      'removeLogic',
+      'webServerPort',
+      'webServerSSL',
+      'maxUsers',
+      'maxPeers',
+      'peerPort',
+      'peerID',
+      'verifyFiles',
+      'fastResume',
+      'useFilenameStream',
+      'torrentNotifs',
+      'torrentTrackers',
+      'userCommands',
+      'jackettHost',
+      'jackettKey'
+    ]
     _.forEach(urlParsed.query, (el, ij) => {
       if (ij == 'token' || ij == 'method') return
+      if (!isMaster && masterOnly.includes(ij)) return
       if (el == 'true') el = true
       else if (el == 'false') el = false
       else if (!isNaN(el)) el = parseInt(el)
@@ -1487,12 +1515,6 @@ const mainServer = http.createServer(function(req, resp) {
     return
   }
 
-  if (method == 'deleteAllPaused') {
-    streams.deleteAllPaused()
-    respond({})
-    return
-  }
-
   if (method == 'jackettLink') {
     shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Jackett')
     respond({})
@@ -1512,6 +1534,12 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (isMaster) {
+
+    if (method == 'deleteAllPaused') {
+      streams.deleteAllPaused()
+      respond({})
+      return
+    }
 
     if (method == 'openInBrowser') {
       const isSSL = config.get('webServerSSL') || false
