@@ -53,7 +53,9 @@ let map = {
 
     subsOnlyHash: false,
 
-    subLangs: 'all'
+    subLangs: 'all',
+
+    downloadSubs: false
 
 }
 

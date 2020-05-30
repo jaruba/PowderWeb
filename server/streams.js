@@ -6,6 +6,7 @@ const parser = require('./utils/parser')
 const helpers = require('./utils/misc')
 let addresses = require('./utils/addressbook')
 let uploadedBook = require('./utils/uploadedbook')
+let completedBook = require('./utils/completedbook')
 let fastresumebook = require('./utils/fastresumebook')
 let streams = {}
 let shouldDestroy = {}
@@ -22,6 +23,10 @@ const isTorrentString = require('./utils/isTorrentString')
 const checksum = require('checksum')
 const async = require('async')
 const rimraf = require('rimraf')
+const notifier = require('node-notifier')
+const childProcess = require('child_process')
+const supported = require('./utils/isSupported')
+const subAutoDownload = require('./utils/subAutoDownload')
 
 const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
 const tempDir = path.join(os.tmpDir(), 'PowderWeb', 'torrent-stream')
@@ -214,6 +219,7 @@ const completelyRemove = (iHash, engine, cb) => {
 
         addresses.remove(iHash)
         uploadedBook.remove(iHash)
+        completedBook.remove(iHash)
 
         const appDataTorrentFilePath = path.join(openerDir, iHash + '.torrent')
 
@@ -383,6 +389,99 @@ const actions = {
 
     isRedirectToMagnet,
 
+    whenComplete: (engine, isMaster) => {
+
+        if (isMaster) {
+          const shouldNotify = config.get('torrentNotifs')
+
+          if (shouldNotify) {
+            notifier.notify({
+                title: 'Powder Web',
+                message: 'Torrent finished downloading',
+                icon: path.join(__dirname, '..', 'packaging', 'icons', 'powder-square.png'),
+                wait: true,
+              }, (err, response) => {
+                // Response is response from notification
+              }
+            )
+            notifier.on('click', (notifierObject, options) => {
+              streams.getPath(engine.infoHash, (folderPath) => {
+                if (folderPath) {
+                  shell.openItem(folderPath)
+                }
+              })
+            })
+          }
+        }
+
+        if (config.get('downloadSubs') && config.get('subLangs') != 'all') {
+          // schedule auto-downloading of subtitles
+          actions.getAllVideos(engine.infoHash, files => {
+            subAutoDownload({ torrentHash: engine.infoHash, files })
+          })
+        }
+
+        // execute user set commands at end of download
+        // (yes, not only in isMaster case)
+
+        const userCommands = config.get('userCommands')
+
+        if (userCommands) {
+
+          const newEnv = JSON.parse(JSON.stringify(process.env))
+
+          const nextCommand = (allCommands, folderPath) => {
+            allCommands.shift()
+            runCommands(allCommands, folderPath)
+          }
+
+          const runCommands = (allCommands, folderPath) => {
+
+            if (allCommands.length) {
+
+              let currentCommand = allCommands[0].trim()
+
+              if (currentCommand.includes('%folder%')) {
+                currentCommand.split('%folder%').join('"' + folderPath + '"')
+              }
+
+              currentCommand = currentCommand.split(' ')
+
+              const firstPart = currentCommand[0]
+
+              currentCommand.shift()
+
+              const commandProc = childProcess.spawn(firstPart, currentCommand, {
+                env: newEnv
+              })
+
+              commandProc.stderr.on('data', () => {
+                nextCommand(allCommands, folderPath)
+              })
+
+              commandProc.on('exit', () => {
+                nextCommand(allCommands, folderPath)
+              })
+
+            }
+
+          }
+
+          let allCommands = []
+
+          if (userCommands.includes(';;')) {
+            allCommands = userCommands.split(';;')
+          } else {
+            allCommands = [userCommands]
+          }
+
+          actions.getPath(engine.infoHash, (folderPath) => {
+            runCommands(allCommands, folderPath)
+          })
+
+        }
+    },
+
     speedUp: (torrentId) => {
 
         _.each(streams, (el, ij) => {
@@ -404,7 +503,7 @@ const actions = {
         })
     },
 
-    new: (torrent, idCb, readyCb, listeningCb, errCb, resume) => {
+    new: (torrent, idCb, readyCb, listeningCb, errCb, resume, isMaster) => {
 
         if (resume && torrent && torrent.length == 40) {
             // get opener from fs
@@ -461,14 +560,8 @@ const actions = {
 //                errCb(new Error('Torrent already exists'))
 //                return
 //            } else {
-                let streamerId
-                const foundStreamer = _.some(streams, (el, ij) => {
-                    if (el.engine && el.engine.infoHash == torrentData.infoHash) {
-                        streamerId = ij
-                        return true
-                    }
-                })
-                if (foundStreamer) {
+                const streamerId = actions.getTorrentId(torrentData.infoHash)
+                if (streamerId !== false) {
                     const streamer = streams[streamerId]
                     idCb(torrentObj(streamerId, torrent, torrentData))
                     readyCb && readyCb(streamer.engine, streamer.organizedFiles)
@@ -478,6 +571,21 @@ const actions = {
                     idCb(torrentObj(utime, torrent, torrentData))
                 }
 //            }
+
+            if (isMaster) {
+              const shouldNotify = config.get('torrentNotifs')
+
+              if (shouldNotify) {
+                notifier.notify({
+                    title: 'Powder Web',
+                    message: 'Torrent started downloading',
+                    icon: path.join(__dirname, '..', 'packaging', 'icons', 'powder-square.png'),
+                  }, (err, response) => {
+                    // Response is response from notification
+                  }
+                )
+              }
+            }
 
             canceled[utime] = false
             streams[utime] = {}
@@ -532,9 +640,21 @@ const actions = {
                             } else {
                                 listeningCb && listeningCb(engine, streams[utime].organizedFiles)
                             }
+
+
                         }, () => {
                             remover()
                         })
+
+                    })
+
+                    // listen for complete event, but only if it did not complete in the past also
+                    engine.on('complete', () => {
+                        // complete actions should only be triggered once
+                        if (!completedBook.get(engine.infoHash)) {
+                            completedBook.add(engine.infoHash)
+                            actions.whenComplete(engine, isMaster)
+                        }
                     })
 
                     engine.on('ready', () => {
@@ -619,22 +739,15 @@ const actions = {
                 startTorrent()
             }
         })
-
     },
 
     cancel: cancelTorrent,
 
     cancelByInfohash(infohash, cb, force, noDelete) {
 
-        let streamerId
-        const foundStreamer = _.some(streams, (el, ij) => {
-            if (el.engine && el.engine.infoHash == infohash) {
-                streamerId = ij
-                return true
-            }
-        })
+        const streamerId = actions.getTorrentId(infohash)
 
-        if (foundStreamer) {
+        if (streamerId !== false) {
             cancelTorrent(streamerId, cb, force, noDelete)
         } else {
             if (config.get('removeLogic') == 1 || (!noDelete && force)) {
@@ -675,14 +788,10 @@ const actions = {
     },
 
     getPortFor(infohash, forceStart, cb) {
-        let streamerId
-        const foundStreamer = _.some(streams, (el, ij) => {
-            if (el.engine && el.engine.infoHash == infohash) {
-                streamerId = ij
-                return true
-            }
-        })
-        if (foundStreamer) {
+
+        const streamerId = actions.getTorrentId(infohash)
+
+        if (streamerId !== false) {
             cb(streams[streamerId].engine.streamPort)
         } else if (!forceStart) {
             cb(0)
@@ -811,14 +920,10 @@ const actions = {
     },
 
     toggleStateFile(infohash, fileId) {
-        let streamerId
-        const foundStreamer = _.some(streams, (el, ij) => {
-            if (el.engine && el.engine.infoHash == infohash) {
-                streamerId = ij
-                return true
-            }
-        })
-        if (foundStreamer) {
+
+        const streamerId = actions.getTorrentId(infohash)
+
+        if (streamerId !== false) {
             const streamer = streams[streamerId]
             const engine = streamer.engine
             if (engine.files && engine.files.length) {
@@ -873,14 +978,10 @@ const actions = {
     },
 
     torrentData(infohash, cb, defaultFiles) {
-        let streamerId
-        const foundStreamer = _.some(streams, (el, ij) => {
-            if (el.engine && el.engine.infoHash == infohash) {
-                streamerId = ij
-                return true
-            }
-        })
-        if (foundStreamer) {
+
+        const streamerId = actions.getTorrentId(infohash)
+
+        if (streamerId !== false) {
             const streamer = streams[streamerId]
             const engine = streamer.engine
             const address = addresses.get(engine.infoHash)
@@ -906,7 +1007,7 @@ const actions = {
                 path: defaultFiles ? engine.path : false
             }, defaultFiles ? engine.torrent.pieces.bank : null)
         } else if (!loading[infohash]) {
-            startThen(infohash, running => {
+            actions.startThen(infohash, running => {
                 if (!running) {
                     cb(false)
                     return
@@ -918,15 +1019,36 @@ const actions = {
             cb(false)
     },
 
-    getFilePath(infohash, fileID, cb) {
-        let streamerId
-        const foundStreamer = _.some(streams, (el, ij) => {
-            if (el.engine && el.engine.infoHash == infohash) {
-                streamerId = ij
-                return true
-            }
+    getAllVideos(infohash, cb) {
+        actions.getAllFilePaths(infohash, files => {
+            if ((files || []).length)
+                cb(files.filter(el => !!supported.is(el, 'video')))
+            else
+                cb([])
         })
-        if (foundStreamer) {
+    },
+
+    getAllFilePaths(infohash, cb) {
+
+        const streamerId = actions.getTorrentId(infohash)
+
+        if (streamerId !== false) {
+            const engine = streams[streamerId].engine
+            const filePaths = []
+            _.forEach(engine.files, (file) => {
+                filePaths.push(path.join(engine.path, file.path))
+            })
+            cb(filePaths)
+        } else {
+            cb([])
+        }
+    },
+
+    getFilePath(infohash, fileID, cb) {
+
+        const streamerId = actions.getTorrentId(infohash)
+
+        if (streamerId !== false) {
             const engine = streams[streamerId].engine
             let filePath = false
             _.some(engine.files, (file) => {

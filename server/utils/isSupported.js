@@ -34,7 +34,7 @@ var supported = {
     is: (file, type) => {
         if (!supported.ext[type]) return false;
         return supported.ext[type].some( el => {
-            if (file.toLowerCase().endsWith(el)) return true;
+            if ((file || '').toLowerCase().endsWith(el)) return true;
         });
     },
     contentType: (ext) => {

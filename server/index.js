@@ -57,7 +57,6 @@ const http = require('http')
 const https = require('https')
 const url = require('url')
 const streams = require('./streams')
-const childProcess = require('child_process')
 const settings = require('electron-settings')
 const config = require('./utils/config')
 const getPort = require('get-port')
@@ -894,21 +893,6 @@ const mainServer = http.createServer(function(req, resp) {
 
     let torrentId
 
-    if (isMaster) {
-      const shouldNotify = config.get('torrentNotifs')
-
-      if (shouldNotify) {
-        notifier.notify({
-            title: 'Powder Web',
-            message: 'Torrent started downloading',
-            icon: path.join(__dirname, '..', 'packaging', 'icons', 'powder-square.png'),
-          }, (err, response) => {
-            // Response is response from notification
-          }
-        )
-      }
-    }
-
     streams.new(urlParsed.query.torrent,
 
                 torrentObj => {
@@ -919,92 +903,6 @@ const mainServer = http.createServer(function(req, resp) {
                 (engine, organizedFiles) => {
 
                   // ready
-
-
-                  engine.on('complete', () => {
-                    if (isMaster) {
-                      const shouldNotify = config.get('torrentNotifs')
-
-                      if (shouldNotify) {
-                        notifier.notify({
-                            title: 'Powder Web',
-                            message: 'Torrent finished downloading',
-                            icon: path.join(__dirname, '..', 'packaging', 'icons', 'powder-square.png'),
-                            wait: true,
-                          }, (err, response) => {
-                            // Response is response from notification
-                          }
-                        )
-                        notifier.on('click', (notifierObject, options) => {
-                          streams.getPath(engine.infoHash, (folderPath) => {
-                            if (folderPath) {
-                              shell.openItem(folderPath)
-                            }
-                          })
-                        })
-                      }
-                    }
-
-                    // execute user set commands at end of download
-                    // (yes, not only in isMaster case)
-
-                    const userCommands = config.get('userCommands')
-
-                    if (userCommands) {
-
-                      const newEnv = JSON.parse(JSON.stringify(process.env))
-
-                      const nextCommand = (allCommands, folderPath) => {
-                        allCommands.shift()
-                        runCommands(allCommands, folderPath)
-                      }
-
-                      const runCommands = (allCommands, folderPath) => {
-
-                        if (allCommands.length) {
-
-                          let currentCommand = allCommands[0].trim()
-
-                          if (currentCommand.includes('%folder%')) {
-                            currentCommand.split('%folder%').join('"' + folderPath + '"')
-                          }
-
-                          currentCommand = currentCommand.split(' ')
-
-                          const firstPart = currentCommand[0]
-
-                          currentCommand.shift()
-
-                          const commandProc = child.spawn(firstPart, currentCommand, {
-                            env: newEnv
-                          })
-
-                          commandProc.stderr.on('data', () => {
-                            nextCommand(allCommands, folderPath)
-                          })
-
-                          commandProc.on('exit', () => {
-                            nextCommand(allCommands, folderPath)
-                          })
-
-                        }
-
-                      }
-
-                      let allCommands = []
-
-                      if (userCommands.includes(';;')) {
-                        allCommands = userCommands.split(';;')
-                      } else {
-                        allCommands = [userCommands]
-                      }
-
-                      streams.getPath(engine.infoHash, (folderPath) => {
-                        runCommands(allCommands, folderPath)
-                      })
-
-                    }
-                  })
 
                 },
 
@@ -1022,7 +920,7 @@ const mainServer = http.createServer(function(req, resp) {
                     page500('An unknown error occured')
                   }
 
-                })
+                }, false, true)
 
     return
   }

@@ -599,7 +599,14 @@ export default class Modals extends PureComponent {
       })
     })
   }
-
+  generalDownloadSubs = () => {
+    const newValue = !this.state.downloadSubs
+    this.saveValue('downloadSubs', newValue, () => {
+      this.setState({
+        downloadSubs: newValue
+      })
+    })
+  }
   generalSubsOnlyHash = () => {
     const newValue = this.state.subsOnlyHash ? false : true
     this.saveValue('subsOnlyHash', newValue, () => {
@@ -1064,6 +1071,42 @@ export default class Modals extends PureComponent {
                 <div style={{clear: 'both', height: '15px'}} />
 
                 <i>The number of maximum subtitles to get per language.</i>
+
+              </div>
+
+              <div style={{clear: 'both', height: '15px'}} />
+
+              <paper-button
+                  raised
+                  onClick={this.generalDownloadSubs.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                  className='playerButtons' >
+              Auto-download Subtitles:
+              </paper-button>
+              
+              <paper-button
+                  raised
+                  id="forcedButton"
+                  onClick={this.generalDownloadSubs.bind(this)}
+                  style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center'}}
+                  className='playerButtons' >
+              { this.state.downloadSubs ? 'On' : 'Off' }
+              </paper-button>
+
+              <paper-button
+                  raised
+                  id="forcedButton"
+                  onClick={this.showInfo.bind(this, 'downloadSubs')}
+                  style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                  className='playerButtons' >
+              { '?' }
+              </paper-button>
+
+              <div className="settingsInfo downloadSubsInfo">
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <i>If the subtitle files should be auto-downloaded for every video when the torrent finishes downloading. This feature will only work if you also set the "Subtitle Languages" setting. If only one subtitle language is set, the subtitle file will have the same filename as the video, if more then one subtitle language is set, then every subtitle file will be prefixed with the 2 letter country code.</i>
 
               </div>
 
