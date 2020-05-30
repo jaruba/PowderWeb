@@ -21,6 +21,7 @@ const organizer = require('./utils/file_organizer')
 const isTorrentString = require('./utils/isTorrentString')
 const checksum = require('checksum')
 const async = require('async')
+const rimraf = require('rimraf')
 
 const openerDir = path.join(app.getPath('appData'), 'PowderWeb', 'openers')
 const tempDir = path.join(os.tmpDir(), 'PowderWeb', 'torrent-stream')
@@ -177,49 +178,65 @@ const removeList = {}
 
 // remove torrents one by one to ensure data is deleted properly
 const removeQueue = async.queue((task, cb) => {
-    if (task.iHash && removeList[task.iHash] && removeList[task.iHash].engine) {
-        removeList[task.iHash].engine.kill(() => {
+    if (task.iHash && removeList[task.iHash]) {
+        let finished = false
+        let timeOut = setTimeout(() => {
+            if (finished) return
+            finished = true
+            cb()
+        }, 10000)
+        const removeNext = () => {
             if (removeList[task.iHash].cb)
                 removeList[task.iHash].cb()
             delete removeList[task.iHash]
+            if (finished) return
+            finished = true
+            clearTimeout(timeOut)
             cb()
-        })
+        }
+        if (removeList[task.iHash].engine) {
+            // if torrent running
+            removeList[task.iHash].engine.kill(removeNext)
+        } else if (removeList[task.iHash].folderPath) {
+            // if torrent not running
+            rimraf(removeList[task.iHash].folderPath, { maxBusyTries: 100 }, removeNext)
+        } else
+            removeNext()
     } else
         cb()
 }, 1)
 
 const completelyRemove = (iHash, engine, cb) => {
 
-    iHash = iHash || engine.infoHash
+    actions.getPath(iHash, (folderPath) => {
 
-    addresses.remove(iHash)
-    uploadedBook.remove(iHash)
+        iHash = iHash || engine.infoHash
 
-    const appDataTorrentFilePath = path.join(openerDir, iHash + '.torrent')
+        addresses.remove(iHash)
+        uploadedBook.remove(iHash)
 
-    if (fs.existsSync(appDataTorrentFilePath)) {
-        fs.unlink(appDataTorrentFilePath, () => {})
-    }
+        const appDataTorrentFilePath = path.join(openerDir, iHash + '.torrent')
 
-    const appDataMagnetLink = path.join(openerDir, iHash + '.magnet')
+        if (fs.existsSync(appDataTorrentFilePath)) {
+            fs.unlink(appDataTorrentFilePath, () => {})
+        }
 
-    if (fs.existsSync(appDataMagnetLink)) {
-        fs.unlink(appDataMagnetLink, () => {})
-    }
+        const appDataMagnetLink = path.join(openerDir, iHash + '.magnet')
 
-    const appDataFastResume = path.join(fastResumeDir, iHash + '.fastresume')
+        if (fs.existsSync(appDataMagnetLink)) {
+            fs.unlink(appDataMagnetLink, () => {})
+        }
 
-    if (fs.existsSync(appDataFastResume)) {
-        fs.unlink(appDataFastResume, () => {})
-        fastresumebook.remove(iHash)
-    }
+        const appDataFastResume = path.join(fastResumeDir, iHash + '.fastresume')
 
-    if (engine) {
-        removelist[iHash] = { engine, cb }
+        if (fs.existsSync(appDataFastResume)) {
+            fs.unlink(appDataFastResume, () => {})
+            fastresumebook.remove(iHash)
+        }
+
+        removeList[iHash] = { engine, folderPath, cb }
         removeQueue.push({ iHash })
-    } else
-        cb()
-
+    })
 }
 
 const cancelTorrent = (utime, cb, force, noDelete) => {
