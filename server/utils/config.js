@@ -59,33 +59,71 @@ let map = {
 
 }
 
-jsonfile.readFile(configPath, (err, obj) => {
-	if (err)
-		jsonfile.atomicWriteFileSync(configPath, map)
-	else {
+function loadUserConfig(err, obj) {
+    if (err) {
 
-		let changed
+        try {
+            jsonfile.atomicWriteFileSync(configPath, map)
+        } catch(e) {
+            // ignore error here
+        }
 
-		for (let key in map)
-			if (!obj.hasOwnProperty(key)) {
-				obj[key] = map[key]
-				changed = true
-			}
+        return map
 
-		if (changed)
-			jsonfile.atomicWriteFileSync(configPath, obj)
+    } else {
+        let changed
 
-		map = obj
-	}
-})
+        for (let key in map)
+            if (!obj.hasOwnProperty(key)) {
+                obj[key] = map[key]
+                changed = true
+            }
+
+        if (changed)
+            jsonfile.atomicWriteFileSync(configPath, obj)
+
+        return obj
+    }
+}
 
 const config = {
+    loaded: false,
 	getAll: () => {
+        if (!config.loaded) {
+
+            let obj, err
+
+            try {
+                obj = jsonfile.readFileSync(configPath)
+            } catch(e) {
+                err = e
+            }
+
+            map = loadUserConfig(err, obj)
+
+            config.loaded = true
+
+        }
 		return map
 	},
-	get: str => {
-		return map[str]
-	},
+    get: str => {
+        if (!config.loaded) {
+
+            let obj, err
+
+            try {
+                obj = jsonfile.readFileSync(configPath)
+            } catch(e) {
+                err = e
+            }
+
+            map = loadUserConfig(err, obj)
+
+            config.loaded = true
+
+        }
+        return map[str]
+    },
 	set: (str, value) => {
 		map[str] = value
 		jsonfile.atomicWriteFileSync(configPath, map)
