@@ -102,7 +102,7 @@ export default class Modals extends PureComponent {
 
             {this.state.label}
             
-            <div style={{margin: '0', marginBottom: '5px', fontSize: '16px', height: '200px', overflow: 'scroll'}}>
+            <div style={{margin: '0', marginBottom: '5px', fontSize: '16px', height: '200px', overflowX: 'hidden', overflowY: 'scroll'}}>
               {this.optionsList()}
             </div>
             
