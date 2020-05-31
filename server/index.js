@@ -1519,6 +1519,12 @@ const mainServer = http.createServer(function(req, resp) {
     return
   }
 
+  if (method == 'deleteAllPaused') {
+    streams.deleteAllPaused()
+    respond({})
+    return
+  }
+
   if (method == 'jackettLink') {
     shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Jackett')
     respond({})
@@ -1538,12 +1544,6 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (isMaster) {
-
-    if (method == 'deleteAllPaused') {
-      streams.deleteAllPaused()
-      respond({})
-      return
-    }
 
     if (method == 'openInBrowser') {
       const isSSL = config.get('webServerSSL') || false
