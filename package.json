@@ -98,7 +98,7 @@
     "babel-preset-env": "^1.7.0",
     "cross-env": "^5.0.0",
     "dotenv": "^4.0.0",
-    "electron": "1.6.7",
+    "electron": "9.1.0",
     "electron-devtools-installer": "^2.2.0",
     "electron-packager": "^12.1.0",
     "eslint-config-react-tools": "^1.0.6",
