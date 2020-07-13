@@ -117,6 +117,8 @@ span.whiteLink:hover {
   border-radius: 0px !important;
   margin-left: 0px !important;
   margin-right: 0px !important;
+  width: 100% !important;
+  max-width: 100% !important;
 }
 
 .dashboardFile {
@@ -1132,9 +1134,17 @@ a.donateButton:hover {
   }
 }
 
+/* this was for older chrome versions, no longer needed */
 @media screen and (-webkit-min-device-pixel-ratio:0)
   and (min-resolution:.001dpcm) {
     .torrentFileProgressHold progress-bubble strong{
+/*      top: -47px; */
+    } 
+}
+
+@media screen and (-webkit-min-device-pixel-ratio:0)
+  and (min-resolution:.001dpcm) {
+    .isElectron .torrentFileProgressHold progress-bubble strong{
       top: -47px;
     } 
 }

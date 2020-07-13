@@ -30,6 +30,7 @@ Powder Web's development relies solely on donations, so if you enjoy this applic
 - Supports SopCast Live Streams
 - Supports All Youtube-dl [Supported Sites](https://rg3.github.io/youtube-dl/supportedsites.html)
 - Supports Streaming Local Files (can add individual files or entire folders)
+- Supports Auto-Downloading Subtitles for Torrents (users can select one or multiple subtitle languages)
 - Streaming to your Preferred Video Player (by generating M3U playlists)
 - Streaming to your Browser (works on all Devices and all Browsers)
 - Find Subtitles for every Video File in Torrents (either automatically in the Web Player, or by using the "Find Subtitles" button in the torrent file settings to find / download subtitles)

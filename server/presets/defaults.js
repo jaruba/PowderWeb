@@ -27,6 +27,7 @@ const map = {
     ytdlbook: {},
     fastresumebook: {},
     uploaded: {},
+    completed: {},
     users: {},
     history: {},
 }

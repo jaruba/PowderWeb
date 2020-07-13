@@ -19185,10 +19185,10 @@ var duplicateClick = false
         _this.resizeHandler();
       }, 100, false, player);
 
-      if (RESIZE_OBSERVER_AVAILABLE) {
-        _this.resizeObserver_ = new _this.ResizeObserver(_this.debouncedHandler_);
-        _this.resizeObserver_.observe(player.el());
-      } else {
+//      if (RESIZE_OBSERVER_AVAILABLE) {
+//        _this.resizeObserver_ = new _this.ResizeObserver(_this.debouncedHandler_);
+//        _this.resizeObserver_.observe(player.el());
+//      } else {
         _this.loadListener_ = function () {
           if (_this.el_.contentWindow) {
             on(_this.el_.contentWindow, 'resize', _this.debouncedHandler_);
@@ -19197,7 +19197,7 @@ var duplicateClick = false
         };
 
         _this.on('load', _this.loadListener_);
-      }
+//      }
       return _this;
     }
 

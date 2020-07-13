@@ -4,7 +4,7 @@ const app = require('./electronShim')
 const config = require('./config')
 let updateCheck = config.get('updateCheck')
 
-const version = '0.8.5'
+const version = '0.9.0'
 
 module.exports = {
     checkUpdates: () => {

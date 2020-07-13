@@ -22,14 +22,14 @@ module.exports = (torrent) => {
             })
         }
         const torrentInfo = torrent
-        getPort().then((port) => {
+        getPort({ port: config.has('peerPort') ? config.get('peerPort') : 6884 }).then((port) => {
             let opts = {}
 
             opts.tracker = true
             opts.withResume = !!config.get('verifyFiles')
             opts.buffer = (1.5 * 1024 * 1024).toString()
             opts.tmp = temp
-            opts.port = config.has('peerPort') && config.get('peerPort') != '6881' ? config.get('peerPort') : port
+            opts.port = port
             opts.connections = config.get('maxPeers')
             opts.torFile = typeof torrent === 'string' && !torrent.startsWith('magnet:') && torrent.match(/(?:\.torrent)(\?([^.]+)|$)/gi) ? torrent : null
             opts.id = '-' + config.get('peerID') + '-' + hat(48)

@@ -269,7 +269,7 @@ const runTorrent = (torrentQuery, reqToken, noAction, opts) => {
                 throw newErr
               }
 
-            })
+            }, false, true)
       } else if (urlType.isYoutubeDl) {
         youtube.add(torrentQuery, (ytdl) => {
           let newM3U = "#EXTM3U";

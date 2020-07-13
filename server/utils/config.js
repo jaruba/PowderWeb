@@ -13,7 +13,7 @@ const haveElectron = require('./haveElectron')
 
 let map = {
 //    torrentContent: false,
-    peerPort: 6881,
+    peerPort: 6884,
     maxPeers: 200,
 //    bufferSize: 7000,
     removeLogic: 0,
@@ -37,7 +37,6 @@ let map = {
 
     ytdlQuality: 2,
 
-    subLimits: ['best', 'all', 3, 4 ,5],
     subLimit: 0,
 
     jackettHost: 'http://localhost:9117/',
@@ -56,35 +55,84 @@ let map = {
 
     userCommands: '',
 
+    subsOnlyHash: false,
+
+    subLangs: 'all',
+
+    downloadSubs: false
+
 }
 
-jsonfile.readFile(configPath, (err, obj) => {
-	if (err)
-		jsonfile.atomicWriteFileSync(configPath, map)
-	else {
+function loadUserConfig(err, obj) {
+    if (err) {
 
-		let changed
+        try {
+            jsonfile.atomicWriteFileSync(configPath, map)
+        } catch(e) {
+            // ignore error here
+        }
 
-		for (let key in map)
-			if (!obj.hasOwnProperty(key)) {
-				obj[key] = map[key]
-				changed = true
-			}
+        return map
 
-		if (changed)
-			jsonfile.atomicWriteFileSync(configPath, obj)
+    } else {
+        let changed
 
-		map = obj
-	}
-})
+        for (let key in map)
+            if (!obj.hasOwnProperty(key)) {
+                obj[key] = map[key]
+                changed = true
+            }
+
+        if (changed)
+            jsonfile.atomicWriteFileSync(configPath, obj)
+
+        // there are issues with port 6881 (in particular) on OSX
+        // as 6881 was previously the default port we will change it
+        if (obj['peerPort'] == 6881)
+            obj['peerPort'] = 6884
+
+        return obj
+    }
+}
 
 const config = {
+    loaded: false,
 	getAll: () => {
+        if (!config.loaded) {
+
+            let obj, err
+
+            try {
+                obj = jsonfile.readFileSync(configPath)
+            } catch(e) {
+                err = e
+            }
+
+            map = loadUserConfig(err, obj)
+
+            config.loaded = true
+
+        }
 		return map
 	},
-	get: str => {
-		return map[str]
-	},
+    get: str => {
+        if (!config.loaded) {
+
+            let obj, err
+
+            try {
+                obj = jsonfile.readFileSync(configPath)
+            } catch(e) {
+                err = e
+            }
+
+            map = loadUserConfig(err, obj)
+
+            config.loaded = true
+
+        }
+        return map[str]
+    },
 	set: (str, value) => {
 		map[str] = value
 		jsonfile.atomicWriteFileSync(configPath, map)

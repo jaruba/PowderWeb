@@ -10,6 +10,7 @@ import api from 'utils/api'
 import events from 'utils/events'
 import player from 'utils/player'
 import modals from 'utils/modals'
+import langs from 'utils/languages'
 
 let internetIp
 
@@ -185,6 +186,33 @@ export default class Modals extends PureComponent {
 
   }
 
+
+  getValueOptions = (label, oldValue, options, cb) => {
+
+    const oldScroll = document.querySelector('#settingsDialog').scrollTop
+
+    const receiveValue = (value) => {
+      cb(value, () => {
+        modals.open('settings', { oldScroll })
+        events.off('optionsDialogValue', receiveValue)
+        events.off('optionsDialogClose', closing)
+      })
+    }
+
+    const closing = () => {
+      modals.open('settings', { oldScroll })
+      events.off('optionsDialogValue', receiveValue)
+      events.off('optionsDialogClose', closing)
+    }
+
+    events.on('optionsDialogValue', receiveValue)
+
+    events.on('optionsDialogClose', closing)
+
+    modals.open('options', { label, default: oldValue, options: options, oldScroll })
+
+  }
+
   saveValue = async (valueName, value, cb) => {
     await api.get({ method: 'settings', [valueName]: value })
     cb && cb()
@@ -321,6 +349,22 @@ export default class Modals extends PureComponent {
   }
   generalDeleteAllTorrents = () => {
     api.get({ method: 'deleteAllPaused' })
+  }
+  generalSubtitleLanguages = () => {
+    const label = 'Select subtitle languages to look for, if none are selected all languages will be returned.'
+
+    this.getValueOptions(label, (this.state.subLangs || ''), langs.languages, (newValue, cb) => {
+      this.saveValue('subLangs', newValue, cb)
+    })
+  }
+  generalSubtitleLimit = () => {
+
+    const label = 'Maximum number of subtitles to show per language. The subtitles are ordered by accuracy for the video. Setting this to "0" (zero) will show all subtitle results.'
+
+    this.getValue(label, this.state.subLimit, (newValue, cb) => {
+      this.saveValue('subLimit', newValue, cb)
+    })
+
   }
   generalSetJackettHost = () => {
     const label = 'The Jackett Host Server, by default this is "http://localhost:9117/". Needs Jackett installed separately and configured.'
@@ -552,6 +596,22 @@ export default class Modals extends PureComponent {
     this.saveLocalValue('forceVideoVisibility', newValue, () => {
       this.setState({
         forceVideoVisibility: newValue
+      })
+    })
+  }
+  generalDownloadSubs = () => {
+    const newValue = !this.state.downloadSubs
+    this.saveValue('downloadSubs', newValue, () => {
+      this.setState({
+        downloadSubs: newValue
+      })
+    })
+  }
+  generalSubsOnlyHash = () => {
+    const newValue = this.state.subsOnlyHash ? false : true
+    this.saveValue('subsOnlyHash', newValue, () => {
+      this.setState({
+        subsOnlyHash: newValue
       })
     })
   }
@@ -1010,6 +1070,127 @@ export default class Modals extends PureComponent {
               </paper-button>
 
               <div style={{ display: window.isMaster ? 'block' : 'none' }}>
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <div className="setting-header" style={{marginTop: '10px'}}>
+                    Subtitles
+                </div>
+
+                <paper-button
+                    raised
+                    onClick={this.generalSubsOnlyHash.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                    className='playerButtons' >
+                Search Subtitles By:
+                </paper-button>
+                
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.generalSubsOnlyHash.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '120px', maxWidth: '120px', display: 'inline-block', textAlign: 'center'}}
+                    className='playerButtons' >
+                { this.state.subsOnlyHash ? 'Video Hash' : 'All Data' }
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.showInfo.bind(this, 'subsOnlyHash')}
+                    style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                    className='playerButtons' >
+                { '?' }
+                </paper-button>
+
+                <div className="settingsInfo subsOnlyHashInfo">
+
+                  <div style={{clear: 'both', height: '15px'}} />
+
+                  <i>Searching for subtitles by "All Data" will lead to more subtitle results in general, subtitles will always be ordered by accuracy for the video. Searching by "Video Hash" only will lead to less results, especially for newer videos, but it may yield better results for niche category videos (such as anime, for example).</i>
+
+                </div>
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <paper-button
+                    raised
+                    onClick={this.generalSubtitleLanguages.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', display: 'block', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                    className='playerButtons' >
+                Subtitle Languages
+                </paper-button>
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <paper-button
+                    raised
+                    onClick={this.generalSubtitleLimit.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', verticalAlign: 'middle', display: 'inline-block', marginRight: '15px'}}
+                    className='playerButtons' >
+                Subtitles Limit:
+                </paper-button>
+
+                <paper-button
+                    raised
+                    onClick={this.generalSubtitleLimit.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', verticalAlign: 'middle', minWidth: '50px', display: 'inline-block', textAlign: 'center'}}
+                    className='playerButtons' >
+                {!this.state.subLimit ? 'None' : (this.state.subLimit + '')}
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.showInfo.bind(this, 'subLimit')}
+                    style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                    className='playerButtons' >
+                { '?' }
+                </paper-button>
+
+                <div className="settingsInfo subLimitInfo">
+
+                  <div style={{clear: 'both', height: '15px'}} />
+
+                  <i>The number of maximum subtitles to get per language.</i>
+
+                </div>
+
+                <div style={{clear: 'both', height: '15px'}} />
+
+                <paper-button
+                    raised
+                    onClick={this.generalDownloadSubs.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', display: 'inline-block', marginRight: '15px'}}
+                    className='playerButtons' >
+                Auto-download Subtitles:
+                </paper-button>
+                
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.generalDownloadSubs.bind(this)}
+                    style={{cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center'}}
+                    className='playerButtons' >
+                { this.state.downloadSubs ? 'On' : 'Off' }
+                </paper-button>
+
+                <paper-button
+                    raised
+                    id="forcedButton"
+                    onClick={this.showInfo.bind(this, 'downloadSubs')}
+                    style={{ borderRadius: '21px', cursor: 'pointer', float: 'none', margin: '0', fontSize: '16px', minWidth: '50px', maxWidth: '50px', display: 'inline-block', textAlign: 'center', marginLeft: '15px'}}
+                    className='playerButtons' >
+                { '?' }
+                </paper-button>
+
+                <div className="settingsInfo downloadSubsInfo">
+
+                  <div style={{clear: 'both', height: '15px'}} />
+
+                  <i>If the subtitle files should be auto-downloaded for every video when the torrent finishes downloading. This feature will only work if you also set the "Subtitle Languages" setting. If only one subtitle language is set, the subtitle file will have the same filename as the video, if more then one subtitle language is set, then every subtitle file will be prefixed with the 2 letter country code.</i>
+
+                </div>
 
                 <div style={{clear: 'both', height: '15px'}} />
 

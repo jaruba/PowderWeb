@@ -1,3 +1,5 @@
+const parseVideo = require('video-name-parser')
+const nameToImdb = require('name-to-imdb')
 const worker = require('subtitles-thread')
 const parser = require('./parser')
 const config = require('./config')
@@ -19,13 +21,10 @@ subtitles.fetchSubs = (newObjective, useQuery) => {
         }
     }
 
-//    if (!objective.limit)
-//        objective.limit = config.get('subLimits')[config.get('subLimit')]
+    objective.limit = !config.get('subLimit') ? 'all' : config.get('subLimit')
 
-    objective.limit = 'all'
+    objective.sublanguageid = config.get('subLangs') || 'all'
 
-//    console.log(objective)
-    
     if (subFinder) subFinder.kill('SIGINT');
     
     subFinder = worker();
@@ -51,6 +50,18 @@ subtitles.fetchSubs = (newObjective, useQuery) => {
         }
     });
 
+    if (!config.get('subsOnlyHash') && objective.filename) {
+        // get imdb id
+        var parsedFilename = parseVideo(objective.filename);
+        if (parsedFilename) {
+            nameToImdb(parsedFilename, function(err, res, inf) {
+                if (res)
+                    objective.imdbid = res;
+                subFinder.send(objective);
+            })
+            return
+        }
+    }
     subFinder.send(objective);
 }
 
