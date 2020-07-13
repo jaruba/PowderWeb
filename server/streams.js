@@ -409,7 +409,7 @@ const actions = {
             notifier.on('click', (notifierObject, options) => {
               streams.getPath(engine.infoHash, (folderPath) => {
                 if (folderPath) {
-                  shell.openItem(folderPath)
+                  app.openItem(folderPath)
                 }
               })
             })
