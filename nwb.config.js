@@ -43,7 +43,6 @@ module.exports = {
       AUTH0_ID: JSON.stringify(process.env.AUTH0_ID),
       AUTH0_DOMAIN: JSON.stringify(process.env.AUTH0_DOMAIN),
     },
-    uglify: false,
   },
   devServer: {
     proxy: [{
