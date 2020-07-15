@@ -8,7 +8,7 @@
   "homepage": "./",
   "scripts": {
     "build": "node build.js",
-    "build-front": "nwb build-react-app",
+    "build-front": "node build.js --only-front",
     "clean": "nwb clean-app",
     "start": "node start.js",
     "start-front": "nwb serve-react-app",
