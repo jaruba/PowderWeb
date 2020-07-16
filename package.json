@@ -9,6 +9,7 @@
   "scripts": {
     "build": "node build.js",
     "build-front": "node build.js --only-front",
+    "build-react": "nwb build-react-app",
     "clean": "nwb clean-app",
     "start": "node start.js",
     "start-front": "nwb serve-react-app",
