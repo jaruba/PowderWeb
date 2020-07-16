@@ -77,11 +77,11 @@ function cleanBackBuild() {
 
 function runFrontBuild() {
 
-	console.log(' 1/3 - Building Front-end')
+	console.log(' 1/' + (onlyFront ? '1' : '3') + ' - Building Front-end')
 
 	var newEnv = JSON.parse(JSON.stringify(process.env))
 
-	var buildProc = child.spawn('npm' + (isWin ? '.cmd' : ''), ['run', 'build-front'],
+	var buildProc = child.spawn('npm' + (isWin ? '.cmd' : ''), ['run', 'build-react'],
 		{
 			cwd: process.cwd(),
 			env: newEnv
