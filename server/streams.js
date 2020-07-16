@@ -85,6 +85,7 @@ const isRedirectToMagnet = (url, cb) => {
 }
 
 const basicTorrentData = (torrent, cb) => {
+    torrent = Buffer.isBuffer(torrent || '') ? torrent.toString() : torrent
     console.log('basic torrent data')
     console.log(torrent)
     if (!torrent || !torrent.startsWith) {
