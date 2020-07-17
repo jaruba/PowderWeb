@@ -1534,25 +1534,25 @@ const mainServer = http.createServer(function(req, resp) {
     return
   }
 
-  if (method == 'jackettLink') {
-    app.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Jackett')
-    respond({})
-    return
-  }
-
-  if (method == 'donateLink') {
-    app.openExternal('https://powder.media/donate')
-    respond({})
-    return
-  }
-
-  if (method == 'sopGuideLink') {
-    app.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Sopcast')
-    respond({})
-    return
-  }
-
   if (isMaster) {
+
+    if (method == 'jackettLink') {
+      shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Jackett')
+      respond({})
+      return
+    }
+
+    if (method == 'donateLink') {
+      shell.openExternal('https://powder.media/donate')
+      respond({})
+      return
+    }
+
+    if (method == 'sopGuideLink') {
+      shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Sopcast')
+      respond({})
+      return
+    }
 
     if (method == 'openInBrowser') {
       const isSSL = config.get('webServerSSL') || false
