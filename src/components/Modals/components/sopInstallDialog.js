@@ -9,6 +9,7 @@ import api from 'utils/api'
 import modals from 'utils/modals'
 import player from 'utils/player'
 import { jackettLinkAnchor } from 'utils/misc'
+import isElectron from 'utils/electron'
 
 let dataTimer
 
@@ -57,7 +58,12 @@ export default class Modals extends PureComponent {
       this.setState({ message: 'Sopcast already installed', showDownload: false })
     }
     window.externalSopGuide = () => {
-      api.get({ method: 'sopGuideLink' })
+      if (isElectron()) {
+        api.get({ method: 'sopGuideLink' })
+      } else {
+        const win = window.open('https://github.com/jaruba/PowderWeb/wiki/Enable-Sopcast', '_blank')
+        win.focus()
+      }
     }
   }
 

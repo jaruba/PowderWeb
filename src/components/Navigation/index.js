@@ -21,7 +21,12 @@ import NavTitle from './navTitle'
 import { getParameterByName } from 'utils/misc'
 
 window.externalJackettLink = () => {
-  api.get({ method: 'jackettLink', anchor: jackettLinkAnchor() })
+  if (isElectron()) {
+    api.get({ method: 'jackettLink', anchor: jackettLinkAnchor() })
+  } else {
+    const win = window.open('https://github.com/jaruba/PowderWeb/wiki/Enable-Jackett', '_blank')
+    win.focus()
+  }
 }
 
 window.loadingTorrents = {}

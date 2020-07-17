@@ -91,7 +91,7 @@
     "youtube-dl": "https://github.com/jaruba/node-youtube-dl/tarball/master",
     "yup": "^0.22.0",
     "jsonfile": "https://github.com/jaruba/node-jsonfile/tarball/master",
-    "name-to-imdb": "https://github.com/Ivshti/name-to-imdb/tarball/master",
+    "name-to-imdb": "2.3.2",
     "video-name-parser": "^1.4.6"
   },
   "devDependencies": {
