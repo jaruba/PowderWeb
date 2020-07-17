@@ -14,18 +14,69 @@ const configPath = path.join(userData, 'settingsShim.json')
 
 let map = {}
 
-jsonfile.readFile(configPath, (err, obj) => {
-	if (err)
-		jsonfile.atomicWriteFileSync(configPath, map)
-	else
-		map = obj
-})
+function loadUserConfig(err, obj) {
+    if (err) {
+
+        try {
+            jsonfile.atomicWriteFileSync(configPath, map)
+        } catch(e) {
+            // ignore error here
+        }
+
+        return map
+
+    } else {
+        let changed
+
+        for (let key in map)
+            if (!obj.hasOwnProperty(key)) {
+                obj[key] = map[key]
+                changed = true
+            }
+
+        if (changed)
+            jsonfile.atomicWriteFileSync(configPath, obj)
+
+        return obj
+    }
+}
 
 const config = {
+	loaded: false,
 	getAll: () => {
-		return map
+        if (!config.loaded) {
+
+            let obj, err
+
+            try {
+                obj = jsonfile.readFileSync(configPath)
+            } catch(e) {
+                err = e
+            }
+
+            map = loadUserConfig(err, obj)
+
+            config.loaded = true
+
+        }
+        return map
 	},
 	get: str => {
+		if (!config.loaded) {
+
+		    let obj, err
+
+		    try {
+		        obj = jsonfile.readFileSync(configPath)
+		    } catch(e) {
+		        err = e
+		    }
+
+		    map = loadUserConfig(err, obj)
+
+		    config.loaded = true
+
+		}
 		return map[str]
 	},
 	set: (str, value) => {
