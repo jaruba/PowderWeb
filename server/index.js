@@ -2087,7 +2087,7 @@ var srv = http.createServer(function (req, res) {
       let resized = false
 
       if (!params.isAudio) {
-        resized = params.needsVideo > -1 && (params.videoQuality == params.maxHeight+'p' || sizeParams.resolution == params.maxWidth+'x?') ? false : true
+        resized = params.needsVideo > -1 && (params.videoQuality == params.maxHeight+'p' || (sizeParams || {}).resolution == params.maxWidth+'x?') ? false : true
       }
 
       if (!params.videoContainer)
