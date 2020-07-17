@@ -8,6 +8,15 @@ var dir = path.join(process.cwd(), 'node_modules/hue-name')
 
 var isWin = process.platform === 'win32'
 
+var onlyFront = false
+
+var argv = process.argv || []
+
+argv.forEach(arg => {
+  if (arg == '--only-front')
+    onlyFront = true
+})
+
 function runBackBuild() {
 
 	console.log(' 3/3 - Packaging Application')
@@ -68,11 +77,11 @@ function cleanBackBuild() {
 
 function runFrontBuild() {
 
-	console.log(' 1/3 - Building Front-end')
+	console.log(' 1/' + (onlyFront ? '1' : '3') + ' - Building Front-end')
 
 	var newEnv = JSON.parse(JSON.stringify(process.env))
 
-	var buildProc = child.spawn('npm' + (isWin ? '.cmd' : ''), ['run', 'build-front'],
+	var buildProc = child.spawn('npm' + (isWin ? '.cmd' : ''), ['run', 'build-react'],
 		{
 			cwd: process.cwd(),
 			env: newEnv
@@ -91,7 +100,10 @@ function runFrontBuild() {
 	})
 
 	buildProc.on('exit', (code) => {
-		cleanBackBuild()
+		if (onlyFront)
+			process.exit()
+		else
+			cleanBackBuild()
 	})
 
 }
