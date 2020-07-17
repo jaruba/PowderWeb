@@ -97,7 +97,7 @@ function loadUserConfig(err, obj) {
 
 const config = {
     loaded: false,
-	getAll: () => {
+    getAll: () => {
         if (!config.loaded) {
 
             let obj, err
@@ -113,8 +113,8 @@ const config = {
             config.loaded = true
 
         }
-		return map
-	},
+        return map
+    },
     get: str => {
         if (!config.loaded) {
 
@@ -133,13 +133,13 @@ const config = {
         }
         return map[str]
     },
-	set: (str, value) => {
-		map[str] = value
-		jsonfile.atomicWriteFileSync(configPath, map)
-	},
-	has: key => {
-		return map.hasOwnProperty(key)
-	}
+    set: (str, value) => {
+        map[str] = value
+        jsonfile.atomicWriteFileSync(configPath, map)
+    },
+    has: key => {
+        return map.hasOwnProperty(key)
+    }
 }
 
 module.exports = config
