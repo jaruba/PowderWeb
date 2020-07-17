@@ -14,6 +14,7 @@ import api from 'utils/api'
 import { readableSize, jackettLinkAnchor } from 'utils/misc'
 import modals from 'utils/modals'
 import player from 'utils/player'
+import isElectron from 'utils/electron'
 
 let dataTimeout
 let focused
@@ -525,7 +526,12 @@ export default class Counter extends PureComponent {
   }
 
   externalJackettLink = () => {
-    api.get({ method: 'jackettLink', anchor: jackettLinkAnchor() })
+    if (isElectron()) {
+      api.get({ method: 'jackettLink', anchor: jackettLinkAnchor() })
+    } else {
+      const win = window.open('https://github.com/jaruba/PowderWeb/wiki/Enable-Jackett', '_blank')
+      win.focus()
+    }
   }
 
   onfocus = () => {
