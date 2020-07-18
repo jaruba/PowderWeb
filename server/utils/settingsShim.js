@@ -41,42 +41,25 @@ function loadUserConfig(err, obj) {
     }
 }
 
+function init() {
+    let obj, err
+
+    try {
+        obj = jsonfile.readFileSync(configPath)
+    } catch(e) {
+        err = e
+    }
+
+    map = loadUserConfig(err, obj)
+}
+
+init()
+
 const config = {
-	loaded: false,
 	getAll: () => {
-        if (!config.loaded) {
-
-            let obj, err
-
-            try {
-                obj = jsonfile.readFileSync(configPath)
-            } catch(e) {
-                err = e
-            }
-
-            map = loadUserConfig(err, obj)
-
-            config.loaded = true
-
-        }
         return map
 	},
 	get: str => {
-		if (!config.loaded) {
-
-		    let obj, err
-
-		    try {
-		        obj = jsonfile.readFileSync(configPath)
-		    } catch(e) {
-		        err = e
-		    }
-
-		    map = loadUserConfig(err, obj)
-
-		    config.loaded = true
-
-		}
 		return map[str]
 	},
 	set: (str, value) => {
@@ -89,4 +72,3 @@ const config = {
 }
 
 module.exports = config
-
