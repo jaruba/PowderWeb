@@ -76,7 +76,8 @@ export default class Counter extends PureComponent {
     this.state = {
       torrents: {},
       activeTorrents: [],
-      noTorrents: false
+      noTorrents: false,
+      updateData: []
     }
   }
 
@@ -534,6 +535,11 @@ export default class Counter extends PureComponent {
     }
   }
 
+  externalUpdateLink = () => {
+      const win = window.open(this.state.updateData[1], '_blank')
+      win.focus()
+  }
+
   onfocus = () => {
     focused = true
     getData.call(this)
@@ -577,6 +583,19 @@ export default class Counter extends PureComponent {
 
     checkHaveSync()
 
+
+    const checkUpdater = async () => {
+      const updater = await api.get({ method: 'haveUpdate', json: true })
+
+      if ((updater || {}).haveUpdate && (updater.updateData || []).length) {
+        this.setState({
+          updateData: updater.updateData
+        })
+      }
+    }
+
+    checkUpdater()
+
   }
 
   componentWillUnmount = () => {
@@ -592,6 +611,9 @@ export default class Counter extends PureComponent {
   render() {
     return (
       <div className='listContainer'>
+        <div style={{ display: (this.state.updateData || []).length ? 'block' : 'none', textAlign: 'left', color: 'rgba(255,255,255,0.8)', fontWeight: '100', fontSize: '14px', padding: '15px 35px', lineHeight: '20px', backgroundColor: 'rgba(0,0,0,0.15)' }}>
+          Powder Web v{this.state.updateData[0]} has been released, you can download it <span className="whiteLink" onClick={this.externalUpdateLink.bind(this)}>from here</span>.
+        </div>
         <div style={{ display: this.state.noTorrents ? 'block' : 'none', textAlign: 'left', color: 'rgba(255,255,255,0.8)', fontWeight: '100', fontSize: '14px', padding: '30px 35px', lineHeight: '20px' }}>
           You have no torrents added. You can add torrents by:<div style={{height: '11px'}} />
           - pressing the "+" button in the top navigation bar<div style={{height: '11px'}} />

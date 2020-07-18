@@ -12,6 +12,8 @@ const configPath = path.join(userData, 'config.json')
 const haveElectron = require('./haveElectron')
 
 let map = {
+    primaryUser: '', // headless mode only
+
 //    torrentContent: false,
     peerPort: 6884,
     maxPeers: 200,
@@ -59,7 +61,7 @@ let map = {
 
     subLangs: 'all',
 
-    downloadSubs: false
+    downloadSubs: false,
 
 }
 

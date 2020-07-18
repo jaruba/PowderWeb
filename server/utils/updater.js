@@ -6,7 +6,7 @@ let updateCheck = config.get('updateCheck')
 
 const version = '0.9.0'
 
-module.exports = {
+const updater = {
     checkUpdates: () => {
         setTimeout(function() {
 
@@ -21,6 +21,9 @@ module.exports = {
                         if (vers[0] == version) {
                             config.set('updateCheck', Math.floor(Date.now() / 1000))
                         } else {
+
+                            updater.haveUpdate = true
+                            updater.updateData = vers
 
                             notifier.notify({
                                 title: 'Powder Web v' + vers[0] + ' Available',
@@ -41,5 +44,9 @@ module.exports = {
                 })
             }
         }, 3000)
-    }
+    },
+    haveUpdate: false,
+    updateData: false
 }
+
+module.exports = updater

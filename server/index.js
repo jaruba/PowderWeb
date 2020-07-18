@@ -253,7 +253,12 @@ const mainServer = http.createServer(function(req, resp) {
   }
 
   if (method == 'signup' && urlParsed.query.value) {
-    if (config.get('maxUsers') && _.size(settings.get('users')) >= config.get('maxUsers')) {
+
+    let users = settings.get('users')
+    const userCount = _.size(users)
+    const maxUsers = config.get('maxUsers')
+
+    if (!maxUsers || (maxUsers && userCount >= maxUsers)) {
       respond({ error: 'Maximum number of users reached' })
       return
     }
@@ -262,10 +267,10 @@ const mainServer = http.createServer(function(req, resp) {
       newUser = JSON.parse(urlParsed.query.value)
     } catch (e) {}
 
-    let users = settings.get('users')
-
     if (newUser.email && newUser.password) {
       if (!users[newUser.email]) {
+        if (!userCount)
+          config.set('primaryUser', newUser.email)
         users[newUser.email] = newUser.password
         settings.set('users', users)
         respondToken(newUser.email)
@@ -326,6 +331,16 @@ const mainServer = http.createServer(function(req, resp) {
 
   if (isEmbed && ['embedStart', 'torrentData', 'getSubs', 'updateHistory', 'haveAce', 'ace', 'aceMsg', 'urlType', 'ytdlAdd', 'sop', 'sopMsg'].indexOf(method) == -1 && !uri.startsWith('/srt2vtt/subtitle.vtt'))
     return page500('Invalid access token')
+
+  if (method == 'haveUpdate') { // used only for headless mode
+    if (tokens[reqToken] == config.get('primaryUser')) {
+      respond({ haveUpdate: updater.haveUpdate, updateData: updater.updateData })
+      return
+    } else {
+      respond({ message: 'This data is exclusive to the primary user' })
+      return
+    }
+  }
 
   if (method == 'settings') {
     const masterOnly = [
