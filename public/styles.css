@@ -1210,6 +1210,11 @@ a.donateButton:hover {
 #auth #innerAuth #innerAuthForm button[type=submit] {
   background: #467b88 !important;
   border-radius: 0 !important;
+  margin: 0 !important;
+}
+
+#auth #innerAuth #innerAuthForm #authBottomText {
+  margin-top: 1rem;
 }
 
 #footerHomeButton {

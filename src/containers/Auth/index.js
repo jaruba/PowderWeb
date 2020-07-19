@@ -102,7 +102,7 @@ class Auth extends Component {
   renderSwitchMode () {
     if (!this.state.switchable || window.isMaster) return null
     return (
-      <div onClick={this.toggleMode} style={{ cursor: 'pointer' }}>
+      <div id="authBottomText" onClick={this.toggleMode} style={{ cursor: 'pointer' }}>
         {
           this.state.mode === 'signUp'
             ? <span>Already have an account? <a>Login</a></span>
