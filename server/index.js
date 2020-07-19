@@ -1563,6 +1563,12 @@ const mainServer = http.createServer(function(req, resp) {
       return
     }
 
+    if (method == 'homeLink') {
+      shell.openExternal('https://web.powder.media/')
+      respond({})
+      return
+    }
+
     if (method == 'sopGuideLink') {
       shell.openExternal('https://github.com/jaruba/PowderWeb/wiki/Enable-Sopcast')
       respond({})

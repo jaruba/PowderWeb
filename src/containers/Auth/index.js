@@ -9,6 +9,16 @@ import Login from './components/Login'
 import SignUp from './components/SignUp'
 import { healToken, checkToken } from 'utils/auth'
 import api from 'utils/api'
+import isElectron from 'utils/electron'
+
+window.authHomeLink = () => {
+    if (isElectron()) {
+		// do nothing in electron because it logs in automatically
+	} else {
+		const win = window.open('https://web.powder.media/', '_blank')
+		win.focus()
+	}
+}
 
 class Auth extends Component {
   constructor (props) {
@@ -51,17 +61,20 @@ class Auth extends Component {
   }
 
   renderTitle () {
-    if (this.state.mode === 'login')
-      return (<h1 style={{ marginTop: '4px', fontSize: '26px' }}>Login</h1>)
+  	if (window.isMaster) // auto-login, we won't show title / logo
+  		return ('')
 
-    return (<h1 style={{ marginTop: '4px', fontSize: '26px' }}>Register</h1>)
+    if (this.state.mode === 'login')
+      return (<div id="authLogoHolder"><img onClick={window.authHomeLink.bind()} src="/powder-web-logo-white.png" /><h1>login</h1></div>)
+
+    return (<div id="authLogoHolder"><img onClick={window.authHomeLink.bind()} src="/powder-web-logo-white.png" /><h1>register</h1></div>)
   }
 
   renderAuth () {
 
     if (window.isMaster) {
       return (
-        <div style={{paddingBottom: '17px'}}>
+        <div style={{padding: '17px 0'}}>
           Logging in, please wait ...
         </div>
       )
@@ -103,11 +116,13 @@ class Auth extends Component {
     return (
       <Wrapper id="auth">
         <Center id="innerAuth">
-          <Panel>
-            {this.renderTitle()}
-            {this.props.errors.map(e => <FormError key={e}>{e}</FormError>)}
-            {this.renderAuth()}
-            {this.renderSwitchMode()}
+          <Panel id="innerAuthHolder">
+		    {this.renderTitle()}
+		    <div id="innerAuthForm">
+	            {this.props.errors.map(e => <FormError key={e}>{e}</FormError>)}
+	            {this.renderAuth()}
+	            {this.renderSwitchMode()}
+            </div>
           </Panel>
         </Center>
       </Wrapper>
