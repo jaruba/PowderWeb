@@ -1156,9 +1156,123 @@ a.donateButton:hover {
   );} 
 }
 
+#auth #innerAuth #innerAuthHolder {
+  background: #292929 !important;
+  border: 0 !important;
+  padding: 0 !important;
+}
+
+#auth #innerAuth #innerAuthHolder h1 {
+  margin-top: 4px;
+  font-size: 25px;
+  float: right;
+  color: rgba(255,255,255,0.7);
+  font-weight: 500;
+}
+
+#auth #innerAuth #innerAuthHolder #authLogoHolder {
+  display: block;
+  text-align: left;
+  margin-bottom: 16px;
+  line-height: 37px;
+  padding: 9px;
+}
+
+#auth #innerAuth #innerAuthHolder #authLogoHolder img {
+  height: 44px;
+  width: 264px;
+  display: inline-block;
+  border: none;
+  cursor: pointer;
+}
+
+#auth #innerAuth #innerAuthForm {
+  background: #494949 !important;
+  color: white !important;
+  border: none !important;
+  padding: 1rem !important;
+}
+
+#auth #innerAuth #innerAuthForm input[type=text] {
+  background-color: rgba(255,255,255,0.95) !important;
+  border-radius: 0 !important;
+  border: none !important;
+  color: #494949 !important;
+}
+
+#auth #innerAuth #innerAuthForm input[type=password] {
+  background-color: rgba(255,255,255,0.95) !important;
+  border-radius: 0 !important;
+  border: none !important;
+  color: #494949 !important;
+}
+
+#auth #innerAuth #innerAuthForm button[type=submit] {
+  background: #467b88 !important;
+  border-radius: 0 !important;
+}
+
+#footerHomeButton {
+  cursor: pointer;
+}
+
+#footerHomeButton:hover {
+  color: white;
+}
+
 /* for IE 10 and IE 11 (IE 11 is last, after that it's Edge) only: */
 @media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
   #auth #innerAuth {
     display: inline-block !important;
+  }
+}
+
+@media only screen and (max-width: 410px) {
+  #auth #innerAuth #innerAuthHolder #authLogoHolder img {
+    height: 39px !important;
+    width: 234px !important;
+  }
+  #auth #innerAuth #innerAuthHolder #authLogoHolder {
+    line-height: 35px !important;
+  }
+}
+
+@media only screen and (max-width: 369px) {
+  #auth #innerAuth #innerAuthHolder #authLogoHolder img {
+    height: 36px !important;
+    width: 216px !important;
+  }
+  #auth #innerAuth #innerAuthHolder #authLogoHolder {
+    line-height: 30px !important;
+  }
+}
+
+@media only screen and (max-width: 329px) {
+  #auth #innerAuth #innerAuthHolder #authLogoHolder img {
+    height: 31px !important;
+    width: 186px !important;
+  }
+  #auth #innerAuth #innerAuthHolder #authLogoHolder {
+    line-height: 30px !important;
+  }
+  #auth #innerAuth #innerAuthHolder #authLogoHolder h1 {
+    font-size: 22px !important;
+  }
+}
+
+@media only screen and (max-width: 269px) {
+  #auth #innerAuth #innerAuthHolder #authLogoHolder img {
+    display: none !important;
+  }
+  #auth #innerAuth #innerAuthHolder #authLogoHolder {
+    line-height: 30px !important;
+    text-align: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  #auth #innerAuth #innerAuthHolder #authLogoHolder h1 {
+    font-size: 22px !important;
+    float: none !important;
+    text-transform: capitalize !important;
   }
 }
